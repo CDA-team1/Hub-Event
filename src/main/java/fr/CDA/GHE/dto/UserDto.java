@@ -1,0 +1,4 @@
+package fr.CDA.GHE.dto;
+
+public class UserDto {
+}
