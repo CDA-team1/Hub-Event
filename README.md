@@ -11,7 +11,7 @@ Application web de gestion de hub évènementiel — **frontend Angular** + **ba
 ## Prérequis
 
 - **Java 25** (OpenJDK)  
-- **Maven 4.0?**
+- **Maven 4.0**
 
 ## Démarrage rapide (dev)
 Backend
