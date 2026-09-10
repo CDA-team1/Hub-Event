@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
+/**
+ * Entité représentant un utilisateur de l'application.
+ */
     @Entity
     @Table(name = "users")
     public class User {
@@ -37,6 +40,22 @@ import java.time.LocalDate;
         public User() {
         }
 
+        /**
+         * Constructeur complet pour initialiser un utilisateur avec tous ses attributs.
+         *
+         * @param id                identifiant unique
+         * @param lastName          nom de famille
+         * @param firstName         prénom
+         * @param postalAddress     adresse postale
+         * @param email             adresse email (unique)
+         * @param phone             numéro de téléphone (nullable)
+         * @param password          mot de passe encodé
+         * @param status            statut du compte
+         * @param role              rôle de l'utilisateur
+         * @param suspended         indique si le compte est suspendu
+         * @param suspensionEndDate date de fin de suspension (nullable)
+         * @param suspensionReason  raison de la suspension (nullable)
+         */
         public User(Long id, String lastName, String firstName, String postalAddress, String email, String phone, String password, AccountStatus status, Role role, boolean suspended, LocalDate suspensionEndDate, String suspensionReason) {
             this.id = id;
             this.lastname = lastName;
