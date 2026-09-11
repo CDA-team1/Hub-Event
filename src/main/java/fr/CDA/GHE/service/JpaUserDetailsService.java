@@ -1,4 +1,4 @@
-package fr.CDA.GHE.security;
+package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.repository.UserRepository;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
  * un utilisateur à partir de son adresse email.
  */
 @Service
-public class CustomUserDetailsService implements UserDetailsService {
+public class JpaUserDetailsService implements UserDetailsService {
 
   private final UserRepository userRepository;
 
@@ -21,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    *
    * @param userRepository repository permettant d'accéder aux utilisateurs
    */
-  public CustomUserDetailsService(UserRepository userRepository) {
+  public JpaUserDetailsService(UserRepository userRepository) {
     this.userRepository = userRepository;
   }
 

@@ -2,6 +2,8 @@ package fr.CDA.GHE.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +29,21 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  /**
+   * Expose l'{@link AuthenticationManager} pour que les services d'authentification
+   * (ex : login) puissent vérifier les identifiants (email/mot de passe) en délégant
+   * à {@code JpaUserDetailsService} et au {@link PasswordEncoder} configurés.
+   *
+   * @param configuration configuration d'authentification fournie par Spring
+   * @return le gestionnaire d'authentification de l'application
+   * @throws Exception si l'AuthenticationManager ne peut pas être récupéré
+   */
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
+      throws Exception {
+    return configuration.getAuthenticationManager();
   }
 
   /**

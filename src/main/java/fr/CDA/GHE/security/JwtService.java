@@ -1,5 +1,6 @@
 package fr.CDA.GHE.security;
 
+import fr.CDA.GHE.entity.enums.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -9,25 +10,50 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
+import java.util.Date;
 
 /**
- * Service chargé de la lecture et de la validation des tokens JWT
+ * Service chargé de la génération, de la lecture et de la validation des tokens JWT
  * utilisés pour l'authentification de l'application.
  */
 @Service
 public class JwtService {
 
   private final SecretKey key;
+  private final long expirationMs;
 
   /**
-   * Initialise la clé cryptographique utilisée pour vérifier les JWT.
+   * Initialise la clé cryptographique utilisée pour signer/vérifier les JWT.
    *
-   * @param secret clé secrète définie dans la configuration de l'application
+   * @param secret       clé secrète (encodée en Base64) définie dans la configuration
+   * @param expirationMs durée de validité d'un token, en millisecondes
    */
-  public JwtService(@Value("${jwt.secret}") String secret) {
+  public JwtService(@Value("${jwt.secret}") String secret,
+                     @Value("${jwt.expiration-ms}") long expirationMs) {
     this.key = Keys.hmacShaKeyFor(
         Base64.getDecoder().decode(secret)
     );
+    this.expirationMs = expirationMs;
+  }
+
+  /**
+   * Génère un JWT signé pour l'utilisateur donné.
+   *
+   * @param email adresse email de l'utilisateur (placée dans le sujet du token)
+   * @param role  rôle de l'utilisateur (placé dans un claim personnalisé)
+   * @return le JWT signé, prêt à être renvoyé au client
+   */
+  public String generateToken(String email, Role role) {
+    Date now = new Date();
+    Date expiration = new Date(now.getTime() + expirationMs);
+
+    return Jwts.builder()
+        .subject(email)
+        .claim("role", role.name())
+        .issuedAt(now)
+        .expiration(expiration)
+        .signWith(key)
+        .compact();
   }
 
   /**
