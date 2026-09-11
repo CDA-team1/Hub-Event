@@ -1,4 +1,168 @@
 package fr.CDA.GHE.entity;
 
-public class User {
-}
+import fr.CDA.GHE.entity.enums.AccountStatus;
+import fr.CDA.GHE.entity.enums.Role;
+import jakarta.persistence.*;
+
+import java.time.LocalDate;
+
+/**
+ * Entité représentant un utilisateur de l'application.
+ */
+    @Entity
+    @Table(name = "users")
+    public class User {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        @Column(nullable = false)
+        private String lastname;
+        @Column(nullable = false)
+        private String firstname;
+        @Column(nullable = false)
+        private String postalAddress;
+        @Column(nullable = false, unique = true)
+        private String email;
+        private String phone;
+        @Column(nullable = false)
+        private String password;
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false)
+        private AccountStatus status;
+        @Column(nullable = false)
+        @Enumerated(EnumType.STRING)
+        private Role role;
+        private boolean suspended = false;
+        private LocalDate suspensionEndDate;
+        private String suspensionReason;
+
+        public User() {
+        }
+
+        /**
+         * Constructeur complet pour initialiser un utilisateur avec tous ses attributs.
+         *
+         * @param id                identifiant unique
+         * @param lastName          nom de famille
+         * @param firstName         prénom
+         * @param postalAddress     adresse postale
+         * @param email             adresse email (unique)
+         * @param phone             numéro de téléphone (nullable)
+         * @param password          mot de passe encodé
+         * @param status            statut du compte
+         * @param role              rôle de l'utilisateur
+         * @param suspended         indique si le compte est suspendu
+         * @param suspensionEndDate date de fin de suspension (nullable)
+         * @param suspensionReason  raison de la suspension (nullable)
+         */
+        public User(Long id, String lastName, String firstName, String postalAddress, String email, String phone, String password, AccountStatus status, Role role, boolean suspended, LocalDate suspensionEndDate, String suspensionReason) {
+            this.id = id;
+            this.lastname = lastName;
+            this.firstname = firstName;
+            this.postalAddress = postalAddress;
+            this.email = email;
+            this.phone = phone;
+            this.password = password;
+            this.status = status;
+            this.role = role;
+            this.suspended = suspended;
+            this.suspensionEndDate = suspensionEndDate;
+            this.suspensionReason = suspensionReason;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getLastName() {
+            return lastname;
+        }
+
+        public void setLastName(String lastName) {
+            this.lastname = lastName;
+        }
+
+        public String getFirstName() {
+            return firstname;
+        }
+
+        public void setFirstName(String firstName) {
+            this.firstname = firstName;
+        }
+
+        public String getPostalAddress() {
+            return postalAddress;
+        }
+
+        public void setPostalAddress(String postalAddress) {
+            this.postalAddress = postalAddress;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPhone() {
+            return phone;
+        }
+
+        public void setPhone(String phone) {
+            this.phone = phone;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public AccountStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(AccountStatus status) {
+            this.status = status;
+        }
+
+        public Role getRole() {
+            return role;
+        }
+
+        public void setRole(Role role) {
+            this.role = role;
+        }
+
+        public boolean isSuspended() {
+            return suspended;
+        }
+
+        public void setSuspended(boolean suspended) {
+            this.suspended = suspended;
+        }
+
+        public LocalDate getSuspensionEndDate() {
+            return suspensionEndDate;
+        }
+
+        public void setSuspensionEndDate(LocalDate suspensionEndDate) {
+            this.suspensionEndDate = suspensionEndDate;
+        }
+
+        public String getSuspensionReason() {
+            return suspensionReason;
+        }
+
+        public void setSuspensionReason(String suspensionReason) {
+            this.suspensionReason = suspensionReason;
+        }
+
+        // TODO : Club (ManyToMany), Event - organizedEvents(OneToMAny), Registration(OneToMany), Comment(OneToMany), AnonymizationRequest(OneToMany)
+
+    }
