@@ -6,7 +6,10 @@ import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import fr.CDA.GHE.security.JwtService;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -18,25 +21,31 @@ import java.time.LocalDate;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository,
+                        AuthenticationManager authenticationManager,
+                        JwtService jwtService) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
     /**
      * Authentifie un utilisateur à partir de son email et de son mot de passe.
      * <p>
-     * Règles vérifiées, dans l'ordre : l'email doit correspondre à un compte existant,
-     * le mot de passe doit correspondre au mot de passe hashé en base, le compte doit
-     * être au statut {@link AccountStatus#ACTIVE} (donc ni inactif, ni anonymisé), et le
-     * compte ne doit pas être suspendu (ou la suspension temporaire doit être terminée).
+     * La vérification de l'email et du mot de passe est déléguée à l'{@link AuthenticationManager}
+     * de Spring Security, qui s'appuie sur {@code JpaUserDetailsService} pour charger l'utilisateur
+     * et sur le {@code PasswordEncoder} configuré pour comparer le mot de passe. En cas d'échec
+     * (email inconnu ou mot de passe incorrect), Spring Security lève toujours la même exception
+     * générique, ce qui évite qu'un attaquant ne puisse déterminer si un email est enregistré ou
+     * non (énumération de comptes).
      * </p>
      * <p>
-     * Les échecs liés à l'email et au mot de passe renvoient volontairement le même
-     * message d'erreur générique, afin d'éviter qu'un attaquant ne puisse déterminer
-     * si un email est enregistré ou non (énumération de comptes).
+     * Une fois l'authentification réussie, deux règles métier supplémentaires sont vérifiées :
+     * le compte doit être au statut {@link AccountStatus#ACTIVE} (donc ni inactif, ni anonymisé),
+     * et il ne doit pas être suspendu (ou la suspension temporaire doit être terminée).
      * </p>
      *
      * @param request email et mot de passe saisis par l'utilisateur
@@ -46,12 +55,15 @@ public class AuthService {
      */
     public LoginResponse login(LoginRequest request) throws FunctionalException {
 
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new FunctionalException("Email ou mot de passe invalide"));
-
-        if (!passwordEncoder.matches(request.password(), user.getPassword())){
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+        } catch (AuthenticationException e) {
             throw new FunctionalException("Email ou mot de passe invalide");
         }
+
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new FunctionalException("Email ou mot de passe invalide"));
 
         if (user.getStatus() != AccountStatus.ACTIVE){
             throw new FunctionalException("Compte inactif ou anonymisé, connexion impossible");
@@ -65,7 +77,7 @@ public class AuthService {
             }
         }
 
-        String token = "TODO"; // A remplacer une fois JwtService prêt
+        String token = jwtService.generateToken(user.getEmail(), user.getRole());
 
         return new LoginResponse(token, user.getRole());
     }
