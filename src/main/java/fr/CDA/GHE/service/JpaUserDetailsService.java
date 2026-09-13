@@ -26,26 +26,21 @@ public class JpaUserDetailsService implements UserDetailsService {
   }
 
   /**
-   * Recherche un utilisateur à partir de son adresse email
-   * et le convertit en utilisateur reconnu par Spring Security.
+   * Recherche un utilisateur à partir de son adresse email.
+   * L'entité {@link User} implémente {@link UserDetails} : elle est renvoyée telle quelle,
+   * aucune conversion nécessaire.
    *
    * @param email adresse email utilisée comme identifiant de connexion
-   * @return les informations de l'utilisateur pour Spring Security
+   * @return l'utilisateur, servant directement de principal Spring Security
    * @throws UsernameNotFoundException si aucun utilisateur ne possède cet email
    */
   @Override
   public UserDetails loadUserByUsername(String email)
       throws UsernameNotFoundException {
 
-    User user = userRepository.findByEmail(email)
+    return userRepository.findByEmail(email)
         .orElseThrow(() ->
             new UsernameNotFoundException("Utilisateur introuvable.")
         );
-
-    return org.springframework.security.core.userdetails.User
-        .withUsername(user.getEmail())
-        .password(user.getPassword())
-        .roles(user.getRole().name())
-        .build();
   }
 }
