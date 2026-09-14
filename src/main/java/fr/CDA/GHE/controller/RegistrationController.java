@@ -5,6 +5,7 @@ import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.RegistrationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,10 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Expose les routes d'inscription et de désinscription des utilisateurs aux évènements.
+ * <p>
+ * SEC-02 : {@code register} (s'inscrire) est réservé au rôle MEMBER (décision SEC-02).
+ * {@code unregister} n'a pas besoin de contrôle de propriété supplémentaire : il n'agit
+ * jamais que sur l'inscription de l'utilisateur actuellement connecté.
+ * </p>
  */
 @RestController
 @RequestMapping("/events/{eventId}/registrations")
-public class RegistrationController {
+public class RegistrationController implements RegistrationControllerDoc {
 
     private final RegistrationService registrationService;
 
@@ -24,27 +30,15 @@ public class RegistrationController {
         this.registrationService = registrationService;
     }
 
-    /**
-     * Inscrit l'utilisateur connecté à l'évènement donné.
-     *
-     * @param eventId identifiant de l'évènement auquel s'inscrire
-     * @return 201 Created avec l'inscription créée (statut REGISTERED ou WAITING_LIST)
-     * @throws FunctionalException si le compte n'est pas actif, si l'utilisateur est déjà
-     *                             inscrit, ou en cas de chevauchement avec un autre évènement
-     */
+    @Override
+    @Secured("ROLE_MEMBER")
     @PostMapping
     public ResponseEntity<RegistrationDto> register(@PathVariable Long eventId) throws FunctionalException {
         RegistrationDto created = registrationService.register(eventId);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    /**
-     * Désinscrit l'utilisateur connecté de l'évènement donné.
-     *
-     * @param eventId identifiant de l'évènement à quitter
-     * @return 204 No Content
-     * @throws FunctionalException si l'utilisateur n'est pas inscrit à cet évènement
-     */
+    @Override
     @DeleteMapping("/me")
     public ResponseEntity<Void> unregister(@PathVariable Long eventId) throws FunctionalException {
         registrationService.unregister(eventId);
