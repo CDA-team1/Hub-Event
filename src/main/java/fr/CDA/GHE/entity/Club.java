@@ -81,8 +81,9 @@ public class Club {
    * <p>
    * Event est le côté propriétaire de la relation grâce à son attribut {@code club}.
    */
-  @OneToMany(mappedBy = "club")
-  private Set<Event> events = new HashSet<>();
+  //TODO : À RÉACTIVER lorsque Event.clubs sera présent sur dev.
+  //@OneToMany(mappedBy = "club")
+  //private Set<Event> events = new HashSet<>();
 
   /**
    * Constructeur vide requis par JPA.
@@ -273,7 +274,7 @@ public class Club {
    * @return {@code true} si l'affiliation existait et a été retirée,
    *         {@code false} sinon
    */
-  //À RÉACTIVER lorsque User.clubs sera présent sur dev.
+  //TODO : À RÉACTIVER lorsque User.club sera présent sur dev.
   //public boolean removeMember(User member) {
   //  boolean removed = members.remove(member);
 
@@ -289,7 +290,8 @@ public class Club {
    *
    * @return les événements du club
    */
-  public Set<Event> getEvents() {
-    return events;
-  }
+  //TODO : À RÉACTIVER lorsque Event.clubs sera présent sur dev.
+  // public Set<Event> getEvents() {
+  //   return events;
+  // }
 }
