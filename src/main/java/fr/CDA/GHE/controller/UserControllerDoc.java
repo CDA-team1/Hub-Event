@@ -37,9 +37,11 @@ public interface UserControllerDoc {
     })
     UserDto getById(@Parameter(description = "Identifiant de l'utilisateur") Long id);
 
-    @Operation(summary = "Crée un nouvel utilisateur")
+    @Operation(summary = "Crée un compte (membre affilié, organisateur ou administrateur)",
+            description = "Réservé à l'administrateur (CdC §Création d'un compte). Distinct de l'inscription "
+                    + "self-service (POST /auth/signup) : mot de passe temporaire, club/rôle choisis par l'admin.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Utilisateur créé",
+            @ApiResponse(responseCode = "201", description = "Compte créé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = UserDto.class))),
             @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)

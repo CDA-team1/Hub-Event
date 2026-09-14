@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.*;
 /**
  * SEC-02 — Autorisations des routes utilisateurs (voir {@link ClubController} pour les règles générales).
  * <p>
- * Note : {@code POST /users} (création de compte) est <strong>public</strong> → pas d'annotation.
- * La modification de son propre profil ({@code /users/me}) est un endpoint distinct, non présent
- * dans {@link UserControllerDoc} : à sécuriser (authentifié) quand il sera créé.
+ * Toutes les routes sont réservées à l'admin : la gestion des comptes existants (liste,
+ * détail, modification, suppression), et la création d'un compte membre affilié,
+ * organisateur ou administrateur (CdC §Création d'un compte — mot de passe temporaire,
+ * pas encore implémentée). L'inscription self-service (CU5, MEMBER non affilié) est une
+ * route distincte et publique : {@code POST /auth/signup}, voir {@link AuthController}.
  */
 @RestController
 @RequestMapping("/users")
@@ -32,12 +34,14 @@ public class UserController implements UserControllerDoc {
         throw new UnsupportedOperationException("TODO logique métier (tâche feature Utilisateur)");
     }
 
-    // Public : création de compte
+    // Réservé admin : création d'un membre affilié / organisateur / administrateur
+    // (CdC §Création d'un compte). Pas confondre avec le signup self-service (POST /auth/signup).
     @Override
+    @Secured("ROLE_ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto create(@RequestBody UserDto userDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Utilisateur)");
+        throw new UnsupportedOperationException("TODO logique métier (tâche feature création admin)");
     }
 
     @Override

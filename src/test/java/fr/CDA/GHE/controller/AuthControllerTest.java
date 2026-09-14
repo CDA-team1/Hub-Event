@@ -1,10 +1,13 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.LoginResponse;
+import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.security.JwtService;
 import fr.CDA.GHE.service.AuthService;
+import fr.CDA.GHE.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -34,6 +37,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private UserService userService;
 
     // JwtAuthenticationFilter est un @Component : @WebMvcTest le charge. Ses dépendances
     // ne font pas partie de la tranche web, on les simule pour que le contexte démarre.
@@ -77,5 +83,36 @@ class AuthControllerTest {
                         .content("{\"email\":\"john.doe@test.com\",\"password\":\"secret\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Compte inactif ou anonymisé, connexion impossible"));
+    }
+
+    @Test
+    void signup_shouldReturn201_whenRequestIsValid() throws Exception {
+        UserDto created = new UserDto(1L, "Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, AccountStatus.INACTIVE, Role.MEMBER);
+        when(userService.createUser(any())).thenReturn(created);
+
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
+                                "email":"john.doe@test.com","password":"StrOng!Passw0rd"}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("john.doe@test.com"))
+                .andExpect(jsonPath("$.status").value("INACTIVE"))
+                .andExpect(jsonPath("$.role").value("MEMBER"));
+    }
+
+    @Test
+    void signup_shouldReturn400_whenEmailAlreadyUsed() throws Exception {
+        when(userService.createUser(any()))
+                .thenThrow(new FunctionalException("Cette adresse email est déjà utilisée."));
+
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
+                                "email":"john.doe@test.com","password":"StrOng!Passw0rd"}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Cette adresse email est déjà utilisée."));
     }
 }
