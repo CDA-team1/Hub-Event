@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Gère l'inscription des utilisateurs aux évènements.
+ * Gère l'inscription et la désinscription des utilisateurs aux évènements.
  */
 @Service
 public class RegistrationService {
@@ -29,32 +29,39 @@ public class RegistrationService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final RegistrationMapper registrationMapper;
+    private final EmailService emailService;
 
     public RegistrationService(RegistrationRepository registrationRepository,
                                EventRepository eventRepository,
                                UserRepository userRepository,
-                               RegistrationMapper registrationMapper) {
+                               RegistrationMapper registrationMapper,
+                               EmailService emailService) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.registrationMapper = registrationMapper;
+        this.emailService = emailService;
     }
 
     /**
-     * Inscrit l'utilisateur connecté à l'évènement donné.
+     * Inscrit l'utilisateur connecté à l'événement donné.
      * <p>
      * Règles vérifiées, dans l'ordre : le compte doit être {@link AccountStatus#ACTIVE},
-     * l'utilisateur ne doit pas déjà être inscrit à cet évènement, et il ne doit pas avoir
-     * d'inscription sur un évènement se déroulant sur un créneau qui chevauche celui-ci.
+     * l'utilisateur ne doit pas déjà être inscrit à cet événement, et il ne doit pas avoir
+     * d'inscription sur un événement se déroulant sur un créneau qui chevauche celui-ci.
      * Le statut de la nouvelle inscription dépend ensuite des places restantes :
      * {@link RegistrationStatus#REGISTERED} s'il reste de la place, sinon
      * {@link RegistrationStatus#WAITING_LIST}.
      * </p>
+     * <p>
+     * Voir Dossier des spécifications générales, cas d'utilisation n°9 « S'inscrire à un
+     * événement », pour le texte officiel des messages d'erreur.
+     * </p>
      *
-     * @param eventId identifiant de l'évènement auquel s'inscrire
+     * @param eventId identifiant de l'événement auquel s'inscrire
      * @return l'inscription créée
      * @throws FunctionalException si le compte n'est pas actif, si l'utilisateur est déjà
-     *                             inscrit, ou en cas de chevauchement avec un autre évènement
+     *                             inscrit, ou en cas de chevauchement avec un autre événement
      */
     @Transactional
     public RegistrationDto register(Long eventId) throws FunctionalException {
@@ -63,18 +70,18 @@ public class RegistrationService {
                 .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
 
         if (user.getStatus() != AccountStatus.ACTIVE) {
-            throw new FunctionalException("Le compte doit être actif pour s'inscrire à un évènement");
+            throw new FunctionalException("Votre compte doit être actif pour vous inscrire à un événement.");
         }
 
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Évènement introuvable"));
+                .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
         if (registrationRepository.existsByUserAndEvent(user, event)) {
-            throw new FunctionalException("Vous êtes déjà inscrit à cet évènement");
+            throw new FunctionalException("Vous êtes déjà inscrit à cet événement.");
         }
 
         if (hasOverlappingRegistration(user, event)) {
-            throw new FunctionalException("Vous êtes déjà inscrit à un évènement se déroulant sur le même créneau");
+            throw new FunctionalException("Vous êtes déjà inscrit à un autre événement sur ce créneau horaire.");
         }
 
         long registeredCount = registrationRepository.countByEventAndStatus(event, RegistrationStatus.REGISTERED);
@@ -86,6 +93,53 @@ public class RegistrationService {
         Registration saved = registrationRepository.save(registration);
 
         return registrationMapper.toDto(saved);
+    }
+
+    /**
+     * Désinscrit l'utilisateur connecté de l'événement donné.
+     * <p>
+     * Si l'inscription supprimée était {@link RegistrationStatus#REGISTERED} (donc occupait
+     * une place) et qu'il y a des personnes en liste d'attente, la première d'entre elles
+     * (la plus ancienne inscrite) est automatiquement promue au statut
+     * {@link RegistrationStatus#REGISTERED}, et un email de notification lui est envoyé.
+     * </p>
+     * <p>
+     * Voir Dossier des spécifications générales, cas d'utilisation n°10 « Se désinscrire
+     * d'un événement », pour le texte officiel des messages d'erreur.
+     * </p>
+     *
+     * @param eventId identifiant de l'événement à quitter
+     * @throws FunctionalException si l'utilisateur ou l'événement n'existe pas,
+     *                             ou si l'utilisateur n'est pas inscrit à cet événement
+     */
+    @Transactional
+    public void unregister(Long eventId) throws FunctionalException {
+
+        User user = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+        Registration registration = registrationRepository.findByUserAndEvent(user, event)
+                .orElseThrow(() -> new FunctionalException("Vous n'êtes pas inscrit à cet événement."));
+
+        boolean freesASeat = registration.getStatus() == RegistrationStatus.REGISTERED;
+
+        registrationRepository.delete(registration);
+
+        if (freesASeat) {
+            promoteFirstWaitingListRegistration(event);
+        }
+    }
+
+    private void promoteFirstWaitingListRegistration(Event event) {
+        registrationRepository.findFirstByEventAndStatusOrderByRegistrationDateAsc(event, RegistrationStatus.WAITING_LIST)
+                .ifPresent(waiting -> {
+                    waiting.setStatus(RegistrationStatus.REGISTERED);
+                    registrationRepository.save(waiting);
+                    emailService.sendWaitingListPromotionEmail(waiting.getUser().getEmail(), event.getTitle());
+                });
     }
 
     private boolean hasOverlappingRegistration(User user, Event newEvent) {
