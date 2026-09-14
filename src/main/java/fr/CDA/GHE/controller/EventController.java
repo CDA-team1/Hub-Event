@@ -1,8 +1,8 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.EventDto;
-import fr.CDA.GHE.dto.PageDto;
-import org.springframework.data.domain.Pageable;
+import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.service.EventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -21,42 +21,55 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/events")
 public class EventController implements EventControllerDoc {
 
-    // Public : liste des évènements publiés
-    @Override
-    @GetMapping
-    public PageDto<EventDto> getAll(Pageable pageable) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
-    }
+  /**
+   * Service de gestion des événements utilisé par ce contrôleur.
+   */
+  private final EventService eventService;
 
-    // Public : détail
-    @Override
-    @GetMapping("/{id}")
-    public EventDto getById(@PathVariable Long id) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
-    }
+  /**
+   * Initialise le contrôleur avec le service de gestion des événements.
+   *
+   * @param eventService service de gestion des événements
+   */
+  public EventController(EventService eventService) {
+    this.eventService = eventService;
+  }
 
-    @Override
-    @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public EventDto create(@RequestBody EventDto eventDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
-    }
+  // Public : consultation des évènements publiés et terminés  @Override
+  @GetMapping
+  public EventListDto getAll() {
+    return eventService.getPublicEvents();
+  }
 
-    @Override
-    @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
-    @PutMapping("/{id}")
-    public EventDto update(@PathVariable Long id, @RequestBody EventDto eventDto) {
-        // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
-    }
+  // Public : détail
+  @Override
+  @GetMapping("/{id}")
+  public EventDto getById(@PathVariable Long id) {
+    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  }
 
-    @Override
-    @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
-    }
+  @Override
+  @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public EventDto create(@RequestBody EventDto eventDto) {
+    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  }
+
+  @Override
+  @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
+  @PutMapping("/{id}")
+  public EventDto update(@PathVariable Long id, @RequestBody EventDto eventDto) {
+    // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
+    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  }
+
+  @Override
+  @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void delete(@PathVariable Long id) {
+    // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
+    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  }
 }
