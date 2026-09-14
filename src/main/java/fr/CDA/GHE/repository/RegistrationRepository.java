@@ -18,4 +18,13 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
   List<Registration> findByUser(User user);
 
   long countByEventAndStatus(Event event, RegistrationStatus status);
+
+  /**
+   * Vérifie si un utilisateur est déjà inscrit à un évènement donné.
+   *
+   * @param user  l'utilisateur concerné
+   * @param event l'évènement concerné
+   * @return {@code true} si une inscription existe déjà pour ce couple
+   */
+  boolean existsByUserAndEvent(User user, Event event);
 }
