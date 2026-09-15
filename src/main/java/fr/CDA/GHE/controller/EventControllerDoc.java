@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.dto.EventDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,29 +21,36 @@ public interface EventControllerDoc {
   @Operation(
       summary = "Retourne les événements disponibles à la consultation publique",
       description = "Retourne les événements PUBLISHED regroupés par catégorie "
-          + "et les événements FINISHED dans la rubrique des événements passés."
-  )
+          + "et les événements FINISHED dans la rubrique des événements passés.")
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "200",
           description = "Listes d'événements retournées avec succès",
           content = @Content(
               mediaType = "application/json",
-              schema = @Schema(implementation = EventListDto.class)
-          )
-      )
+              schema = @Schema(implementation = EventListDto.class)))
   })
   EventListDto getAll();
 
-  @Operation(summary = "Retourne un évènement par son identifiant")
+  @Operation(
+      summary = "Retourne le détail d'un événement par son identifiant",
+      description = "Retourne le détail d'un événement accessible à l'utilisateur courant.")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Évènement trouvé",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = EventDto.class))),
-      @ApiResponse(responseCode = "404", description = "Aucun évènement pour cet identifiant",
+      @ApiResponse(
+          responseCode = "200",
+          description = "Détail de l'événement retourné avec succès",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDetailResponse.class)
+          )),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable ou non accessible",
           content = @Content)
   })
-  EventDto getById(@Parameter(description = "Identifiant de l'évènement") Long id);
+  EventDetailResponse getById(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  );
 
   @Operation(summary = "Crée un nouvel évènement")
   @ApiResponses(value = {

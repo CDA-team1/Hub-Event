@@ -1,6 +1,7 @@
 package fr.CDA.GHE.mapper;
 
 import fr.CDA.GHE.dto.EventCardDto;
+import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.Event;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +29,25 @@ public class EventMapper {
         event.getAffiliatedPrice(),
         event.getNonAffiliatedPrice(),
         event.getCategory()
+    );
+  }
+
+  /**
+   * Convertit un événement en DTO de détail.
+   *
+   * @param event événement à convertir
+   * @return DTO contenant les informations détaillées de l'événement
+   */
+  public EventDetailResponse toDetailResponse(Event event) {
+    return new EventDetailResponse(
+        event.getTitle(),
+        event.getDescription(),
+        event.getLocation(),
+        event.getStartDateTime(),
+        event.getEndDateTime(),
+        event.getAffiliatedPrice(),
+        event.getNonAffiliatedPrice(),
+        event.getMaxSeats()
     );
   }
 }

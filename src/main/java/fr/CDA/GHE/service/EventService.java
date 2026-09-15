@@ -1,12 +1,17 @@
 package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.dto.EventCardDto;
+import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.entity.Event;
+import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
+import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.EventMapper;
 import fr.CDA.GHE.repository.EventRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,6 +87,37 @@ public class EventService {
   }
 
   /**
+   * Retourne le détail d'un événement accessible à l'utilisateur courant.
+   * <p>
+   * Les événements publiés et terminés sont accessibles publiquement.
+   * Un événement brouillon est accessible uniquement à son organisateur.
+   * Les autres événements sont considérés comme non accessibles.
+   * </p>
+   *
+   * @param id identifiant de l'événement recherché
+   * @return le détail de l'événement
+   * @throws NotFoundException si l'événement n'existe pas ou n'est pas accessible
+   */
+  @Transactional(readOnly = true)
+  public EventDetailResponse getEventDetail(Long id) {
+
+    // TODO EVT-03 : utiliser @EntityGraph ou JOIN FETCH pour charger
+    // les inscriptions, les images et les commentaires lorsque ces relations
+    // seront disponibles dans Event.
+
+    Event event = eventRepository.findById(id)
+        .orElseThrow(() ->
+            new NotFoundException("Événement introuvable")
+        );
+
+    if (!isEventAccessible(event)) {
+      throw new NotFoundException("Événement introuvable");
+    }
+
+    return eventMapper.toDetailResponse(event);
+  }
+
+  /**
    * Filtre les événements selon une catégorie, les trie par date de début
    * puis les convertit en DTO de carte.
    *
@@ -98,5 +134,33 @@ public class EventService {
         .sorted(Comparator.comparing(Event::getStartDateTime))
         .map(eventMapper::toCardDto)
         .toList();
+  }
+
+  /**
+   * Vérifie si un événement peut être consulté par l'utilisateur courant.
+   *
+   * @param event événement dont la visibilité doit être vérifiée
+   * @return {@code true} si l'événement est accessible, sinon {@code false}
+   */
+  private boolean isEventAccessible(Event event) {
+
+    if (event.getStatus() == EventStatus.PUBLISHED
+        || event.getStatus() == EventStatus.FINISHED) {
+      return true;
+    }
+
+    if (event.getStatus() != EventStatus.DRAFT) {
+      return false;
+    }
+
+    Authentication authentication =
+        SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication == null
+        || !(authentication.getPrincipal() instanceof User authenticatedUser)) {
+      return false;
+    }
+
+    return authenticatedUser.getId().equals(event.getOrganizer().getId());
   }
 }

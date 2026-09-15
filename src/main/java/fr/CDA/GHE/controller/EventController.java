@@ -1,5 +1,6 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.service.EventService;
@@ -35,17 +36,23 @@ public class EventController implements EventControllerDoc {
     this.eventService = eventService;
   }
 
-  // Public : consultation des évènements publiés et terminés  @Override
+  // Public : consultation des évènements publiés et terminés
+  @Override
   @GetMapping
   public EventListDto getAll() {
     return eventService.getPublicEvents();
   }
 
-  // Public : détail
+  /**
+   * Retourne le détail d'un événement accessible.
+   *
+   * @param id identifiant de l'événement
+   * @return le détail de l'événement
+   */
   @Override
   @GetMapping("/{id}")
-  public EventDto getById(@PathVariable Long id) {
-    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  public EventDetailResponse getById(@PathVariable Long id) {
+    return eventService.getEventDetail(id);
   }
 
   @Override
