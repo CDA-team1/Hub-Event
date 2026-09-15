@@ -1,7 +1,7 @@
 package fr.CDA.GHE.controller;
 
-import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.RegistrationDto;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 
 /**
  * Interface de documentation Swagger/OpenAPI du {@link RegistrationController}.
@@ -18,41 +18,29 @@ import org.springframework.data.domain.Pageable;
 @Tag(name = "Inscriptions", description = "Gestion des inscriptions aux évènements")
 public interface RegistrationControllerDoc {
 
-    @Operation(summary = "Retourne une page d'inscriptions",
-            description = "Pagination via les paramètres page, size et sort (ex. ?page=0&size=20&sort=id,desc)")
+    @Operation(summary = "S'inscrire à un évènement",
+            description = "Inscrit l'utilisateur connecté à l'évènement donné. "
+                    + "Si l'évènement est complet, l'utilisateur est placé en liste d'attente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Page d'inscriptions au format JSON",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageDto.class)))
-    })
-    PageDto<RegistrationDto> getAll(Pageable pageable);
-
-    @Operation(summary = "Retourne une inscription par son identifiant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Inscription trouvée",
+            @ApiResponse(responseCode = "201", description = "Inscription créée (REGISTERED ou WAITING_LIST)",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = RegistrationDto.class))),
-            @ApiResponse(responseCode = "404", description = "Aucune inscription pour cet identifiant",
-                    content = @Content)
+            @ApiResponse(responseCode = "400", description = "Compte inactif, déjà inscrit, ou chevauchement d'horaire",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Évènement introuvable", content = @Content)
     })
-    RegistrationDto getById(@Parameter(description = "Identifiant de l'inscription") Long id);
+    ResponseEntity<RegistrationDto> register(
+            @Parameter(description = "Identifiant de l'évènement") Long eventId) throws FunctionalException;
 
-    @Operation(summary = "Crée une nouvelle inscription",
-            description = "Inscrit un membre à un évènement (placement en liste d'attente si l'évènement est complet)")
+    @Operation(summary = "Se désinscrire d'un évènement",
+            description = "Désinscrit l'utilisateur connecté de l'évènement donné. "
+                    + "Si une place se libère, la première personne en liste d'attente est promue et notifiée par email.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Inscription créée",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = RegistrationDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)
+            @ApiResponse(responseCode = "204", description = "Désinscription effectuée", content = @Content),
+            @ApiResponse(responseCode = "400", description = "L'utilisateur n'est pas inscrit à cet évènement",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Évènement introuvable", content = @Content)
     })
-    RegistrationDto create(RegistrationDto registrationDto);
-
-    @Operation(summary = "Supprime une inscription",
-            description = "Désinscrit un membre de l'évènement")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Inscription supprimée", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Aucune inscription pour cet identifiant",
-                    content = @Content)
-    })
-    void delete(@Parameter(description = "Identifiant de l'inscription") Long id);
+    ResponseEntity<Void> unregister(
+            @Parameter(description = "Identifiant de l'évènement") Long eventId) throws FunctionalException;
 }

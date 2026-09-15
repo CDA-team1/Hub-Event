@@ -1,50 +1,47 @@
 package fr.CDA.GHE.controller;
 
-import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.RegistrationDto;
-import org.springframework.data.domain.Pageable;
+import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.service.RegistrationService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- * SEC-02 — Autorisations des routes inscriptions (voir {@link ClubController} pour les règles générales).
+ * Expose les routes d'inscription et de désinscription des utilisateurs aux évènements.
  * <p>
- * {@code create} (s'inscrire) est réservé au rôle <strong>MEMBER</strong> (décision SEC-02).
- * {@code getById}/{@code delete} : contrôle de <strong>propriété</strong> (le membre n'agit que sur SES
- * inscriptions ; sinon ADMIN, et ORGANIZER de l'évènement pour la lecture) → 403 sinon.
+ * SEC-02 : {@code register} (s'inscrire) est réservé au rôle MEMBER (décision SEC-02).
+ * {@code unregister} n'a pas besoin de contrôle de propriété supplémentaire : il n'agit
+ * jamais que sur l'inscription de l'utilisateur actuellement connecté.
+ * </p>
  */
 @RestController
-@RequestMapping("/registrations")
+@RequestMapping("/events/{eventId}/registrations")
 public class RegistrationController implements RegistrationControllerDoc {
 
-    @Override
-    @Secured("ROLE_ADMIN")
-    @GetMapping
-    public PageDto<RegistrationDto> getAll(Pageable pageable) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Inscription)");
-    }
+    private final RegistrationService registrationService;
 
-    @Override
-    @GetMapping("/{id}")
-    public RegistrationDto getById(@PathVariable Long id) {
-        // TODO SEC-02 : propriétaire, ORGANIZER de l'évènement ou ADMIN → 403 sinon
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Inscription)");
+    public RegistrationController(RegistrationService registrationService) {
+        this.registrationService = registrationService;
     }
 
     @Override
     @Secured("ROLE_MEMBER")
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public RegistrationDto create(@RequestBody RegistrationDto registrationDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Inscription)");
+    public ResponseEntity<RegistrationDto> register(@PathVariable Long eventId) throws FunctionalException {
+        RegistrationDto created = registrationService.register(eventId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Override
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        // TODO SEC-02 : propriétaire ou ADMIN → 403 sinon
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Inscription)");
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> unregister(@PathVariable Long eventId) throws FunctionalException {
+        registrationService.unregister(eventId);
+        return ResponseEntity.noContent().build();
     }
 }
