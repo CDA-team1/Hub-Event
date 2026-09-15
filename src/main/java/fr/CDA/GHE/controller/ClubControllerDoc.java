@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -71,7 +72,7 @@ public interface ClubControllerDoc {
             @ApiResponse(responseCode = "400", description = "Données invalides",
                     content = @Content)
     })
-    ClubDto create(ClubDto clubDto);
+    ClubDto create(ClubDto clubDto) throws FunctionalException;
 
     /**
      * Met à jour un club existant.
@@ -90,7 +91,7 @@ public interface ClubControllerDoc {
             @ApiResponse(responseCode = "404", description = "Aucun club pour cet identifiant",
                     content = @Content)
     })
-    ClubDto update(@Parameter(description = "Identifiant du club") Long id, ClubDto clubDto);
+    ClubDto update(@Parameter(description = "Identifiant du club") Long id, ClubDto clubDto) throws FunctionalException;
 
     /**
      * Supprime un club.
