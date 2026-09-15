@@ -77,4 +77,21 @@ public class AuthController {
         return userService.activateAccount(token);
     }
 
+    /**
+     * Déconnecte l'utilisateur.
+     * <p>
+     * L'authentification de l'application est stateless (JWT, aucune session côté serveur) :
+     * le serveur ne conserve aucune trace du jeton émis, donc il n'y a rien à invalider en
+     * base ni en mémoire. La déconnexion consiste uniquement à supprimer le jeton côté client
+     * (ex. localStorage côté Angular). Cet endpoint est fourni pour la cohérence du contrat
+     * d'API (symétrique à {@code /auth/login}), mais ne réalise aucune action côté serveur.
+     * </p>
+     *
+     * @return 200 OK
+     */
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(){
+        return ResponseEntity.ok().build();
+    }
 }
