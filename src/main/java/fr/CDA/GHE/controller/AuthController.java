@@ -10,9 +10,11 @@ import fr.CDA.GHE.service.AuthService;
 import fr.CDA.GHE.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -60,6 +62,19 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto signup(@RequestBody CreateUserRequest request) throws FunctionalException {
         return userService.createUser(request);
+    }
+
+    /**
+     * Active un compte à partir du lien reçu par email (CU6, SFG §2.9) — parcours
+     * self-service, accessible sans authentification.
+     *
+     * @param token jeton d'activation transmis dans le lien
+     * @return le compte activé
+     * @throws FunctionalException si le lien est invalide ou si le compte ne peut plus être activé
+     */
+    @GetMapping("/activate")
+    public UserDto activate(@RequestParam String token) throws FunctionalException {
+        return userService.activateAccount(token);
     }
 
 }

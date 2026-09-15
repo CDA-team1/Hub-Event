@@ -10,10 +10,12 @@ import fr.CDA.GHE.mapper.UserMapper;
 import fr.CDA.GHE.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -30,11 +32,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final String baseUrl;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder,
+                        EmailService emailService, @Value("${app.base-url}") String baseUrl) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.baseUrl = baseUrl;
     }
 
     /**
@@ -62,16 +69,41 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setStatus(AccountStatus.INACTIVE);
         user.setRole(Role.MEMBER);
+        user.setActivationToken(UUID.randomUUID().toString());
 
         User created = userRepository.save(user);
         log.info("CREATION compte non affilié : id={} email={}", created.getId(), created.getEmail());
 
-        // TODO SIGNUP : envoyer l'email de validation (CU5, règle métier n°10) et brancher
-        // GET /users/activation dessus. Dépend d'un service d'envoi d'email pas encore
-        // implémenté (pas de tâche identifiée à ce jour) — le compte reste INACTIF en
-        // attendant, conformément à la règle métier.
+        // CU5 règle métier n°10 / CU6 : email d'activation (lien à usage unique).
+        String activationLink = baseUrl + "/auth/activate?token=" + created.getActivationToken();
+        emailService.sendActivationEmail(created.getEmail(), activationLink);
 
         return userMapper.toDto(created);
+    }
+
+    /**
+     * Active un compte à partir du lien reçu par email (CU6, SFG §2.9).
+     *
+     * @param token jeton d'activation transmis dans le lien
+     * @return le compte activé
+     * @throws FunctionalException si le lien est invalide ou si le compte ne peut plus être activé
+     */
+    @Transactional
+    public UserDto activateAccount(String token) throws FunctionalException {
+        User user = userRepository.findByActivationToken(token)
+                .orElseThrow(() -> new FunctionalException("Le compte associé à ce lien n'existe pas."));
+
+        if (user.getStatus() != AccountStatus.INACTIVE) {
+            throw new FunctionalException("Ce compte est déjà actif ou ne peut plus être activé.");
+        }
+
+        user.setStatus(AccountStatus.ACTIVE);
+        user.setActivationToken(null); // jeton à usage unique
+
+        log.info("ACTIVATION compte : id={} email={}", user.getId(), user.getEmail());
+
+        // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
     }
 
     /**

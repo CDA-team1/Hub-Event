@@ -48,7 +48,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             // Routes publiques (docs/SEC-02-matrice-routes.md)
             .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup").permitAll()
-            .requestMatchers(HttpMethod.GET, "/users/activation").permitAll() // pas encore codé
+            .requestMatchers(HttpMethod.GET, "/auth/activate").permitAll()
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/search", "/events/*/comments").permitAll() // pas encore codés
             .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
