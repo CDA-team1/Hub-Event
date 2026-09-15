@@ -1,22 +1,36 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.CreateUserRequest;
+import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.UserMapper;
+import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Gère le cycle de vie des comptes utilisateurs.
@@ -29,15 +43,25 @@ public class UserService {
     // Format simplifié, suffisant pour un contrôle serveur (CU5, règle métier n°3).
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
+    // Alphabet du mot de passe temporaire : exclut les caractères ambigus (I/O/0/1...).
+    private static final String PWD_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final String PWD_LOWER = "abcdefghijkmnpqrstuvwxyz";
+    private static final String PWD_DIGITS = "23456789";
+    private static final String PWD_SPECIAL = "!@#$%^&*";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final UserRepository userRepository;
+    private final ClubRepository clubRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final String baseUrl;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder,
-                        EmailService emailService, @Value("${app.base-url}") String baseUrl) {
+    public UserService(UserRepository userRepository, ClubRepository clubRepository, UserMapper userMapper,
+                        PasswordEncoder passwordEncoder, EmailService emailService,
+                        @Value("${app.base-url}") String baseUrl) {
         this.userRepository = userRepository;
+        this.clubRepository = clubRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -104,6 +128,229 @@ public class UserService {
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
         return userMapper.toDto(user);
+    }
+
+    /**
+     * Retourne une page d'utilisateurs (CU25 — liste des comptes).
+     *
+     * @param pageable pagination demandée
+     * @return la page d'utilisateurs correspondante
+     */
+    @Transactional(readOnly = true)
+    public PageDto<UserDto> extractAll(Pageable pageable) {
+        Page<User> page = userRepository.findAll(pageable);
+        List<UserDto> content = userMapper.toDtoList(page.getContent());
+        return new PageDto<>(content, page.getNumber(), page.getSize(), page.getTotalElements(),
+                page.getTotalPages(), page.isFirst(), page.isLast());
+    }
+
+    /**
+     * Retourne un utilisateur par son identifiant.
+     *
+     * @param id identifiant de l'utilisateur
+     * @return l'utilisateur trouvé
+     * @throws NotFoundException si aucun utilisateur ne correspond
+     */
+    @Transactional(readOnly = true)
+    public UserDto extractById(Long id) {
+        return userMapper.toDto(findUserOrThrow(id));
+    }
+
+    /**
+     * Crée un compte (membre affilié, organisateur ou administrateur) — CU25, SFG §2.28.
+     * <p>
+     * Statut {@link AccountStatus#INACTIVE} par défaut, comme pour le signup self-service.
+     * Un mot de passe temporaire est généré par le système (jamais choisi par l'admin) et
+     * envoyé par email (règle métier de l'action « Bouton Valider »).
+     * <p>
+     * TODO CPT-06 (à créer) : endpoint de confirmation permettant au titulaire du compte de
+     * saisir son mot de passe temporaire puis un mot de passe définitif, faisant passer le
+     * compte à ACTIF (CdC §Validation de la création d'un compte). Tant que cet endpoint
+     * n'existe pas, un compte créé ici reste INACTIF.
+     *
+     * @param request informations saisies par l'administrateur
+     * @return le compte créé
+     * @throws FunctionalException si une règle métier n'est pas respectée
+     */
+    @Transactional
+    public UserDto createUserByAdmin(AdminUserRequest request) throws FunctionalException {
+        validateAdminRequest(request);
+
+        if (userRepository.existsByEmail(request.email())) {
+            throw new FunctionalException("Cette adresse email est déjà utilisée.");
+        }
+
+        String temporaryPassword = generateTemporaryPassword();
+
+        User user = new User();
+        user.setLastName(request.lastName());
+        user.setFirstName(request.firstName());
+        user.setPostalAddress(request.postalAddress());
+        user.setEmail(request.email());
+        user.setPhone(request.phone());
+        user.setPassword(passwordEncoder.encode(temporaryPassword));
+        user.setStatus(AccountStatus.INACTIVE);
+        user.setRole(request.role());
+
+        User created = userRepository.save(user);
+        assignClubs(created, request.clubIds());
+
+        log.info("CREATION compte (admin) : id={} email={} role={}",
+                created.getId(), created.getEmail(), created.getRole());
+
+        emailService.sendAdminCreatedAccountEmail(created.getEmail(), temporaryPassword);
+
+        return userMapper.toDto(created);
+    }
+
+    /**
+     * Modifie un compte existant (CU25, SFG §2.28).
+     * <p>
+     * Règle métier n°3 : l'email modifié ne doit pas entrer en collision avec celui d'un
+     * <strong>autre</strong> compte (le compte modifié garde le droit de conserver le sien).
+     *
+     * @param id      identifiant du compte à modifier
+     * @param request nouvelles informations
+     * @return le compte modifié
+     * @throws NotFoundException   si aucun compte ne correspond à l'identifiant
+     * @throws FunctionalException si une règle métier n'est pas respectée
+     */
+    @Transactional
+    public UserDto updateUserByAdmin(Long id, AdminUserRequest request) throws FunctionalException {
+        User user = findUserOrThrow(id);
+
+        validateAdminRequest(request);
+
+        boolean emailChanged = !request.email().equalsIgnoreCase(user.getEmail());
+        if (emailChanged && userRepository.existsByEmail(request.email())) {
+            throw new FunctionalException("Cette adresse email est déjà utilisée.");
+        }
+
+        user.setLastName(request.lastName());
+        user.setFirstName(request.firstName());
+        user.setPostalAddress(request.postalAddress());
+        user.setEmail(request.email());
+        user.setPhone(request.phone());
+        user.setRole(request.role());
+
+        syncClubs(user, request.clubIds());
+
+        log.info("MODIFICATION compte (admin) : id={} email={}", user.getId(), user.getEmail());
+
+        // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
+    }
+
+    /**
+     * Supprime un compte (CU25, SFG §2.28).
+     * <p>
+     * Retire d'abord le compte de ses clubs d'affiliation : sinon la contrainte de clé
+     * étrangère de la table {@code affiliation} empêcherait la suppression.
+     *
+     * @param id identifiant du compte à supprimer
+     * @throws NotFoundException si aucun compte ne correspond à l'identifiant
+     */
+    @Transactional
+    public void deleteUserByAdmin(Long id) {
+        User user = findUserOrThrow(id);
+
+        clubRepository.findByMembers_Id(id).forEach(club -> club.getMembers().remove(user));
+        userRepository.delete(user);
+
+        log.info("SUPPRESSION compte (admin) : id={} email={}", id, user.getEmail());
+    }
+
+    private User findUserOrThrow(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Utilisateur non trouvé"));
+    }
+
+    /**
+     * Contrôles communs à la création et à la modification par un administrateur.
+     * <p>
+     * L'unicité de l'email est vérifiée séparément par l'appelant (le cas "modification"
+     * doit exclure le compte courant de la vérification, ce qu'une méthode générique ne
+     * peut pas savoir).
+     *
+     * @throws FunctionalException si une règle métier n'est pas respectée
+     */
+    private void validateAdminRequest(AdminUserRequest request) throws FunctionalException {
+        if (isBlank(request.lastName()) || isBlank(request.firstName())
+                || isBlank(request.postalAddress()) || isBlank(request.email())
+                || request.role() == null) {
+            throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
+        }
+
+        // Règle PO (dossier de conception) : un organisateur est forcément rattaché à un club.
+        if (request.role() == Role.ORGANIZER && (request.clubIds() == null || request.clubIds().isEmpty())) {
+            throw new FunctionalException("Un organisateur doit être rattaché à au moins un club.");
+        }
+    }
+
+    /**
+     * Affilie un utilisateur nouvellement créé aux clubs demandés (aucun retrait à gérer,
+     * l'utilisateur n'appartient encore à aucun club).
+     *
+     * @throws FunctionalException si un identifiant de club ne correspond à aucun club
+     */
+    private void assignClubs(User user, List<Long> clubIds) throws FunctionalException {
+        if (clubIds == null) {
+            return;
+        }
+        for (Long clubId : clubIds) {
+            Club club = clubRepository.findById(clubId)
+                    .orElseThrow(() -> new FunctionalException("Club introuvable : id=" + clubId));
+            club.getMembers().add(user);
+        }
+    }
+
+    /**
+     * Aligne les affiliations d'un utilisateur existant sur la liste demandée : retire les
+     * clubs qui n'y figurent plus, ajoute les nouveaux.
+     *
+     * @throws FunctionalException si un identifiant de club ne correspond à aucun club
+     */
+    private void syncClubs(User user, List<Long> newClubIds) throws FunctionalException {
+        List<Club> currentClubs = clubRepository.findByMembers_Id(user.getId());
+        Set<Long> newIds = newClubIds == null ? Set.of() : new HashSet<>(newClubIds);
+
+        for (Club club : currentClubs) {
+            if (!newIds.contains(club.getId())) {
+                club.getMembers().remove(user);
+            }
+        }
+
+        Set<Long> currentIds = currentClubs.stream().map(Club::getId).collect(Collectors.toSet());
+        for (Long clubId : newIds) {
+            if (!currentIds.contains(clubId)) {
+                Club club = clubRepository.findById(clubId)
+                        .orElseThrow(() -> new FunctionalException("Club introuvable : id=" + clubId));
+                club.getMembers().add(user);
+            }
+        }
+    }
+
+    /**
+     * Génère un mot de passe temporaire respectant les mêmes critères de robustesse que
+     * ceux imposés au signup self-service (12 caractères, 4 types), sans jamais le faire
+     * choisir à l'admin (SFG §2.28.1.4).
+     */
+    private String generateTemporaryPassword() {
+        List<Character> chars = new ArrayList<>();
+        chars.add(PWD_UPPER.charAt(RANDOM.nextInt(PWD_UPPER.length())));
+        chars.add(PWD_LOWER.charAt(RANDOM.nextInt(PWD_LOWER.length())));
+        chars.add(PWD_DIGITS.charAt(RANDOM.nextInt(PWD_DIGITS.length())));
+        chars.add(PWD_SPECIAL.charAt(RANDOM.nextInt(PWD_SPECIAL.length())));
+
+        String all = PWD_UPPER + PWD_LOWER + PWD_DIGITS + PWD_SPECIAL;
+        for (int i = chars.size(); i < 12; i++) {
+            chars.add(all.charAt(RANDOM.nextInt(all.length())));
+        }
+        Collections.shuffle(chars, RANDOM);
+
+        StringBuilder password = new StringBuilder(chars.size());
+        chars.forEach(password::append);
+        return password.toString();
     }
 
     /**
