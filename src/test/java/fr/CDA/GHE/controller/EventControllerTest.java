@@ -1,8 +1,10 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.EventCardDto;
+import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.service.EventService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,5 +91,59 @@ class EventControllerTest {
         .andExpect(jsonPath("$.pastEvents").isEmpty());
 
     verify(eventService).getPublicEvents();
+  }
+
+  /**
+   * Vérifie que la route publique GET /events/{id}
+   * retourne le détail de l'événement fourni par le service.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnEventDetailWithoutAuthentication() throws Exception {
+
+    EventDetailResponse eventDetail = new EventDetailResponse(
+        "Concert",
+        "Description de test",
+        "Montpellier",
+        LocalDateTime.of(2026, 11, 20, 20, 0),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100
+    );
+
+    when(eventService.getEventDetail(1L))
+        .thenReturn(eventDetail);
+
+    mockMvc.perform(get("/events/1"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.title").value("Concert"))
+        .andExpect(jsonPath("$.description").value("Description de test"))
+        .andExpect(jsonPath("$.location").value("Montpellier"))
+        .andExpect(jsonPath("$.affiliatedPrice").value(10))
+        .andExpect(jsonPath("$.nonAffiliatedPrice").value(15))
+        .andExpect(jsonPath("$.maxSeats").value(100));
+
+    verify(eventService).getEventDetail(1L);
+  }
+
+  /**
+   * Vérifie que la route GET /events/{id} retourne 404
+   * lorsque l'événement n'existe pas ou n'est pas accessible.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnNotFoundWhenEventDetailIsNotAccessible() throws Exception {
+
+    when(eventService.getEventDetail(999L))
+        .thenThrow(new NotFoundException("Événement introuvable"));
+
+    mockMvc.perform(get("/events/999"))
+        .andExpect(status().isNotFound());
+
+    verify(eventService).getEventDetail(999L);
   }
 }

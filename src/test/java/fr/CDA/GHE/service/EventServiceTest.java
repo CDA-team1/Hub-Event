@@ -1,21 +1,30 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.entity.Event;
+import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
+import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.repository.EventRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +48,15 @@ class EventServiceTest {
    */
   @MockitoBean
   private EventRepository eventRepository;
+
+  /**
+   * Nettoie le contexte de sécurité après chaque test
+   * afin qu'une authentification ne perturbe pas le test suivant.
+   */
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
+  }
 
   /**
    * Vérifie que les événements publiés sont regroupés par catégorie
@@ -145,6 +163,174 @@ class EventServiceTest {
 
     verify(eventRepository, never()).findByStatus(EventStatus.DRAFT);
     verify(eventRepository, never()).findByStatus(EventStatus.CANCELLED);
+  }
+
+  /**
+   * Vérifie que le détail d'un événement publié est accessible.
+   */
+  @Test
+  void shouldReturnPublishedEventDetail() {
+
+    Event event = createEvent(
+        "Concert",
+        Category.CULTURE,
+        EventStatus.PUBLISHED,
+        LocalDateTime.of(2026, 11, 20, 20, 0)
+    );
+
+    when(eventRepository.findById(1L))
+        .thenReturn(Optional.of(event));
+
+    EventDetailResponse result = eventService.getEventDetail(1L);
+
+    assertEquals("Concert", result.title());
+    assertEquals("Description de test", result.description());
+    assertEquals("Montpellier", result.location());
+    assertEquals(
+        LocalDateTime.of(2026, 11, 20, 20, 0),
+        result.startDateTime()
+    );
+    assertEquals(BigDecimal.valueOf(10), result.affiliatedPrice());
+    assertEquals(BigDecimal.valueOf(15), result.nonAffiliatedPrice());
+    assertEquals(100, result.maxSeats());
+  }
+
+  /**
+   * Vérifie que le détail d'un événement terminé reste accessible.
+   */
+  @Test
+  void shouldReturnFinishedEventDetail() {
+
+    Event event = createEvent(
+        "Festival terminé",
+        Category.CULTURE,
+        EventStatus.FINISHED,
+        LocalDateTime.of(2026, 8, 10, 18, 0)
+    );
+
+    when(eventRepository.findById(2L))
+        .thenReturn(Optional.of(event));
+
+    EventDetailResponse result = eventService.getEventDetail(2L);
+
+    assertEquals("Festival terminé", result.title());
+  }
+
+  /**
+   * Vérifie qu'un événement inexistant provoque une NotFoundException.
+   */
+  @Test
+  void shouldThrowNotFoundExceptionWhenEventDoesNotExist() {
+
+    when(eventRepository.findById(999L))
+        .thenReturn(Optional.empty());
+
+    assertThrows(
+        NotFoundException.class,
+        () -> eventService.getEventDetail(999L)
+    );
+  }
+
+  /**
+   * Vérifie que l'organisateur peut consulter son propre événement brouillon.
+   */
+  @Test
+  void shouldReturnDraftEventDetailForItsOrganizer() {
+
+    User organizer = mock(User.class);
+    when(organizer.getId()).thenReturn(1L);
+
+    Event event = createEvent(
+        "Brouillon",
+        Category.SPORT,
+        EventStatus.DRAFT,
+        LocalDateTime.of(2026, 12, 5, 14, 0)
+    );
+    event.setOrganizer(organizer);
+
+    when(eventRepository.findById(3L))
+        .thenReturn(Optional.of(event));
+
+    authenticateAs(organizer);
+
+    EventDetailResponse result = eventService.getEventDetail(3L);
+
+    assertEquals("Brouillon", result.title());
+  }
+
+  /**
+   * Vérifie qu'un utilisateur ne peut pas consulter
+   * le brouillon d'un autre organisateur.
+   */
+  @Test
+  void shouldThrowNotFoundExceptionForDraftOwnedByAnotherUser() {
+
+    User organizer = mock(User.class);
+    when(organizer.getId()).thenReturn(1L);
+
+    User otherUser = mock(User.class);
+    when(otherUser.getId()).thenReturn(2L);
+
+    Event event = createEvent(
+        "Brouillon privé",
+        Category.LEISURE,
+        EventStatus.DRAFT,
+        LocalDateTime.of(2026, 12, 10, 10, 0)
+    );
+    event.setOrganizer(organizer);
+
+    when(eventRepository.findById(4L))
+        .thenReturn(Optional.of(event));
+
+    authenticateAs(otherUser);
+
+    assertThrows(
+        NotFoundException.class,
+        () -> eventService.getEventDetail(4L)
+    );
+  }
+
+  /**
+   * Vérifie qu'un visiteur non authentifié
+   * ne peut pas consulter un événement brouillon.
+   */
+  @Test
+  void shouldThrowNotFoundExceptionForDraftWhenUnauthenticated() {
+
+    User organizer = mock(User.class);
+    when(organizer.getId()).thenReturn(1L);
+
+    Event event = createEvent(
+        "Brouillon privé",
+        Category.CULTURE,
+        EventStatus.DRAFT,
+        LocalDateTime.of(2026, 12, 15, 18, 0)
+    );
+    event.setOrganizer(organizer);
+
+    when(eventRepository.findById(5L))
+        .thenReturn(Optional.of(event));
+
+    assertThrows(
+        NotFoundException.class,
+        () -> eventService.getEventDetail(5L)
+    );
+  }
+
+  /**
+   * Place dans le contexte de sécurité un utilisateur authentifié.
+   *
+   * @param user utilisateur à placer dans le contexte de sécurité
+   */
+  private void authenticateAs(User user) {
+
+    SecurityContextHolder.getContext().setAuthentication(
+        new UsernamePasswordAuthenticationToken(
+            user,
+            null,
+            List.of()
+        )
+    );
   }
 
   /**
