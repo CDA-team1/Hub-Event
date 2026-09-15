@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AnonymizationDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,14 +41,16 @@ public interface AnonymizationRequestControllerDoc {
     AnonymizationDto getById(@Parameter(description = "Identifiant de la demande") Long id);
 
     @Operation(summary = "Crée une nouvelle demande d'anonymisation",
-            description = "Un membre demande l'anonymisation de son compte")
+            description = "Enregistre une demande d'anonymisation pour l'utilisateur connecté (identifié via "
+                    + "le JWT). Aucune donnée à transmettre : ni doublon, ni demande pour un autre compte.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Demande créée",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AnonymizationDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Compte inactif ou demande déjà existante",
+                    content = @Content)
     })
-    AnonymizationDto create(AnonymizationDto anonymizationDto);
+    AnonymizationDto create() throws FunctionalException;
 
     @Operation(summary = "Met à jour une demande d'anonymisation",
             description = "Traitement de la demande par un administrateur (validation)")
