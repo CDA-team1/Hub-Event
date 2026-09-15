@@ -67,4 +67,24 @@ public class EmailService {
         mailSender.send(message);
         log.info("Email de création de compte (admin) envoyé à {}", to);
     }
+
+    /**
+     * Envoie l'email de promotion depuis la liste d'attente (CU9 règle métier n°7, CU10 règle métier n°5).
+     *
+     * @param to         adresse email du destinataire
+     * @param eventTitle titre de l'évènement concerné
+     */
+    public void sendWaitingListPromotionEmail(String to, String eventTitle) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Vous êtes inscrit - Hub évènementiel");
+        message.setText("""
+                Bonjour,
+
+                Une place s'est libérée pour l'évènement "%s" et vous étiez le premier \
+                sur la liste d'attente : vous êtes désormais inscrit !""".formatted(eventTitle));
+
+        mailSender.send(message);
+        log.info("Email de promotion (liste d'attente) envoyé à {} pour l'évènement {}", to, eventTitle);
+    }
 }
