@@ -42,6 +42,12 @@ import java.util.List;
         private boolean suspended = false;
         private LocalDate suspensionEndDate;
         private String suspensionReason;
+        /**
+         * Jeton d'activation envoyé par email à la création du compte (CU5/CU6).
+         * {@code null} une fois le compte activé (jeton à usage unique).
+         */
+        @Column(name = "activation_token", unique = true)
+        private String activationToken;
 
         public User() {
         }
@@ -167,6 +173,14 @@ import java.util.List;
 
         public void setSuspensionReason(String suspensionReason) {
             this.suspensionReason = suspensionReason;
+        }
+
+        public String getActivationToken() {
+            return activationToken;
+        }
+
+        public void setActivationToken(String activationToken) {
+            this.activationToken = activationToken;
         }
 
         // --- Implémentation UserDetails ---

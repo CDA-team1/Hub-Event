@@ -25,4 +25,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return {@code true} si un utilisateur possède cet email
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Recherche un utilisateur par son jeton d'activation (CU6).
+     *
+     * @param activationToken le jeton reçu dans le lien d'activation
+     * @return un {@link Optional} contenant l'utilisateur s'il existe
+     */
+    Optional<User> findByActivationToken(String activationToken);
 }
