@@ -1,6 +1,8 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AdminUserRequest;
+import fr.CDA.GHE.dto.ClubAffiliationRequest;
+import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -12,6 +14,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 /**
  * Interface de documentation Swagger/OpenAPI du {@link UserController}.
@@ -74,4 +78,20 @@ public interface UserControllerDoc {
                     content = @Content)
     })
     void delete(@Parameter(description = "Identifiant de l'utilisateur") Long id);
+
+    @Operation(summary = "Gère les affiliations club d'un membre ou d'un organisateur",
+            description = "Remplace l'ensemble des clubs auxquels l'utilisateur est rattaché par la liste "
+                    + "transmise (CU26, CU27). Une liste vide est valide. Si un organisateur n'a plus aucun "
+                    + "club, il est rétrogradé en membre non affilié. Ne s'applique pas aux administrateurs.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clubs affiliés après mise à jour",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ClubDto.class))),
+            @ApiResponse(responseCode = "400", description = "Utilisateur administrateur, ou club introuvable",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
+                    content = @Content)
+    })
+    List<ClubDto> updateAffiliations(@Parameter(description = "Identifiant de l'utilisateur") Long id,
+                                      ClubAffiliationRequest request) throws FunctionalException;
 }

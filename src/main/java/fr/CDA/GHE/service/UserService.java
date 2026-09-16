@@ -1,8 +1,11 @@
 package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.dto.AdminUserRequest;
+import fr.CDA.GHE.dto.ClubAffiliationRequest;
+import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.User;
@@ -10,9 +13,11 @@ import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
+import fr.CDA.GHE.mapper.ClubMapper;
 import fr.CDA.GHE.mapper.UserMapper;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
+import fr.CDA.GHE.util.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,16 +58,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final ClubRepository clubRepository;
     private final UserMapper userMapper;
+    private final ClubMapper clubMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final String baseUrl;
 
     public UserService(UserRepository userRepository, ClubRepository clubRepository, UserMapper userMapper,
-                        PasswordEncoder passwordEncoder, EmailService emailService,
+                        ClubMapper clubMapper, PasswordEncoder passwordEncoder, EmailService emailService,
                         @Value("${app.base-url}") String baseUrl) {
         this.userRepository = userRepository;
         this.clubRepository = clubRepository;
         this.userMapper = userMapper;
+        this.clubMapper = clubMapper;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.baseUrl = baseUrl;
@@ -127,6 +134,100 @@ public class UserService {
         log.info("ACTIVATION compte : id={} email={}", user.getId(), user.getEmail());
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
+    }
+
+    /**
+     * Modifie le compte de l'utilisateur connecté (CU13, SFG §2.16).
+     * <p>
+     * Contrairement à la création (CU5), où tout champ est obligatoirement saisi et validé,
+     * une règle n'est ici revérifiée que si le champ concerné change réellement :
+     * <ul>
+     *     <li>email : vérifié unique seulement si différent de l'email actuel (règle n°3),
+     *     en excluant le compte courant de la recherche (sinon il se bloquerait lui-même) ;</li>
+     *     <li>mot de passe : laissé vide, il n'est pas modifié ; renseigné, il doit être fort
+     *     (règle n°4).</li>
+     * </ul>
+     * Les autres champs (nom, prénom, adresse, email, téléphone) sont appliqués immédiatement.
+     * Le mot de passe, lui, ne l'est <strong>pas</strong> : conformément au CdC (« Si je ne
+     * confirme pas en cliquant sur le lien, mon mot de passe n'est pas modifié »), le nouveau
+     * mot de passe (déjà hashé) est mis en attente et un email de confirmation est envoyé ;
+     * l'ancien mot de passe reste actif tant que le lien n'a pas été cliqué (voir
+     * {@link #confirmPasswordChange(String)}).
+     * Les clubs affiliés ne sont pas modifiables ici (champ désactivé côté maquette CU13).
+     *
+     * @param request nouvelles informations
+     * @return le compte modifié
+     * @throws FunctionalException si le compte n'est pas actif, ou si une règle métier n'est pas respectée
+     */
+    @Transactional
+    public UserDto updateOwnAccount(UpdateUserRequest request) throws FunctionalException {
+        User user = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            throw new FunctionalException("Votre compte doit être actif pour modifier vos informations.");
+        }
+
+        if (isBlank(request.lastName()) || isBlank(request.firstName())
+                || isBlank(request.postalAddress()) || isBlank(request.email())) {
+            throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
+        }
+
+        boolean emailChanged = !request.email().equalsIgnoreCase(user.getEmail());
+        if (emailChanged && userRepository.existsByEmailAndIdNot(request.email(), user.getId())) {
+            throw new FunctionalException("Cette adresse email est déjà utilisée.");
+        }
+
+        boolean passwordChanged = !isBlank(request.password());
+        if (passwordChanged && !isStrongPassword(request.password())) {
+            throw new FunctionalException("Le mot de passe ne respecte pas les critères de sécurité requis.");
+        }
+
+        user.setLastName(request.lastName());
+        user.setFirstName(request.firstName());
+        user.setPostalAddress(request.postalAddress());
+        user.setEmail(request.email());
+        user.setPhone(request.phone());
+
+        if (passwordChanged) {
+            user.setPendingPassword(passwordEncoder.encode(request.password()));
+            user.setPasswordChangeToken(UUID.randomUUID().toString());
+        }
+
+        log.info("MODIFICATION compte (self-service) : id={} email={}", user.getId(), user.getEmail());
+
+        if (passwordChanged) {
+            String confirmationLink = baseUrl + "/auth/confirm-password-change?token=" + user.getPasswordChangeToken();
+            emailService.sendPasswordChangeConfirmationEmail(user.getEmail(), confirmationLink);
+        }
+
+        // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
+    }
+
+    /**
+     * Confirme un changement de mot de passe à partir du lien reçu par email (CU13).
+     * <p>
+     * Applique le mot de passe mis en attente par {@link #updateOwnAccount(UpdateUserRequest)}
+     * et invalide le jeton (lien à usage unique). Tant que ce lien n'a pas été cliqué,
+     * l'ancien mot de passe reste seul valide pour se connecter.
+     *
+     * @param token jeton de confirmation transmis dans le lien
+     * @return le compte dont le mot de passe a été confirmé
+     * @throws FunctionalException si le lien est invalide
+     */
+    @Transactional
+    public UserDto confirmPasswordChange(String token) throws FunctionalException {
+        User user = userRepository.findByPasswordChangeToken(token)
+                .orElseThrow(() -> new FunctionalException("Le lien de confirmation est invalide."));
+
+        user.setPassword(user.getPendingPassword());
+        user.setPendingPassword(null);
+        user.setPasswordChangeToken(null); // jeton à usage unique
+
+        log.info("CONFIRMATION changement de mot de passe : id={} email={}", user.getId(), user.getEmail());
+
         return userMapper.toDto(user);
     }
 
@@ -239,6 +340,48 @@ public class UserService {
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
         return userMapper.toDto(user);
+    }
+
+    /**
+     * Gère les affiliations club d'un membre ou d'un organisateur (CU26 SFG §2.29, CU27 SFG §2.30).
+     * <p>
+     * Remplace l'ensemble des clubs auxquels l'utilisateur est rattaché par la liste transmise :
+     * ajoute les nouveaux, retire ceux qui n'y figurent plus. Une liste vide est valide — pas une
+     * erreur.
+     * <p>
+     * Conséquence sur le rôle si plus aucun club ne reste (règle métier n°5 des deux CU) :
+     * un {@link Role#MEMBER} reste membre, simplement non affilié ; un {@link Role#ORGANIZER}
+     * est rétrogradé en {@link Role#MEMBER} non affilié — il ne peut plus organiser d'événement
+     * sans être rattaché à un club (règle PO).
+     * <p>
+     * Ne s'applique pas à un {@link Role#ADMIN} : un administrateur n'a pas d'affiliation club.
+     *
+     * @param id      identifiant de l'utilisateur (membre ou organisateur)
+     * @param request nouvelle liste de clubs
+     * @return les clubs auxquels l'utilisateur est désormais affilié
+     * @throws NotFoundException   si aucun utilisateur ne correspond à l'identifiant
+     * @throws FunctionalException si l'utilisateur est un administrateur, ou si un club n'existe pas
+     */
+    @Transactional
+    public List<ClubDto> updateMemberAffiliations(Long id, ClubAffiliationRequest request) throws FunctionalException {
+        User user = findUserOrThrow(id);
+
+        if (user.getRole() == Role.ADMIN) {
+            throw new FunctionalException("Cette action ne s'applique pas aux administrateurs.");
+        }
+
+        syncClubs(user, request.clubIds());
+
+        List<Club> remainingClubs = clubRepository.findByMembers_Id(user.getId());
+
+        if (user.getRole() == Role.ORGANIZER && remainingClubs.isEmpty()) {
+            user.setRole(Role.MEMBER);
+            log.info("RETROGRADATION organisateur -> membre non affilié (plus aucun club) : userId={}", user.getId());
+        }
+
+        log.info("MODIFICATION affiliations (admin) : userId={} clubIds={}", user.getId(), request.clubIds());
+
+        return clubMapper.toDtoList(remainingClubs);
     }
 
     /**

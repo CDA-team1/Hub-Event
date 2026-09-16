@@ -1,6 +1,8 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AdminUserRequest;
+import fr.CDA.GHE.dto.ClubAffiliationRequest;
+import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -9,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * SEC-02 — Autorisations des routes utilisateurs (voir {@link ClubController} pour les règles générales).
@@ -64,5 +68,13 @@ public class UserController implements UserControllerDoc {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         userService.deleteUserByAdmin(id);
+    }
+
+    @Override
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/{id}/clubs")
+    public List<ClubDto> updateAffiliations(@PathVariable Long id, @RequestBody ClubAffiliationRequest request)
+            throws FunctionalException {
+        return userService.updateMemberAffiliations(id, request);
     }
 }
