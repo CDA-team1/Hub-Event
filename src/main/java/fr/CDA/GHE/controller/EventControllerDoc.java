@@ -121,14 +121,64 @@ public interface EventControllerDoc {
 
   @Operation(summary = "Met à jour un évènement existant")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Évènement mis à jour",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = EventDto.class))),
-      @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content),
-      @ApiResponse(responseCode = "404", description = "Aucun évènement pour cet identifiant",
-          content = @Content)
+      @ApiResponse(
+          responseCode = "200",
+          description = "Évènement mis à jour",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Données invalides",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Aucun évènement pour cet identifiant",
+          content = @Content
+      )
   })
-  EventDto update(@Parameter(description = "Identifiant de l'évènement") Long id, UpdateEventRequest request) throws FunctionalException;
+  EventDto update(
+      @Parameter(description = "Identifiant de l'évènement") Long id,
+      UpdateEventRequest request
+  ) throws FunctionalException;
+
+  @Operation(summary = "Termine un événement")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Événement terminé",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Changement de statut non autorisé",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à modifier le statut de cet événement",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
+  })
+  EventDto finish(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  ) throws FunctionalException;
 
   @Operation(summary = "Supprime un évènement")
   @ApiResponses(value = {

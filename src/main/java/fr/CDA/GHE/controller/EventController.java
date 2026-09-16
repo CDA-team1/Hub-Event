@@ -69,6 +69,15 @@ public class EventController implements EventControllerDoc {
 
   @Override
   @Secured("ROLE_ORGANIZER")
+  @PostMapping("/{id}/status")
+  public EventDto finish(@PathVariable Long id)
+      throws FunctionalException {
+
+    return eventService.finishEvent(id);
+  }
+
+  @Override
+  @Secured("ROLE_ORGANIZER")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public EventDto create(@RequestBody CreateEventRequest request)
