@@ -1,26 +1,26 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.LegalDocumentDto;
-import fr.CDA.GHE.dto.LegalDocumentRequest;
 import fr.CDA.GHE.entity.enums.DocumentType;
-import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.LegalDocumentService;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * SEC-02 — Autorisations des routes documents légaux.
+ * SEC-02 — Autorisations des routes de consultation des documents légaux.
  * <p>
- * Réservé à l'admin (CU31 : saisie/MAJ de la politique RGPD, CU32 : saisie/MAJ des CGU). Un
- * seul document par type, adressé par type plutôt que par id numérique. La consultation
- * publique (CU7/CU8) est une route distincte, pas encore implémentée.
+ * Routes publiques (CU7 : consulter la politique RGPD, CU8 : consulter les CGU), accessibles
+ * sans authentification. La saisie/mise à jour est une route distincte et réservée à l'admin :
+ * {@code PUT /admin/documents/{type}}, voir {@link AdminLegalDocumentController}.
  */
 @RestController
-@RequestMapping("/admin/documents")
+@RequestMapping("/documents")
 public class LegalDocumentController implements LegalDocumentControllerDoc {
 
     private final LegalDocumentService legalDocumentService;
@@ -30,10 +30,23 @@ public class LegalDocumentController implements LegalDocumentControllerDoc {
     }
 
     @Override
-    @Secured("ROLE_ADMIN")
-    @PutMapping("/{type}")
-    public LegalDocumentDto upsert(@PathVariable DocumentType type, @RequestBody LegalDocumentRequest request)
-            throws FunctionalException {
-        return legalDocumentService.upsert(type, request);
+    @GetMapping("/{type}")
+    public LegalDocumentDto getByType(@PathVariable DocumentType type) {
+        return legalDocumentService.extractByType(type);
+    }
+
+    @Override
+    @GetMapping(value = "/{type}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> getByTypePdf(@PathVariable DocumentType type) {
+        byte[] pdf = legalDocumentService.generatePdf(type);
+
+        ContentDisposition contentDisposition = ContentDisposition.inline()
+                .filename(type.name().toLowerCase() + ".pdf")
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .body(pdf);
     }
 }
