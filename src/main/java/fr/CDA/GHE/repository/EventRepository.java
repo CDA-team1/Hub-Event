@@ -53,4 +53,14 @@ public interface EventRepository
    * @return la liste des événements appartenant à ce club
    */
   List<Event> findByClub_Id(Long clubId);
+
+  /**
+   * Recherche les événements d'un organisateur possédant un statut donné (CU29 : annulation
+   * des événements publiés à venir lors de l'anonymisation d'un organisateur).
+   *
+   * @param organizer utilisateur organisateur
+   * @param status    statut des événements recherchés
+   * @return la liste des événements correspondants
+   */
+  List<Event> findByOrganizerAndStatus(User organizer, EventStatus status);
 }
