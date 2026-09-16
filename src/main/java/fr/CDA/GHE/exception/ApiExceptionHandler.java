@@ -32,6 +32,17 @@ public class ApiExceptionHandler {
     }
 
     /**
+     * Gère les {@link ForbiddenException} et retourne un 403 Forbidden.
+     *
+     * @param ex l'exception levée
+     * @return la réponse HTTP avec le message d'erreur
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    protected ResponseEntity<String> handleForbidden(ForbiddenException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    /**
      * Gère les {@link FunctionalException} et retourne un 400 Bad Request.
      *
      * @param ex l'exception levée
