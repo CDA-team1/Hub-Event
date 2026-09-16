@@ -14,6 +14,7 @@ import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import org.springframework.security.access.AccessDeniedException;
+import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.repository.EventRepository;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
@@ -1361,6 +1362,155 @@ class EventServiceTest {
 
     assertEquals(
         "Les tarifs doivent être supérieurs ou égaux à zéro.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie que l'organisateur propriétaire
+   * peut publier son événement brouillon.
+   */
+  @Test
+  void shouldPublishDraftEventForOwnerOrganizer() throws FunctionalException {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement brouillon",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(eventRepository.save(event))
+        .thenReturn(event);
+
+    EventDto result = eventService.publishEvent(100L);
+
+    assertEquals(EventStatus.PUBLISHED, result.status());
+
+    verify(eventRepository).save(event);
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas publier
+   * l'événement d'un autre organisateur.
+   */
+  @Test
+  void shouldRejectPublishWhenOrganizerIsNotOwner() {
+
+    User owner = mock(User.class);
+    User otherOrganizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(owner.getId()).thenReturn(1L);
+
+    when(otherOrganizer.getId()).thenReturn(2L);
+    when(otherOrganizer.getUsername()).thenReturn("other@test.fr");
+    when(otherOrganizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(otherOrganizer);
+
+    Event event = new Event(
+        "Événement brouillon",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        owner,
+        club
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("other@test.fr"))
+        .thenReturn(Optional.of(otherOrganizer));
+
+    ForbiddenException exception = assertThrows(
+        ForbiddenException.class,
+        () -> eventService.publishEvent(100L)
+    );
+
+    assertEquals(
+        "Vous n'êtes pas autorisé à publier cet événement.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement qui n'est plus au statut brouillon
+   * ne peut pas être publié.
+   */
+  @Test
+  void shouldRejectPublishWhenEventIsNotDraft() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.publishEvent(100L)
+    );
+
+    assertEquals(
+        "Cet événement ne peut pas être publié dans son état actuel.",
         exception.getMessage()
     );
 

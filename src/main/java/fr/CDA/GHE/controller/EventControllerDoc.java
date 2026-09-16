@@ -83,6 +83,42 @@ public interface EventControllerDoc {
   })
   EventDto create(CreateEventRequest request) throws FunctionalException;
 
+  @Operation(summary = "Publie un événement")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Événement publié",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "L'événement ne peut pas être publié dans son état actuel",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à publier cet événement",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
+  })
+  EventDto publish(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  ) throws FunctionalException;
+
+
   @Operation(summary = "Met à jour un évènement existant")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Évènement mis à jour",
@@ -93,6 +129,7 @@ public interface EventControllerDoc {
           content = @Content)
   })
   EventDto update(@Parameter(description = "Identifiant de l'évènement") Long id, UpdateEventRequest request) throws FunctionalException;
+
   @Operation(summary = "Supprime un évènement")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "204", description = "Évènement supprimé", content = @Content),

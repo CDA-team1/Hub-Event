@@ -8,6 +8,8 @@ import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.exception.ForbiddenException;
+import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.service.EventService;
 import org.junit.jupiter.api.Test;
@@ -426,5 +428,117 @@ class EventControllerTest {
             eq(100L),
             any(UpdateEventRequest.class)
         );
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié
+   * peut publier un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldPublishEventAsOrganizer() throws Exception {
+
+    EventDto publishedEvent = new EventDto(
+        100L,
+        "Concert",
+        "Description",
+        "Montpellier",
+        LocalDateTime.of(2026, 11, 20, 20, 0),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        EventStatus.PUBLISHED,
+        Category.CULTURE,
+        1L,
+        10L
+    );
+
+    when(eventService.publishEvent(100L))
+        .thenReturn(publishedEvent);
+
+    mockMvc.perform(post("/events/100/publish")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(100))
+        .andExpect(jsonPath("$.title").value("Concert"))
+        .andExpect(jsonPath("$.status").value("PUBLISHED"));
+
+    verify(eventService).publishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas publier un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventPublicationForMember() throws Exception {
+
+    mockMvc.perform(post("/events/100/publish")
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never()).publishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas publier un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventPublicationWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(post("/events/100/publish"))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never()).publishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié mais non propriétaire
+   * reçoit une réponse 403 lors de la publication.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventPublicationForNonOwnerOrganizer() throws Exception {
+
+    when(eventService.publishEvent(100L))
+        .thenThrow(new ForbiddenException(
+            "Vous n'êtes pas autorisé à publier cet événement."
+        ));
+
+    mockMvc.perform(post("/events/100/publish")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService).publishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un événement qui n'est pas au statut brouillon
+   * ne peut pas être publié.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventPublicationWhenEventIsNotDraft() throws Exception {
+
+    when(eventService.publishEvent(100L))
+        .thenThrow(new FunctionalException(
+            "Cet événement ne peut pas être publié dans son état actuel."
+        ));
+
+    mockMvc.perform(post("/events/100/publish")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isBadRequest());
+
+    verify(eventService).publishEvent(100L);
   }
 }

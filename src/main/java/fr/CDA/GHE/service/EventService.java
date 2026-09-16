@@ -16,6 +16,7 @@ import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.exception.NotFoundException;
+import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.mapper.EventMapper;
 
 import fr.CDA.GHE.util.CurrentUser;
@@ -422,5 +423,42 @@ public class EventService {
    */
   private boolean isBlank(String value) {
     return value == null || value.isBlank();
+  }
+
+  /**
+   * Publie un événement appartenant à l'organisateur actuellement authentifié.
+   *
+   * @param id identifiant de l'événement à publier
+   * @return l'événement publié
+   * @throws FunctionalException si une règle métier n'est pas respectée
+   */
+  @Transactional
+  public EventDto publishEvent(Long id) throws FunctionalException {
+
+    Event event = eventRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER
+        || !event.getOrganizer().getId().equals(organizer.getId())) {
+
+      throw new ForbiddenException(
+          "Vous n'êtes pas autorisé à publier cet événement."
+      );
+    }
+
+    if (event.getStatus() != EventStatus.DRAFT) {
+      throw new FunctionalException(
+          "Cet événement ne peut pas être publié dans son état actuel."
+      );
+    }
+
+    event.publish();
+
+    Event savedEvent = eventRepository.save(event);
+
+    return eventMapper.toDto(savedEvent);
   }
 }
