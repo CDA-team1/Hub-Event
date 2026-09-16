@@ -1,6 +1,8 @@
 package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.dto.AdminUserRequest;
+import fr.CDA.GHE.dto.ClubAffiliationRequest;
+import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.UpdateUserRequest;
@@ -11,6 +13,7 @@ import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
+import fr.CDA.GHE.mapper.ClubMapper;
 import fr.CDA.GHE.mapper.UserMapper;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
@@ -55,16 +58,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final ClubRepository clubRepository;
     private final UserMapper userMapper;
+    private final ClubMapper clubMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final String baseUrl;
 
     public UserService(UserRepository userRepository, ClubRepository clubRepository, UserMapper userMapper,
-                        PasswordEncoder passwordEncoder, EmailService emailService,
+                        ClubMapper clubMapper, PasswordEncoder passwordEncoder, EmailService emailService,
                         @Value("${app.base-url}") String baseUrl) {
         this.userRepository = userRepository;
         this.clubRepository = clubRepository;
         this.userMapper = userMapper;
+        this.clubMapper = clubMapper;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.baseUrl = baseUrl;
@@ -335,6 +340,48 @@ public class UserService {
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
         return userMapper.toDto(user);
+    }
+
+    /**
+     * Gère les affiliations club d'un membre ou d'un organisateur (CU26 SFG §2.29, CU27 SFG §2.30).
+     * <p>
+     * Remplace l'ensemble des clubs auxquels l'utilisateur est rattaché par la liste transmise :
+     * ajoute les nouveaux, retire ceux qui n'y figurent plus. Une liste vide est valide — pas une
+     * erreur.
+     * <p>
+     * Conséquence sur le rôle si plus aucun club ne reste (règle métier n°5 des deux CU) :
+     * un {@link Role#MEMBER} reste membre, simplement non affilié ; un {@link Role#ORGANIZER}
+     * est rétrogradé en {@link Role#MEMBER} non affilié — il ne peut plus organiser d'événement
+     * sans être rattaché à un club (règle PO).
+     * <p>
+     * Ne s'applique pas à un {@link Role#ADMIN} : un administrateur n'a pas d'affiliation club.
+     *
+     * @param id      identifiant de l'utilisateur (membre ou organisateur)
+     * @param request nouvelle liste de clubs
+     * @return les clubs auxquels l'utilisateur est désormais affilié
+     * @throws NotFoundException   si aucun utilisateur ne correspond à l'identifiant
+     * @throws FunctionalException si l'utilisateur est un administrateur, ou si un club n'existe pas
+     */
+    @Transactional
+    public List<ClubDto> updateMemberAffiliations(Long id, ClubAffiliationRequest request) throws FunctionalException {
+        User user = findUserOrThrow(id);
+
+        if (user.getRole() == Role.ADMIN) {
+            throw new FunctionalException("Cette action ne s'applique pas aux administrateurs.");
+        }
+
+        syncClubs(user, request.clubIds());
+
+        List<Club> remainingClubs = clubRepository.findByMembers_Id(user.getId());
+
+        if (user.getRole() == Role.ORGANIZER && remainingClubs.isEmpty()) {
+            user.setRole(Role.MEMBER);
+            log.info("RETROGRADATION organisateur -> membre non affilié (plus aucun club) : userId={}", user.getId());
+        }
+
+        log.info("MODIFICATION affiliations (admin) : userId={} clubIds={}", user.getId(), request.clubIds());
+
+        return clubMapper.toDtoList(remainingClubs);
     }
 
     /**
