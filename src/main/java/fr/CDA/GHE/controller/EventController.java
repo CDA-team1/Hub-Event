@@ -60,6 +60,15 @@ public class EventController implements EventControllerDoc {
 
   @Override
   @Secured("ROLE_ORGANIZER")
+  @PostMapping("/{id}/publish")
+  public EventDto publish(@PathVariable Long id)
+      throws FunctionalException {
+
+    return eventService.publishEvent(id);
+  }
+
+  @Override
+  @Secured("ROLE_ORGANIZER")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public EventDto create(@RequestBody CreateEventRequest request)
