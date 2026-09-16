@@ -1,16 +1,13 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.CancelRegistrationRequest;
 import fr.CDA.GHE.dto.RegistrationDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.RegistrationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Expose les routes d'inscription et de désinscription des utilisateurs aux évènements.
@@ -42,6 +39,17 @@ public class RegistrationController implements RegistrationControllerDoc {
     @DeleteMapping("/me")
     public ResponseEntity<Void> unregister(@PathVariable Long eventId) throws FunctionalException {
         registrationService.unregister(eventId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @Secured("ROLE_ORGANIZER")
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> cancelRegistrationByOrganizer(@PathVariable Long eventId,
+                                                  @PathVariable Long userId,
+                                                  @RequestBody CancelRegistrationRequest request)
+            throws FunctionalException{
+        registrationService.cancelRegistrationByOrganizer(eventId, userId, request.reason());
         return ResponseEntity.noContent().build();
     }
 }
