@@ -1,6 +1,7 @@
 package fr.CDA.GHE.mapper;
 
 import fr.CDA.GHE.dto.ClubDto;
+import fr.CDA.GHE.dto.MemberSummaryDto;
 import fr.CDA.GHE.entity.Club;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,10 @@ import java.util.List;
 public class ClubMapper {
 
     public ClubDto toDto(Club club){
+        List<MemberSummaryDto> members = club.getMembers().stream()
+                .map(user -> new MemberSummaryDto(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail()))
+                .toList();
+
         return new ClubDto(
                 club.getId(),
                 club.getName(),
@@ -21,7 +26,8 @@ public class ClubMapper {
                 club.getPostalAddress(),
                 club.getEmail(),
                 club.getPhone(),
-                club.getValidityEndDate()
+                club.getValidityEndDate(),
+                members
         );
     }
     public List<ClubDto> toDtoList(List<Club> clubs){
