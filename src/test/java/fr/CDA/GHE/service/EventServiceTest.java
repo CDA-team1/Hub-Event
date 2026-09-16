@@ -1516,4 +1516,262 @@ class EventServiceTest {
 
     verify(eventRepository, never()).save(any(Event.class));
   }
+
+  /**
+   * Vérifie que l'organisateur propriétaire
+   * peut terminer manuellement son événement publié,
+   * même lorsqu'aucune date de fin n'est renseignée.
+   */
+  @Test
+  void shouldFinishPublishedEventForOwnerOrganizer()
+      throws FunctionalException {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().minusDays(1),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(eventRepository.save(event))
+        .thenReturn(event);
+
+    EventDto result = eventService.finishEvent(100L);
+
+    assertEquals(EventStatus.FINISHED, result.status());
+
+    verify(eventRepository).save(event);
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas terminer
+   * l'événement appartenant à un autre organisateur.
+   */
+  @Test
+  void shouldRejectFinishWhenOrganizerIsNotOwner() {
+
+    User owner = mock(User.class);
+    User otherOrganizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(owner.getId()).thenReturn(1L);
+
+    when(otherOrganizer.getId()).thenReturn(2L);
+    when(otherOrganizer.getUsername()).thenReturn("other@test.fr");
+    when(otherOrganizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(otherOrganizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().minusDays(1),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        owner,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("other@test.fr"))
+        .thenReturn(Optional.of(otherOrganizer));
+
+    ForbiddenException exception = assertThrows(
+        ForbiddenException.class,
+        () -> eventService.finishEvent(100L)
+    );
+
+    assertEquals(
+        "Vous n’êtes pas autorisé à modifier le statut de cet événement.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement qui n'est pas publié
+   * ne peut pas passer au statut terminé.
+   */
+  @Test
+  void shouldRejectFinishWhenEventIsNotPublished() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement brouillon",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().minusDays(1),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.finishEvent(100L)
+    );
+
+    assertEquals(
+        "Ce changement de statut n’est pas autorisé.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement sans date de début
+   * ne peut pas passer au statut terminé.
+   */
+  @Test
+  void shouldRejectFinishWithoutStartDate() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        null,
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.finishEvent(100L)
+    );
+
+    assertEquals(
+        "Ce changement de statut n’est pas autorisé.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement dont la date de fin
+   * n'est pas postérieure à la date de début
+   * ne peut pas passer au statut terminé.
+   */
+  @Test
+  void shouldRejectFinishWithInvalidEndDate() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    LocalDateTime startDateTime = LocalDateTime.now().minusDays(1);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        startDateTime,
+        startDateTime,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.finishEvent(100L)
+    );
+
+    assertEquals(
+        "Ce changement de statut n’est pas autorisé.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
 }

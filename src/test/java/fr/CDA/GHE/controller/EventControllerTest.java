@@ -541,4 +541,117 @@ class EventControllerTest {
 
     verify(eventService).publishEvent(100L);
   }
+
+  /**
+   * Vérifie qu'un organisateur authentifié
+   * peut terminer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldFinishEventAsOrganizer() throws Exception {
+
+    EventDto finishedEvent = new EventDto(
+        100L,
+        "Concert",
+        "Description",
+        "Montpellier",
+        LocalDateTime.of(2026, 9, 15, 20, 0),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        EventStatus.FINISHED,
+        Category.CULTURE,
+        1L,
+        10L
+    );
+
+    when(eventService.finishEvent(100L))
+        .thenReturn(finishedEvent);
+
+    mockMvc.perform(post("/events/100/status")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(100))
+        .andExpect(jsonPath("$.title").value("Concert"))
+        .andExpect(jsonPath("$.status").value("FINISHED"));
+
+    verify(eventService).finishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas terminer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventFinishForMember() throws Exception {
+
+    mockMvc.perform(post("/events/100/status")
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never()).finishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas terminer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventFinishWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(post("/events/100/status"))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never()).finishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié mais non propriétaire
+   * reçoit une réponse 403 lors du changement de statut.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventFinishForNonOwnerOrganizer() throws Exception {
+
+    when(eventService.finishEvent(100L))
+        .thenThrow(new ForbiddenException(
+            "Vous n’êtes pas autorisé à modifier le statut de cet événement."
+        ));
+
+    mockMvc.perform(post("/events/100/status")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService).finishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un changement de statut non autorisé
+   * retourne une réponse 400.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventFinishWhenStatusChangeIsNotAllowed()
+      throws Exception {
+
+    when(eventService.finishEvent(100L))
+        .thenThrow(new FunctionalException(
+            "Ce changement de statut n’est pas autorisé."
+        ));
+
+    mockMvc.perform(post("/events/100/status")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isBadRequest());
+
+    verify(eventService).finishEvent(100L);
+  }
 }
