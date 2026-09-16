@@ -6,6 +6,7 @@ import fr.CDA.GHE.entity.Registration;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
+import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.RegistrationMapper;
@@ -129,6 +130,54 @@ public class RegistrationService {
         registrationRepository.delete(registration);
 
         if (freesASeat) {
+            promoteFirstWaitingListRegistration(event);
+        }
+    }
+
+
+    /**
+     * Annule l'inscription d'un membre à la demande de l'organisateur de l'évènement (CU22).
+     * <p>
+     * Seul l'organisateur propriétaire de l'évènement peut effectuer cette action. Le membre
+     * désinscrit reçoit un email contenant le motif saisi. Si l'inscription supprimée occupait
+     * une place, la première personne en liste d'attente est automatiquement promue et notifiée.
+     * </p>
+     *
+     * @param eventId identifiant de l'évènement concerné
+     * @param userId  identifiant du membre dont l'inscription doit être annulée
+     * @param reason  motif de l'annulation, obligatoire
+     * @throws ForbiddenException  si l'utilisateur connecté n'est pas l'organisateur de l'évènement
+     * @throws FunctionalException si le motif est manquant ou si le membre n'est pas inscrit
+     */
+    @Transactional
+    public void cancelRegistrationByOrganizer(Long eventId, Long userId, String reason) throws FunctionalException{
+
+        User currentUser = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+        if (!event.getOrganizer().getId().equals(currentUser.getId())){
+            throw new ForbiddenException("Vous n'êtes pas autorisé à annuler cette incription");
+        }
+
+        if (reason == null || reason.isBlank()){
+            throw new FunctionalException("Le motif de l'annulation est obligatoire");
+        }
+
+        User member = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        Registration registration = registrationRepository.findByUserAndEvent(member, event)
+                .orElseThrow(() -> new FunctionalException("Ce membre n'est pas inscrit à cet événement"));
+
+        boolean freesASeat = registration.getStatus() == RegistrationStatus.REGISTERED;
+
+        registrationRepository.delete(registration);
+
+        emailService.sendRegistrationCancelledEmail(member.getEmail(), event.getTitle(), reason);
+
+        if (freesASeat){
             promoteFirstWaitingListRegistration(event);
         }
     }

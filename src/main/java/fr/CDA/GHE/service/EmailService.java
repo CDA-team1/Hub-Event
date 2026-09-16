@@ -87,4 +87,26 @@ public class EmailService {
         mailSender.send(message);
         log.info("Email de promotion (liste d'attente) envoyé à {} pour l'évènement {}", to, eventTitle);
     }
+
+    /**
+     * Envoie l'email d'annulation d'inscription par l'organisateur, avec le motif (CU22 règle métier).
+     *
+     * @param to         adresse email du destinataire
+     * @param eventTitle titre de l'évènement concerné
+     * @param reason     motif de l'annulation, saisi par l'organisateur
+     */
+    public void sendRegistrationCancelledEmail(String to, String eventTitle, String reason){
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Votre inscription a été annulée - Hub évènementiel");
+        message.setText("""
+                Bonjour)
+                
+                Votre inscription à l'évènement "%s" a été annulée par l'organisateur.
+                
+                Motif : %s""".formatted(eventTitle, reason));
+
+        mailSender.send(message);
+        log.info("Email d'annulation d'inscription (organisateur) envoyé à {} pour l'évènement {}", to, eventTitle);
+    }
 }
