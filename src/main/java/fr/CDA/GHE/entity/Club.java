@@ -256,12 +256,11 @@ public class Club {
    *
    * @param member utilisateur à affilier au club
    */
-  //À RÉACTIVER lorsque User.clubs sera présent sur dev.
-  //public void addMember(User member) {
-  //  if (members.add(member)) {
-  //   member.getClubs().add(this);
-  //  }
-  //}
+  public void addMember(User member) {
+    if (members.add(member)) {
+      member.getClubs().add(this);
+    }
+  }
 
   /**
    * Retire un utilisateur des membres affiliés du club
@@ -274,16 +273,15 @@ public class Club {
    * @return {@code true} si l'affiliation existait et a été retirée,
    *         {@code false} sinon
    */
-  //TODO : À RÉACTIVER lorsque User.club sera présent sur dev.
-  //public boolean removeMember(User member) {
-  //  boolean removed = members.remove(member);
+  public boolean removeMember(User member) {
+    boolean removed = members.remove(member);
 
-  //  if (removed) {
-  //    member.getClubs().remove(this);
-  //  }
+    if (removed) {
+      member.getClubs().remove(this);
+    }
 
-  //  return removed;
-  //}
+    return removed;
+  }
 
   /**
    * Retourne les événements rattachés au club.
