@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AnonymizationDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.AnonymizationRequestService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.annotation.Secured;
@@ -41,8 +42,8 @@ public class AdminAnonymizationController implements AdminAnonymizationControlle
 
     @Override
     @Secured("ROLE_ADMIN")
-    @PutMapping("/{id}")
-    public AnonymizationDto update(@PathVariable Long id, @RequestBody AnonymizationDto anonymizationDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Anonymisation)");
+    @PostMapping("/{id}/validate")
+    public AnonymizationDto validate(@PathVariable Long id) throws FunctionalException {
+        return anonymizationRequestService.validateRequest(id);
     }
 }

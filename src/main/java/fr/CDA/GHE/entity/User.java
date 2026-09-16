@@ -218,6 +218,5 @@ import java.util.List;
             return true;
         }
 
-        // TODO : Club (ManyToMany), Event - organizedEvents(OneToMAny), Registration(OneToMany), Comment(OneToMany), AnonymizationRequest(OneToMany)
-
+        // TODO : Event - organizedEvents(OneToMAny), Comment(OneToMany)
     }

@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AnonymizationDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,14 +40,16 @@ public interface AdminAnonymizationControllerDoc {
     AnonymizationDto getById(@Parameter(description = "Identifiant de la demande") Long id);
 
     @Operation(summary = "Valide une demande d'anonymisation",
-            description = "Anonymise le compte de l'utilisateur concerné (CU29)")
+            description = "Anonymise le compte de l'utilisateur concerné : données personnelles remplacées par "
+                    + "des valeurs aléatoires, statut ANONYMIZED. Si l'utilisateur est organisateur, ses "
+                    + "évènements publiés à venir sont annulés, sans transfert (CU29). Aucune donnée à transmettre.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Demande validée, compte anonymisé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AnonymizationDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Demande déjà traitée", content = @Content),
             @ApiResponse(responseCode = "404", description = "Aucune demande pour cet identifiant",
                     content = @Content)
     })
-    AnonymizationDto update(@Parameter(description = "Identifiant de la demande") Long id, AnonymizationDto anonymizationDto);
+    AnonymizationDto validate(@Parameter(description = "Identifiant de la demande") Long id) throws FunctionalException;
 }
