@@ -4,6 +4,7 @@ import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.EventService;
 import org.springframework.http.HttpStatus;
@@ -68,11 +69,14 @@ public class EventController implements EventControllerDoc {
   }
 
   @Override
-  @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
+  @Secured("ROLE_ORGANIZER")
   @PutMapping("/{id}")
-  public EventDto update(@PathVariable Long id, @RequestBody EventDto eventDto) {
-    // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
-    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  public EventDto update(
+      @PathVariable Long id,
+      @RequestBody UpdateEventRequest request
+  ) throws FunctionalException {
+
+    return eventService.updateEvent(id, request);
   }
 
   @Override

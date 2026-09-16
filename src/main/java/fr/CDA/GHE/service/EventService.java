@@ -3,6 +3,7 @@ package fr.CDA.GHE.service;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.entity.Club;
@@ -22,6 +23,7 @@ import fr.CDA.GHE.util.CurrentUser;
 import fr.CDA.GHE.repository.EventRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -200,6 +202,115 @@ public class EventService {
     Event savedEvent = eventRepository.save(event);
 
     return eventMapper.toDto(savedEvent);
+  }
+
+  /**
+   * Modifie un événement appartenant à l'organisateur actuellement authentifié.
+   *
+   * @param id      identifiant de l'événement à modifier
+   * @param request nouvelles données de l'événement
+   * @return l'événement mis à jour
+   * @throws FunctionalException si une règle métier n'est pas respectée
+   */
+  @Transactional
+  public EventDto updateEvent(Long id, UpdateEventRequest request)
+      throws FunctionalException {
+
+    Event event = eventRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER
+        || !event.getOrganizer().getId().equals(organizer.getId())) {
+
+      throw new AccessDeniedException(
+          "Vous n'êtes pas autorisé à modifier cet événement."
+      );
+    }
+    // TODO EVT-05 : intégrer la modification des images lorsque le modèle Image
+    // et la relation entre Event et Image seront implémentés.
+    // Un événement FINISHED devra alors rester modifiable uniquement pour ses images.
+    if (event.getStatus() == EventStatus.FINISHED) {
+      throw new FunctionalException(
+          "Un événement passé ne peut plus être modifié, à l'exception de ses images."
+      );
+    }
+
+    validateUpdateRequest(event, request);
+
+    event.setTitle(request.title());
+    event.setDescription(request.description());
+    event.setLocation(request.location());
+    event.setStartDateTime(request.startDateTime());
+    event.setEndDateTime(request.endDateTime());
+    event.setAffiliatedPrice(request.affiliatedPrice());
+    event.setNonAffiliatedPrice(request.nonAffiliatedPrice());
+    event.setMaxSeats(request.maxSeats());
+    event.setCategory(request.category());
+
+    Event savedEvent = eventRepository.save(event);
+
+    return eventMapper.toDto(savedEvent);
+  }
+
+  /**
+   * Vérifie les données utilisées pour modifier un événement.
+   *
+   * @param event   événement actuellement enregistré
+   * @param request nouvelles données à contrôler
+   * @throws FunctionalException si une règle métier n'est pas respectée
+   */
+  private void validateUpdateRequest(
+      Event event,
+      UpdateEventRequest request
+  ) throws FunctionalException {
+
+    if (request == null
+        || isBlank(request.title())
+        || isBlank(request.description())
+        || isBlank(request.location())
+        || request.startDateTime() == null
+        || request.affiliatedPrice() == null
+        || request.nonAffiliatedPrice() == null
+        || request.maxSeats() == null
+        || request.category() == null) {
+
+      throw new FunctionalException(
+          "Veuillez renseigner tous les champs obligatoires."
+      );
+    }
+
+    if (!request.startDateTime().equals(event.getStartDateTime())
+        && !request.startDateTime().isAfter(LocalDateTime.now())) {
+
+      throw new FunctionalException(
+          "La date de début doit être postérieure à la date et à l'heure actuelles."
+      );
+    }
+
+    if (request.endDateTime() != null
+        && !request.endDateTime().isAfter(request.startDateTime())) {
+
+      throw new FunctionalException(
+          "La date de fin doit être postérieure à la date de début."
+      );
+    }
+
+    if (request.maxSeats() <= 0) {
+      throw new FunctionalException(
+          "Le nombre maximal de places doit être strictement supérieur à zéro."
+      );
+    }
+
+    if (request.affiliatedPrice().compareTo(BigDecimal.ZERO) < 0
+        || request.nonAffiliatedPrice().compareTo(BigDecimal.ZERO) < 0) {
+
+      throw new FunctionalException(
+          "Les tarifs doivent être supérieurs ou égaux à zéro."
+      );
+    }
   }
 
   /**
