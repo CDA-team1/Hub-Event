@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Entité représentant un utilisateur de l'application.
@@ -48,6 +50,8 @@ import java.util.List;
          */
         @Column(name = "activation_token", unique = true)
         private String activationToken;
+        @ManyToMany(mappedBy = "members")
+        private Set<Club> clubs = new HashSet<>();
 
         public User() {
         }
@@ -183,6 +187,24 @@ import java.util.List;
             this.activationToken = activationToken;
         }
 
+        public Set<Club> getClubs() {
+            return clubs;
+        }
+
+        public void addClub(Club club) {
+            if (clubs.add(club)) {
+                club.getMembers().add(this);
+            }
+        }
+
+        public boolean removeClub(Club club) {
+            boolean removed = clubs.remove(club);
+            if (removed) {
+                club.getMembers().remove(this);
+            }
+            return removed;
+        }
+
         // --- Implémentation UserDetails ---
         // isAccountNonExpired/isAccountNonLocked/isCredentialsNonExpired/isEnabled renvoient
         // true : le statut métier (ACTIVE/INACTIVE/ANONYMIZED) et la suspension sont vérifiés
@@ -218,5 +240,10 @@ import java.util.List;
             return true;
         }
 
+<<<<<<< HEAD
         // TODO : Event - organizedEvents(OneToMAny), Comment(OneToMany)
+=======
+    // TODO : Event - organizedEvents(OneToMAny), Registration(OneToMany), Comment(OneToMany), AnonymizationRequest(OneToMany)
+
+>>>>>>> origin/dev
     }

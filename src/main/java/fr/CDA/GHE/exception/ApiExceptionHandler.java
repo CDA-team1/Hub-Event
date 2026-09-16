@@ -2,6 +2,7 @@ package fr.CDA.GHE.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -37,6 +38,17 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(ex.getMessage());
     }
 
+  /**
+   * Gère les refus d'accès et retourne un 403 Forbidden.
+   *
+   * @param ex l'exception d'autorisation levée
+   * @return la réponse HTTP indiquant que l'accès est refusé
+   */
+  @ExceptionHandler(AccessDeniedException.class)
+  protected ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Accès refusé");
+  }
+  
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<String> handleGeneric(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne");

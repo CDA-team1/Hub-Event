@@ -1,8 +1,11 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
-import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.service.EventService;
@@ -15,6 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +29,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.any;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.mockito.Mockito.never;
 
 /**
  * Tests du contrôleur des événements.
@@ -145,5 +153,135 @@ class EventControllerTest {
         .andExpect(status().isNotFound());
 
     verify(eventService).getEventDetail(999L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié peut créer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldCreateEventAsOrganizer() throws Exception {
+    LocalDateTime startDateTime =
+        LocalDateTime.of(2026, 11, 20, 18, 0);
+
+    LocalDateTime endDateTime =
+        LocalDateTime.of(2026, 11, 20, 20, 0);
+
+    EventDto createdEvent = new EventDto(
+        1L,
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        endDateTime,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        EventStatus.DRAFT,
+        Category.SPORT,
+        1L,
+        10L
+    );
+
+    when(eventService.createEvent(any(CreateEventRequest.class)))
+        .thenReturn(createdEvent);
+
+    String requestBody = """
+      {
+        "title": "Tournoi de tennis",
+        "description": "Tournoi ouvert aux membres",
+        "location": "Montpellier",
+        "startDateTime": "2026-11-20T18:00:00",
+        "endDateTime": "2026-11-20T20:00:00",
+        "affiliatedPrice": 10,
+        "nonAffiliatedPrice": 15,
+        "maxSeats": 100,
+        "category": "SPORT",
+        "clubId": 10
+      }
+      """;
+
+    mockMvc.perform(post("/events")
+            .with(user("organizer@test.fr").roles("ORGANIZER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isCreated())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.title").value("Tournoi de tennis"))
+        .andExpect(jsonPath("$.status").value("DRAFT"))
+        .andExpect(jsonPath("$.category").value("SPORT"))
+        .andExpect(jsonPath("$.organizerId").value(1))
+        .andExpect(jsonPath("$.clubId").value(10));
+
+    verify(eventService).createEvent(any(CreateEventRequest.class));
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas créer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventCreationWithoutAuthentication() throws Exception {
+
+    String requestBody = """
+      {
+        "title": "Tournoi de tennis",
+        "description": "Tournoi ouvert aux membres",
+        "location": "Montpellier",
+        "startDateTime": "2026-11-20T18:00:00",
+        "endDateTime": "2026-11-20T20:00:00",
+        "affiliatedPrice": 10,
+        "nonAffiliatedPrice": 15,
+        "maxSeats": 100,
+        "category": "SPORT",
+        "clubId": 10
+      }
+      """;
+
+    mockMvc.perform(post("/events")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never())
+        .createEvent(any(CreateEventRequest.class));
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas créer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventCreationForMember() throws Exception {
+
+    String requestBody = """
+      {
+        "title": "Tournoi de tennis",
+        "description": "Tournoi ouvert aux membres",
+        "location": "Montpellier",
+        "startDateTime": "2026-11-20T18:00:00",
+        "endDateTime": "2026-11-20T20:00:00",
+        "affiliatedPrice": 10,
+        "nonAffiliatedPrice": 15,
+        "maxSeats": 100,
+        "category": "SPORT",
+        "clubId": 10
+      }
+      """;
+
+    mockMvc.perform(post("/events")
+            .with(user("member@test.fr").roles("MEMBER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never())
+        .createEvent(any(CreateEventRequest.class));
   }
 }

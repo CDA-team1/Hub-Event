@@ -3,6 +3,8 @@ package fr.CDA.GHE.dto;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 
+import java.util.List;
+
 /**
  * Représentation d'un utilisateur exposée par l'API. Le mot de passe n'y figure jamais.
  *
