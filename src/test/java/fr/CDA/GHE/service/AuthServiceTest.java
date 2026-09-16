@@ -7,81 +7,78 @@ import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.repository.UserRepository;
-import fr.CDA.GHE.security.JwtService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 /**
- * Tests unitaires de {@link AuthService}, avec {@link UserRepository}, {@link AuthenticationManager}
- * et {@link JwtService} mockés (pas de contexte Spring chargé).
+ * Tests de {@link AuthService} avec une vraie base H2 et le vrai {@code AuthenticationManager}
+ * (profil "test", voir {@code GheApplicationTests}) : donc le vrai {@link JpaUserDetailsService}
+ * et le vrai {@link PasswordEncoder}. Contrairement à un {@code AuthenticationManager} mocké,
+ * ça vérifie que la validation d'un mot de passe fonctionne réellement (BCrypt), pas seulement
+ * que le service réagit comme prévu à ce qu'un mock lui dit de faire — même logique que
+ * {@code JpaUserDetailsServiceTest} / {@code UserServiceTest}.
+ * <p>
+ * {@code @Transactional} annule les écritures après chaque test.
  */
-@ExtendWith(MockitoExtension.class)
-public class AuthServiceTest {
+@ActiveProfiles("test")
+@SpringBootTest
+@Transactional
+class AuthServiceTest {
 
-    @Mock
+    @Autowired
+    private AuthService authService;
+
+    @Autowired
     private UserRepository userRepository;
 
-    @Mock
-    private AuthenticationManager authenticationManager;
-
-    @Mock
-    private JwtService jwtService;
-
-    private AuthService authService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private static final String RAW_PASSWORD = "StrOng!PasswOrd";
 
-    @BeforeEach
-    void setUp() {
-        authService = new AuthService(userRepository, authenticationManager, jwtService);
-    }
-
     /**
-     * Vérifie qu'un utilisateur actif avec les bons identifiants peut se connecter,
-     * et récupère bien le jeton généré par {@link JwtService}.
+     * Vérifie qu'un utilisateur actif avec les bons identifiants peut se connecter, et que le
+     * mot de passe fourni est réellement comparé au hash BCrypt stocké (pas un mock qui laisse
+     * passer sans vérifier).
      */
     @Test
     void login_shouldSucceed_whenCredentialsAreValidAndAccountIsActive() throws FunctionalException {
-        User user = new User();
-        user.setEmail("secret.story@test.com");
-        user.setStatus(AccountStatus.ACTIVE);
-        user.setRole(Role.MEMBER);
+        persistUser("secret.story@test.com", AccountStatus.ACTIVE, false, null);
 
-        when(userRepository.findByEmail("secret.story@test.com")).thenReturn(Optional.of(user));
-        when(jwtService.generateToken("secret.story@test.com", Role.MEMBER)).thenReturn("fake-jwt-token");
+        LoginResponse response = authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD));
 
-        LoginRequest request = new LoginRequest("secret.story@test.com", RAW_PASSWORD);
-        LoginResponse response = authService.login(request);
-
-        assertThat(response.token()).isEqualTo("fake-jwt-token");
+        assertThat(response.token()).isNotBlank();
         assertThat(response.role()).isEqualTo(Role.MEMBER);
     }
 
     /**
-     * Vérifie qu'un échec d'authentification (email inconnu ou mot de passe incorrect)
-     * est rejeté. Les deux cas sont désormais indissociables du point de vue d'AuthService,
-     * car c'est l'AuthenticationManager de Spring Security (via JpaUserDetailsService) qui
-     * lève la même exception générique dans les deux cas.
+     * Vérifie qu'un mot de passe incorrect est rejeté par la vraie vérification BCrypt.
      */
     @Test
-    void login_shouldThrow_whenCredentialsAreInvalid() {
-        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
+    void login_shouldThrow_whenPasswordIsIncorrect() {
+        persistUser("secret.story@test.com", AccountStatus.ACTIVE, false, null);
 
-        LoginRequest request = new LoginRequest("secret.story@test.com", "MauvaisMotDePasse123!");
+        assertThatThrownBy(() -> authService.login(new LoginRequest("secret.story@test.com", "MauvaisMotDePasse123!")))
+                .isInstanceOf(FunctionalException.class);
+    }
 
-        assertThatThrownBy(() -> authService.login(request)).isInstanceOf(FunctionalException.class);
+    /**
+     * Vérifie qu'un email inconnu est rejeté (même message générique que mot de passe
+     * incorrect, pour éviter l'énumération de comptes).
+     */
+    @Test
+    void login_shouldThrow_whenEmailIsUnknown() {
+        assertThatThrownBy(() -> authService.login(new LoginRequest("unknown@test.com", RAW_PASSWORD)))
+                .isInstanceOf(FunctionalException.class);
     }
 
     /**
@@ -89,33 +86,46 @@ public class AuthServiceTest {
      */
     @Test
     void login_shouldThrow_whenAccountNotActive() {
-        User user = new User();
-        user.setEmail("secret.story@test.com");
-        user.setStatus(AccountStatus.INACTIVE);
-        user.setRole(Role.MEMBER);
+        persistUser("secret.story@test.com", AccountStatus.INACTIVE, false, null);
 
-        when(userRepository.findByEmail("secret.story@test.com")).thenReturn(Optional.of(user));
-
-        LoginRequest request = new LoginRequest("secret.story@test.com", RAW_PASSWORD);
-
-        assertThatThrownBy(() -> authService.login(request)).isInstanceOf(FunctionalException.class);
+        assertThatThrownBy(() -> authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD)))
+                .isInstanceOf(FunctionalException.class);
     }
 
     /**
      * Vérifie qu'un compte suspendu de façon définitive (pas de date de fin) est rejeté.
      */
     @Test
-    void login_shouldThrow_whenAccountSuspended() {
+    void login_shouldThrow_whenAccountSuspendedIndefinitely() {
+        persistUser("secret.story@test.com", AccountStatus.ACTIVE, true, null);
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD)))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    /**
+     * Vérifie qu'une suspension temporaire déjà terminée ne bloque plus la connexion.
+     */
+    @Test
+    void login_shouldSucceed_whenTemporarySuspensionHasEnded() throws FunctionalException {
+        persistUser("secret.story@test.com", AccountStatus.ACTIVE, true, LocalDate.now().minusDays(1));
+
+        LoginResponse response = authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD));
+
+        assertThat(response.token()).isNotBlank();
+    }
+
+    private User persistUser(String email, AccountStatus status, boolean suspended, LocalDate suspensionEndDate) {
         User user = new User();
-        user.setEmail("secret.story@test.com");
-        user.setStatus(AccountStatus.ACTIVE);
+        user.setLastName("Doe");
+        user.setFirstName("John");
+        user.setPostalAddress("1 rue de Test");
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(RAW_PASSWORD));
+        user.setStatus(status);
         user.setRole(Role.MEMBER);
-        user.setSuspended(true);
-
-        when(userRepository.findByEmail("secret.story@test.com")).thenReturn(Optional.of(user));
-
-        LoginRequest request = new LoginRequest("secret.story@test.com", RAW_PASSWORD);
-
-        assertThatThrownBy(() -> authService.login(request)).isInstanceOf(FunctionalException.class);
+        user.setSuspended(suspended);
+        user.setSuspensionEndDate(suspensionEndDate);
+        return userRepository.save(user);
     }
 }

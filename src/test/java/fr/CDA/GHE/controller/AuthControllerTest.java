@@ -138,4 +138,25 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Le compte associé à ce lien n'existe pas."));
     }
+
+    @Test
+    void confirmPasswordChange_shouldReturn200_whenTokenIsValid() throws Exception {
+        UserDto confirmed = new UserDto(1L, "Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, AccountStatus.ACTIVE, Role.MEMBER);
+        when(userService.confirmPasswordChange(eq("valid-token"))).thenReturn(confirmed);
+
+        mockMvc.perform(get("/auth/confirm-password-change").param("token", "valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("john.doe@test.com"));
+    }
+
+    @Test
+    void confirmPasswordChange_shouldReturn400_whenTokenIsInvalid() throws Exception {
+        when(userService.confirmPasswordChange(eq("unknown-token")))
+                .thenThrow(new FunctionalException("Le lien de confirmation est invalide."));
+
+        mockMvc.perform(get("/auth/confirm-password-change").param("token", "unknown-token"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Le lien de confirmation est invalide."));
+    }
 }
