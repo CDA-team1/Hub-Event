@@ -3,6 +3,8 @@ package fr.CDA.GHE.controller;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -54,12 +56,31 @@ public interface EventControllerDoc {
 
   @Operation(summary = "Crée un nouvel évènement")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "201", description = "Évènement créé",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = EventDto.class))),
-      @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)
+      @ApiResponse(
+          responseCode = "201",
+          description = "Évènement créé",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Données invalides",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Accès refusé : rôle ORGANIZER requis",
+          content = @Content
+      )
   })
-  EventDto create(EventDto eventDto);
+  EventDto create(CreateEventRequest request) throws FunctionalException;
 
   @Operation(summary = "Met à jour un évènement existant")
   @ApiResponses(value = {

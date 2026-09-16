@@ -1,14 +1,24 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
+import fr.CDA.GHE.entity.enums.Role;
+import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.repository.ClubRepository;
+import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.EventMapper;
+
+import fr.CDA.GHE.util.CurrentUser;
+
 import fr.CDA.GHE.repository.EventRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,8 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 /**
- * Service gérant la consultation des événements.
+ * Service gérant les événements.
  */
 @Service
 public class EventService {
@@ -35,14 +48,33 @@ public class EventService {
   private final EventMapper eventMapper;
 
   /**
+   * Repository permettant l'accès aux utilisateurs en base de données.
+   */
+  private final UserRepository userRepository;
+
+  /**
+   * Repository permettant l'accès aux clubs en base de données.
+   */
+  private final ClubRepository clubRepository;
+
+  /**
    * Initialise le service avec ses dépendances.
    *
    * @param eventRepository repository d'accès aux événements
    * @param eventMapper     mapper permettant de convertir un événement en DTO
+   * @param userRepository  repository d'accès aux utilisateurs
+   * @param clubRepository  repository d'accès aux clubs
    */
-  public EventService(EventRepository eventRepository, EventMapper eventMapper) {
+  public EventService(
+      EventRepository eventRepository,
+      EventMapper eventMapper,
+      UserRepository userRepository,
+      ClubRepository clubRepository
+  ) {
     this.eventRepository = eventRepository;
     this.eventMapper = eventMapper;
+    this.userRepository = userRepository;
+    this.clubRepository = clubRepository;
   }
 
   /**
@@ -118,6 +150,59 @@ public class EventService {
   }
 
   /**
+   * Crée un nouvel événement pour l'organisateur actuellement authentifié.
+   *
+   * @param request données saisies pour la création de l'événement
+   * @return l'événement créé
+   * @throws FunctionalException si une règle métier n'est pas respectée
+   */
+  @Transactional
+  public EventDto createEvent(CreateEventRequest request) throws FunctionalException {
+
+    validateCreateRequest(request);
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER) {
+      throw new FunctionalException(
+          "Vous n'êtes pas autorisé à créer un événement."
+      );
+    }
+
+    Club club = clubRepository.findByMembers_Id(organizer.getId()).stream()
+        .filter(affiliatedClub -> affiliatedClub.getId().equals(request.clubId()))
+        .findFirst()
+        .orElseThrow(() -> new FunctionalException(
+            "Vous n'êtes pas autorisé à créer un événement pour ce club."
+        ));
+
+    if (club.getValidityEndDate() != null) {
+      throw new FunctionalException(
+          "Vous n'êtes pas autorisé à créer un événement pour ce club."
+      );
+    }
+
+    Event event = new Event(
+        request.title(),
+        request.description(),
+        request.location(),
+        request.startDateTime(),
+        request.endDateTime(),
+        request.affiliatedPrice(),
+        request.nonAffiliatedPrice(),
+        request.maxSeats(),
+        request.category(),
+        organizer,
+        club
+    );
+
+    Event savedEvent = eventRepository.save(event);
+
+    return eventMapper.toDto(savedEvent);
+  }
+
+  /**
    * Filtre les événements selon une catégorie, les trie par date de début
    * puis les convertit en DTO de carte.
    *
@@ -162,5 +247,69 @@ public class EventService {
     }
 
     return authenticatedUser.getId().equals(event.getOrganizer().getId());
+  }
+
+  /**
+   * Vérifie les données nécessaires à la création d'un événement.
+   *
+   * @param request données à contrôler
+   * @throws FunctionalException si une règle métier n'est pas respectée
+   */
+  private void validateCreateRequest(CreateEventRequest request)
+      throws FunctionalException {
+
+    if (request == null
+        || isBlank(request.title())
+        || isBlank(request.description())
+        || isBlank(request.location())
+        || request.startDateTime() == null
+        || request.affiliatedPrice() == null
+        || request.nonAffiliatedPrice() == null
+        || request.maxSeats() == null
+        || request.category() == null
+        || request.clubId() == null) {
+
+      throw new FunctionalException(
+          "Veuillez renseigner tous les champs obligatoires."
+      );
+    }
+
+    if (!request.startDateTime().isAfter(LocalDateTime.now())) {
+      throw new FunctionalException(
+          "La date de début doit être postérieure à la date et à l'heure actuelles."
+      );
+    }
+
+    if (request.endDateTime() != null
+        && !request.endDateTime().isAfter(request.startDateTime())) {
+
+      throw new FunctionalException(
+          "La date de fin doit être postérieure à la date de début."
+      );
+    }
+
+    if (request.maxSeats() <= 0) {
+      throw new FunctionalException(
+          "Le nombre maximal de places doit être strictement supérieur à zéro."
+      );
+    }
+
+    if (request.affiliatedPrice().compareTo(BigDecimal.ZERO) < 0
+        || request.nonAffiliatedPrice().compareTo(BigDecimal.ZERO) < 0) {
+
+      throw new FunctionalException(
+          "Les tarifs doivent être supérieurs ou égaux à zéro."
+      );
+    }
+  }
+
+  /**
+   * Vérifie si une chaîne est absente ou vide.
+   *
+   * @param value chaîne à vérifier
+   * @return {@code true} si la chaîne est nulle, vide ou ne contient que des espaces
+   */
+  private boolean isBlank(String value) {
+    return value == null || value.isBlank();
   }
 }
