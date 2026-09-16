@@ -461,4 +461,45 @@ public class EventService {
 
     return eventMapper.toDto(savedEvent);
   }
+
+  /**
+   * Termine manuellement un événement appartenant à l'organisateur authentifié.
+   *
+   * @param id identifiant de l'événement à terminer
+   * @return l'événement terminé
+   * @throws FunctionalException si le changement de statut n'est pas autorisé
+   */
+  @Transactional
+  public EventDto finishEvent(Long id) throws FunctionalException {
+
+    Event event = eventRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER
+        || !event.getOrganizer().getId().equals(organizer.getId())) {
+
+      throw new ForbiddenException(
+          "Vous n’êtes pas autorisé à modifier le statut de cet événement."
+      );
+    }
+
+    if (event.getStatus() != EventStatus.PUBLISHED
+        || event.getStartDateTime() == null
+        || (event.getEndDateTime() != null
+        && !event.getEndDateTime().isAfter(event.getStartDateTime()))) {
+
+      throw new FunctionalException(
+          "Ce changement de statut n’est pas autorisé."
+      );
+    }
+
+    event.finish();
+
+    Event savedEvent = eventRepository.save(event);
+
+    return eventMapper.toDto(savedEvent);
+  }
 }
