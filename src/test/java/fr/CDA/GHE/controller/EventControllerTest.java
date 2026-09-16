@@ -4,6 +4,7 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Category;
@@ -33,6 +34,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+
 
 /**
  * Tests du contrôleur des événements.
@@ -188,19 +192,19 @@ class EventControllerTest {
         .thenReturn(createdEvent);
 
     String requestBody = """
-      {
-        "title": "Tournoi de tennis",
-        "description": "Tournoi ouvert aux membres",
-        "location": "Montpellier",
-        "startDateTime": "2026-11-20T18:00:00",
-        "endDateTime": "2026-11-20T20:00:00",
-        "affiliatedPrice": 10,
-        "nonAffiliatedPrice": 15,
-        "maxSeats": 100,
-        "category": "SPORT",
-        "clubId": 10
-      }
-      """;
+        {
+          "title": "Tournoi de tennis",
+          "description": "Tournoi ouvert aux membres",
+          "location": "Montpellier",
+          "startDateTime": "2026-11-20T18:00:00",
+          "endDateTime": "2026-11-20T20:00:00",
+          "affiliatedPrice": 10,
+          "nonAffiliatedPrice": 15,
+          "maxSeats": 100,
+          "category": "SPORT",
+          "clubId": 10
+        }
+        """;
 
     mockMvc.perform(post("/events")
             .with(user("organizer@test.fr").roles("ORGANIZER"))
@@ -228,19 +232,19 @@ class EventControllerTest {
   void shouldRejectEventCreationWithoutAuthentication() throws Exception {
 
     String requestBody = """
-      {
-        "title": "Tournoi de tennis",
-        "description": "Tournoi ouvert aux membres",
-        "location": "Montpellier",
-        "startDateTime": "2026-11-20T18:00:00",
-        "endDateTime": "2026-11-20T20:00:00",
-        "affiliatedPrice": 10,
-        "nonAffiliatedPrice": 15,
-        "maxSeats": 100,
-        "category": "SPORT",
-        "clubId": 10
-      }
-      """;
+        {
+          "title": "Tournoi de tennis",
+          "description": "Tournoi ouvert aux membres",
+          "location": "Montpellier",
+          "startDateTime": "2026-11-20T18:00:00",
+          "endDateTime": "2026-11-20T20:00:00",
+          "affiliatedPrice": 10,
+          "nonAffiliatedPrice": 15,
+          "maxSeats": 100,
+          "category": "SPORT",
+          "clubId": 10
+        }
+        """;
 
     mockMvc.perform(post("/events")
             .contentType(MediaType.APPLICATION_JSON)
@@ -261,19 +265,19 @@ class EventControllerTest {
   void shouldRejectEventCreationForMember() throws Exception {
 
     String requestBody = """
-      {
-        "title": "Tournoi de tennis",
-        "description": "Tournoi ouvert aux membres",
-        "location": "Montpellier",
-        "startDateTime": "2026-11-20T18:00:00",
-        "endDateTime": "2026-11-20T20:00:00",
-        "affiliatedPrice": 10,
-        "nonAffiliatedPrice": 15,
-        "maxSeats": 100,
-        "category": "SPORT",
-        "clubId": 10
-      }
-      """;
+        {
+          "title": "Tournoi de tennis",
+          "description": "Tournoi ouvert aux membres",
+          "location": "Montpellier",
+          "startDateTime": "2026-11-20T18:00:00",
+          "endDateTime": "2026-11-20T20:00:00",
+          "affiliatedPrice": 10,
+          "nonAffiliatedPrice": 15,
+          "maxSeats": 100,
+          "category": "SPORT",
+          "clubId": 10
+        }
+        """;
 
     mockMvc.perform(post("/events")
             .with(user("member@test.fr").roles("MEMBER"))
@@ -283,5 +287,144 @@ class EventControllerTest {
 
     verify(eventService, never())
         .createEvent(any(CreateEventRequest.class));
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié
+   * peut modifier un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldUpdateEventAsOrganizer() throws Exception {
+
+    LocalDateTime startDateTime =
+        LocalDateTime.of(2026, 11, 25, 18, 0);
+
+    LocalDateTime endDateTime =
+        LocalDateTime.of(2026, 11, 25, 20, 0);
+
+    EventDto updatedEvent = new EventDto(
+        100L,
+        "Nouveau titre",
+        "Nouvelle description",
+        "Nîmes",
+        startDateTime,
+        endDateTime,
+        BigDecimal.ZERO,
+        BigDecimal.valueOf(20),
+        80,
+        EventStatus.DRAFT,
+        Category.SPORT,
+        1L,
+        10L
+    );
+
+    when(eventService.updateEvent(
+        eq(100L),
+        any(UpdateEventRequest.class)
+    )).thenReturn(updatedEvent);
+
+    String requestBody = """
+        {
+          "title": "Nouveau titre",
+          "description": "Nouvelle description",
+          "location": "Nîmes",
+          "startDateTime": "2026-11-25T18:00:00",
+          "endDateTime": "2026-11-25T20:00:00",
+          "affiliatedPrice": 0,
+          "nonAffiliatedPrice": 20,
+          "maxSeats": 80,
+          "category": "SPORT"
+        }
+        """;
+
+    mockMvc.perform(put("/events/100")
+            .with(user("organizer@test.fr").roles("ORGANIZER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(100))
+        .andExpect(jsonPath("$.title").value("Nouveau titre"))
+        .andExpect(jsonPath("$.location").value("Nîmes"))
+        .andExpect(jsonPath("$.maxSeats").value(80))
+        .andExpect(jsonPath("$.category").value("SPORT"));
+
+    verify(eventService).updateEvent(
+        eq(100L),
+        any(UpdateEventRequest.class)
+    );
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas modifier un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventUpdateForMember() throws Exception {
+
+    String requestBody = """
+        {
+          "title": "Nouveau titre",
+          "description": "Nouvelle description",
+          "location": "Nîmes",
+          "startDateTime": "2026-11-25T18:00:00",
+          "endDateTime": "2026-11-25T20:00:00",
+          "affiliatedPrice": 0,
+          "nonAffiliatedPrice": 20,
+          "maxSeats": 80,
+          "category": "SPORT"
+        }
+        """;
+
+    mockMvc.perform(put("/events/100")
+            .with(user("member@test.fr").roles("MEMBER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never())
+        .updateEvent(
+            eq(100L),
+            any(UpdateEventRequest.class)
+        );
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas modifier un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventUpdateWithoutAuthentication() throws Exception {
+
+    String requestBody = """
+        {
+          "title": "Nouveau titre",
+          "description": "Nouvelle description",
+          "location": "Nîmes",
+          "startDateTime": "2026-11-25T18:00:00",
+          "endDateTime": "2026-11-25T20:00:00",
+          "affiliatedPrice": 0,
+          "nonAffiliatedPrice": 20,
+          "maxSeats": 80,
+          "category": "SPORT"
+        }
+        """;
+
+    mockMvc.perform(put("/events/100")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never())
+        .updateEvent(
+            eq(100L),
+            any(UpdateEventRequest.class)
+        );
   }
 }
