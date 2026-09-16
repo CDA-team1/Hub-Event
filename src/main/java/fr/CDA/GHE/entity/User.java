@@ -240,10 +240,5 @@ import java.util.Set;
             return true;
         }
 
-<<<<<<< HEAD
         // TODO : Event - organizedEvents(OneToMAny), Comment(OneToMany)
-=======
-    // TODO : Event - organizedEvents(OneToMAny), Registration(OneToMany), Comment(OneToMany), AnonymizationRequest(OneToMany)
-
->>>>>>> origin/dev
     }
