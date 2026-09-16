@@ -78,6 +78,19 @@ public class AuthController {
     }
 
     /**
+     * Confirme un changement de mot de passe à partir du lien reçu par email (CU13) — parcours
+     * self-service, accessible sans authentification (le lien est la preuve d'identité).
+     *
+     * @param token jeton de confirmation transmis dans le lien
+     * @return le compte dont le mot de passe a été confirmé
+     * @throws FunctionalException si le lien est invalide
+     */
+    @GetMapping("/confirm-password-change")
+    public UserDto confirmPasswordChange(@RequestParam String token) throws FunctionalException {
+        return userService.confirmPasswordChange(token);
+    }
+
+    /**
      * Déconnecte l'utilisateur.
      * <p>
      * L'authentification de l'application est stateless (JWT, aucune session côté serveur) :

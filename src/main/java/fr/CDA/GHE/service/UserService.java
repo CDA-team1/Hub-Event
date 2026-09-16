@@ -3,6 +3,7 @@ package fr.CDA.GHE.service;
 import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.User;
@@ -13,6 +14,7 @@ import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.UserMapper;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
+import fr.CDA.GHE.util.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -127,6 +129,100 @@ public class UserService {
         log.info("ACTIVATION compte : id={} email={}", user.getId(), user.getEmail());
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
+    }
+
+    /**
+     * Modifie le compte de l'utilisateur connecté (CU13, SFG §2.16).
+     * <p>
+     * Contrairement à la création (CU5), où tout champ est obligatoirement saisi et validé,
+     * une règle n'est ici revérifiée que si le champ concerné change réellement :
+     * <ul>
+     *     <li>email : vérifié unique seulement si différent de l'email actuel (règle n°3),
+     *     en excluant le compte courant de la recherche (sinon il se bloquerait lui-même) ;</li>
+     *     <li>mot de passe : laissé vide, il n'est pas modifié ; renseigné, il doit être fort
+     *     (règle n°4).</li>
+     * </ul>
+     * Les autres champs (nom, prénom, adresse, email, téléphone) sont appliqués immédiatement.
+     * Le mot de passe, lui, ne l'est <strong>pas</strong> : conformément au CdC (« Si je ne
+     * confirme pas en cliquant sur le lien, mon mot de passe n'est pas modifié »), le nouveau
+     * mot de passe (déjà hashé) est mis en attente et un email de confirmation est envoyé ;
+     * l'ancien mot de passe reste actif tant que le lien n'a pas été cliqué (voir
+     * {@link #confirmPasswordChange(String)}).
+     * Les clubs affiliés ne sont pas modifiables ici (champ désactivé côté maquette CU13).
+     *
+     * @param request nouvelles informations
+     * @return le compte modifié
+     * @throws FunctionalException si le compte n'est pas actif, ou si une règle métier n'est pas respectée
+     */
+    @Transactional
+    public UserDto updateOwnAccount(UpdateUserRequest request) throws FunctionalException {
+        User user = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            throw new FunctionalException("Votre compte doit être actif pour modifier vos informations.");
+        }
+
+        if (isBlank(request.lastName()) || isBlank(request.firstName())
+                || isBlank(request.postalAddress()) || isBlank(request.email())) {
+            throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
+        }
+
+        boolean emailChanged = !request.email().equalsIgnoreCase(user.getEmail());
+        if (emailChanged && userRepository.existsByEmailAndIdNot(request.email(), user.getId())) {
+            throw new FunctionalException("Cette adresse email est déjà utilisée.");
+        }
+
+        boolean passwordChanged = !isBlank(request.password());
+        if (passwordChanged && !isStrongPassword(request.password())) {
+            throw new FunctionalException("Le mot de passe ne respecte pas les critères de sécurité requis.");
+        }
+
+        user.setLastName(request.lastName());
+        user.setFirstName(request.firstName());
+        user.setPostalAddress(request.postalAddress());
+        user.setEmail(request.email());
+        user.setPhone(request.phone());
+
+        if (passwordChanged) {
+            user.setPendingPassword(passwordEncoder.encode(request.password()));
+            user.setPasswordChangeToken(UUID.randomUUID().toString());
+        }
+
+        log.info("MODIFICATION compte (self-service) : id={} email={}", user.getId(), user.getEmail());
+
+        if (passwordChanged) {
+            String confirmationLink = baseUrl + "/auth/confirm-password-change?token=" + user.getPasswordChangeToken();
+            emailService.sendPasswordChangeConfirmationEmail(user.getEmail(), confirmationLink);
+        }
+
+        // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
+    }
+
+    /**
+     * Confirme un changement de mot de passe à partir du lien reçu par email (CU13).
+     * <p>
+     * Applique le mot de passe mis en attente par {@link #updateOwnAccount(UpdateUserRequest)}
+     * et invalide le jeton (lien à usage unique). Tant que ce lien n'a pas été cliqué,
+     * l'ancien mot de passe reste seul valide pour se connecter.
+     *
+     * @param token jeton de confirmation transmis dans le lien
+     * @return le compte dont le mot de passe a été confirmé
+     * @throws FunctionalException si le lien est invalide
+     */
+    @Transactional
+    public UserDto confirmPasswordChange(String token) throws FunctionalException {
+        User user = userRepository.findByPasswordChangeToken(token)
+                .orElseThrow(() -> new FunctionalException("Le lien de confirmation est invalide."));
+
+        user.setPassword(user.getPendingPassword());
+        user.setPendingPassword(null);
+        user.setPasswordChangeToken(null); // jeton à usage unique
+
+        log.info("CONFIRMATION changement de mot de passe : id={} email={}", user.getId(), user.getEmail());
+
         return userMapper.toDto(user);
     }
 

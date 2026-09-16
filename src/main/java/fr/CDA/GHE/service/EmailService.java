@@ -69,6 +69,32 @@ public class EmailService {
     }
 
     /**
+     * Envoie le lien de confirmation d'un changement de mot de passe (CU13 ; CdC : « Si je ne
+     * confirme pas en cliquant sur le lien, mon mot de passe n'est pas modifié »). Le nouveau
+     * mot de passe n'est appliqué qu'au clic sur ce lien, jamais avant.
+     *
+     * @param to                adresse email du destinataire
+     * @param confirmationLink  lien complet à cliquer pour confirmer le changement
+     */
+    public void sendPasswordChangeConfirmationEmail(String to, String confirmationLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Confirmez le changement de votre mot de passe - Hub évènementiel");
+        message.setText("""
+                Bonjour,
+
+                Vous avez demandé à modifier le mot de passe de votre compte sur le Hub \
+                évènementiel. Cliquez sur le lien suivant pour confirmer ce changement :
+                %s
+
+                Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre \
+                mot de passe actuel reste inchangé tant que vous n'avez pas cliqué sur ce lien.""".formatted(confirmationLink));
+
+        mailSender.send(message);
+        log.info("Email de confirmation de changement de mot de passe envoyé à {}", to);
+    }
+
+    /**
      * Envoie l'email de promotion depuis la liste d'attente (CU9 règle métier n°7, CU10 règle métier n°5).
      *
      * @param to         adresse email du destinataire

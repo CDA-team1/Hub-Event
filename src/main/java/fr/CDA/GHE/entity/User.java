@@ -50,6 +50,19 @@ import java.util.Set;
          */
         @Column(name = "activation_token", unique = true)
         private String activationToken;
+        /**
+         * Nouveau mot de passe (déjà hashé), en attente de confirmation par email (CU13).
+         * {@code null} tant qu'aucun changement de mot de passe n'est en cours.
+         */
+        @Column(name = "pending_password")
+        private String pendingPassword;
+        /**
+         * Jeton de confirmation du changement de mot de passe, envoyé par email (CU13, CdC :
+         * « Si je ne confirme pas en cliquant sur le lien, mon mot de passe n'est pas modifié »).
+         * {@code null} tant qu'aucun changement de mot de passe n'est en cours.
+         */
+        @Column(name = "password_change_token", unique = true)
+        private String passwordChangeToken;
         @ManyToMany(mappedBy = "members")
         private Set<Club> clubs = new HashSet<>();
 
@@ -185,6 +198,22 @@ import java.util.Set;
 
         public void setActivationToken(String activationToken) {
             this.activationToken = activationToken;
+        }
+
+        public String getPendingPassword() {
+            return pendingPassword;
+        }
+
+        public void setPendingPassword(String pendingPassword) {
+            this.pendingPassword = pendingPassword;
+        }
+
+        public String getPasswordChangeToken() {
+            return passwordChangeToken;
+        }
+
+        public void setPasswordChangeToken(String passwordChangeToken) {
+            this.passwordChangeToken = passwordChangeToken;
         }
 
         public Set<Club> getClubs() {
