@@ -3,6 +3,7 @@ package fr.CDA.GHE.service;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
@@ -12,6 +13,7 @@ import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import fr.CDA.GHE.repository.EventRepository;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
@@ -866,6 +868,499 @@ class EventServiceTest {
 
     assertEquals(
         "Le nombre maximal de places doit être strictement supérieur à zéro.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie que l'organisateur propriétaire peut modifier son événement.
+   */
+  @Test
+  void shouldUpdateEventForOwnerOrganizer() throws FunctionalException {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    when(club.getId()).thenReturn(10L);
+
+    authenticateAs(organizer);
+
+    LocalDateTime initialStart = LocalDateTime.now().plusDays(5);
+    LocalDateTime updatedStart = LocalDateTime.now().plusDays(10);
+
+    Event event = new Event(
+        "Ancien titre",
+        "Ancienne description",
+        "Montpellier",
+        initialStart,
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Nouveau titre",
+        "Nouvelle description",
+        "Nîmes",
+        updatedStart,
+        null,
+        BigDecimal.ZERO,
+        BigDecimal.valueOf(20),
+        80,
+        Category.SPORT
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(eventRepository.save(event))
+        .thenReturn(event);
+
+    EventDto result = eventService.updateEvent(100L, request);
+
+    assertEquals("Nouveau titre", result.title());
+    assertEquals("Nouvelle description", result.description());
+    assertEquals("Nîmes", result.location());
+    assertEquals(updatedStart, result.startDateTime());
+    assertEquals(BigDecimal.ZERO, result.affiliatedPrice());
+    assertEquals(BigDecimal.valueOf(20), result.nonAffiliatedPrice());
+    assertEquals(80, result.maxSeats());
+    assertEquals(Category.SPORT, result.category());
+
+    verify(eventRepository).save(event);
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas modifier
+   * un événement appartenant à un autre organisateur.
+   */
+  @Test
+  void shouldRejectUpdateWhenOrganizerIsNotOwner() {
+
+    User owner = mock(User.class);
+    User otherOrganizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(owner.getId()).thenReturn(1L);
+
+    when(otherOrganizer.getId()).thenReturn(2L);
+    when(otherOrganizer.getUsername()).thenReturn("other@test.fr");
+    when(otherOrganizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(otherOrganizer);
+
+    Event event = new Event(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        owner,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Nouveau titre",
+        "Nouvelle description",
+        "Nîmes",
+        LocalDateTime.now().plusDays(10),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        80,
+        Category.SPORT
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("other@test.fr"))
+        .thenReturn(Optional.of(otherOrganizer));
+
+    assertThrows(
+        AccessDeniedException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement terminé ne peut plus être modifié
+   * en dehors de ses images.
+   */
+  @Test
+  void shouldRejectUpdateWhenEventIsFinished() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement terminé",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().minusDays(2),
+        LocalDateTime.now().minusDays(1),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.finish();
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Nouveau titre",
+        "Nouvelle description",
+        "Nîmes",
+        LocalDateTime.now().plusDays(10),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        80,
+        Category.SPORT
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    assertThrows(
+        FunctionalException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie que la date de début d'un événement
+   * ne peut pas être modifiée avec une date passée.
+   */
+  @Test
+  void shouldRejectUpdateWithPastStartDate() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().minusDays(1),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    assertEquals(
+        "La date de début doit être postérieure à la date et à l'heure actuelles.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie que la date de fin d'un événement
+   * doit rester postérieure à sa date de début.
+   */
+  @Test
+  void shouldRejectUpdateWithInvalidEndDate() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    LocalDateTime updatedStart = LocalDateTime.now().plusDays(10);
+
+    Event event = new Event(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Événement",
+        "Description",
+        "Montpellier",
+        updatedStart,
+        updatedStart,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    assertEquals(
+        "La date de fin doit être postérieure à la date de début.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être modifié
+   * avec un titre vide.
+   */
+  @Test
+  void shouldRejectUpdateWithoutTitle() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "   ",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(10),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    assertEquals(
+        "Veuillez renseigner tous les champs obligatoires.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être modifié
+   * avec un nombre maximal de places nul.
+   */
+  @Test
+  void shouldRejectUpdateWithZeroMaxSeats() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(10),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        0,
+        Category.CULTURE
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    assertEquals(
+        "Le nombre maximal de places doit être strictement supérieur à zéro.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être modifié
+   * avec un tarif négatif.
+   */
+  @Test
+  void shouldRejectUpdateWithNegativePrice() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    UpdateEventRequest request = new UpdateEventRequest(
+        "Événement",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(10),
+        null,
+        BigDecimal.valueOf(-1),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.updateEvent(100L, request)
+    );
+
+    assertEquals(
+        "Les tarifs doivent être supérieurs ou égaux à zéro.",
         exception.getMessage()
     );
 

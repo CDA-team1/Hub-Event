@@ -4,6 +4,7 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -91,8 +92,7 @@ public interface EventControllerDoc {
       @ApiResponse(responseCode = "404", description = "Aucun évènement pour cet identifiant",
           content = @Content)
   })
-  EventDto update(@Parameter(description = "Identifiant de l'évènement") Long id, EventDto eventDto);
-
+  EventDto update(@Parameter(description = "Identifiant de l'évènement") Long id, UpdateEventRequest request) throws FunctionalException;
   @Operation(summary = "Supprime un évènement")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "204", description = "Évènement supprimé", content = @Content),
