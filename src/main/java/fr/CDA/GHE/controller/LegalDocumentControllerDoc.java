@@ -1,7 +1,7 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.LegalDocumentDto;
-import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.entity.enums.DocumentType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,59 +9,33 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 
 /**
  * Interface de documentation Swagger/OpenAPI du {@link LegalDocumentController}.
  * Voir {@link ClubControllerDoc} pour le détail du patron (séparation doc / mapping).
  */
-@Tag(name = "Documents légaux", description = "Gestion des documents légaux (CGU, RGPD)")
+@Tag(name = "Documents légaux", description = "Consultation publique des CGU et de la politique RGPD (CU7, CU8)")
 public interface LegalDocumentControllerDoc {
 
-    @Operation(summary = "Retourne une page de documents légaux",
-            description = "Pagination via les paramètres page, size et sort (ex. ?page=0&size=20&sort=id,desc)")
+    @Operation(summary = "Retourne le contenu d'un document légal",
+            description = "Accessible sans authentification.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Page de documents légaux au format JSON",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageDto.class)))
-    })
-    PageDto<LegalDocumentDto> getAll(Pageable pageable);
-
-    @Operation(summary = "Retourne un document légal par son identifiant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document légal trouvé",
+            @ApiResponse(responseCode = "200", description = "Document trouvé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "404", description = "Aucun document légal pour cet identifiant",
+            @ApiResponse(responseCode = "404", description = "Aucun document enregistré pour ce type",
                     content = @Content)
     })
-    LegalDocumentDto getById(@Parameter(description = "Identifiant du document légal") Long id);
+    LegalDocumentDto getByType(@Parameter(description = "Type de document (RGPD ou CGU)") DocumentType type);
 
-    @Operation(summary = "Crée un nouveau document légal")
+    @Operation(summary = "Retourne un document légal au format PDF",
+            description = "Accessible sans authentification.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Document légal créé",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)
-    })
-    LegalDocumentDto create(LegalDocumentDto legalDocumentDto);
-
-    @Operation(summary = "Met à jour un document légal existant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document légal mis à jour",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Aucun document légal pour cet identifiant",
+            @ApiResponse(responseCode = "200", description = "PDF généré",
+                    content = @Content(mediaType = "application/pdf")),
+            @ApiResponse(responseCode = "404", description = "Aucun document enregistré pour ce type",
                     content = @Content)
     })
-    LegalDocumentDto update(@Parameter(description = "Identifiant du document légal") Long id, LegalDocumentDto legalDocumentDto);
-
-    @Operation(summary = "Supprime un document légal")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Document légal supprimé", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Aucun document légal pour cet identifiant",
-                    content = @Content)
-    })
-    void delete(@Parameter(description = "Identifiant du document légal") Long id);
+    ResponseEntity<byte[]> getByTypePdf(@Parameter(description = "Type de document (RGPD ou CGU)") DocumentType type);
 }
