@@ -1,7 +1,9 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.LegalDocumentDto;
-import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.LegalDocumentRequest;
+import fr.CDA.GHE.entity.enums.DocumentType;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,59 +11,23 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Interface de documentation Swagger/OpenAPI du {@link LegalDocumentController}.
  * Voir {@link ClubControllerDoc} pour le détail du patron (séparation doc / mapping).
  */
-@Tag(name = "Documents légaux", description = "Gestion des documents légaux (CGU, RGPD)")
+@Tag(name = "Documents légaux (admin)", description = "Saisie et mise à jour des CGU et de la politique RGPD (CU31, CU32)")
 public interface LegalDocumentControllerDoc {
 
-    @Operation(summary = "Retourne une page de documents légaux",
-            description = "Pagination via les paramètres page, size et sort (ex. ?page=0&size=20&sort=id,desc)")
+    @Operation(summary = "Enregistre ou met à jour un document légal",
+            description = "Crée le document s'il n'existe pas encore pour ce type, sinon met à jour son contenu "
+                    + "et sa date de mise à jour. Réservé à l'administrateur.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Page de documents légaux au format JSON",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageDto.class)))
-    })
-    PageDto<LegalDocumentDto> getAll(Pageable pageable);
-
-    @Operation(summary = "Retourne un document légal par son identifiant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document légal trouvé",
+            @ApiResponse(responseCode = "200", description = "Document enregistré",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "404", description = "Aucun document légal pour cet identifiant",
-                    content = @Content)
+            @ApiResponse(responseCode = "400", description = "Contenu invalide", content = @Content)
     })
-    LegalDocumentDto getById(@Parameter(description = "Identifiant du document légal") Long id);
-
-    @Operation(summary = "Crée un nouveau document légal")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Document légal créé",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)
-    })
-    LegalDocumentDto create(LegalDocumentDto legalDocumentDto);
-
-    @Operation(summary = "Met à jour un document légal existant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document légal mis à jour",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Aucun document légal pour cet identifiant",
-                    content = @Content)
-    })
-    LegalDocumentDto update(@Parameter(description = "Identifiant du document légal") Long id, LegalDocumentDto legalDocumentDto);
-
-    @Operation(summary = "Supprime un document légal")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Document légal supprimé", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Aucun document légal pour cet identifiant",
-                    content = @Content)
-    })
-    void delete(@Parameter(description = "Identifiant du document légal") Long id);
+    LegalDocumentDto upsert(@Parameter(description = "Type de document (RGPD ou CGU)") DocumentType type,
+                             LegalDocumentRequest request) throws FunctionalException;
 }
