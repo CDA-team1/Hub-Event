@@ -2,12 +2,19 @@ package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.EventDto;
+import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
+import fr.CDA.GHE.entity.enums.Role;
+import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.repository.EventRepository;
+import fr.CDA.GHE.repository.ClubRepository;
+import fr.CDA.GHE.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Tests du service de gestion des événements.
@@ -48,6 +57,20 @@ class EventServiceTest {
    */
   @MockitoBean
   private EventRepository eventRepository;
+
+  /**
+   * Repository des utilisateurs remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private UserRepository userRepository;
+
+  /**
+   * Repository des clubs remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private ClubRepository clubRepository;
 
   /**
    * Nettoie le contexte de sécurité après chaque test
@@ -318,6 +341,446 @@ class EventServiceTest {
   }
 
   /**
+   * Vérifie qu'un organisateur affilié à un club peut créer un événement.
+   */
+  @Test
+  void shouldCreateDraftEventForAffiliatedOrganizer() throws FunctionalException {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    when(club.getId()).thenReturn(10L);
+    when(club.getValidityEndDate()).thenReturn(null);
+
+    authenticateAs(organizer);
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(clubRepository.findByMembers_Id(1L))
+        .thenReturn(List.of(club));
+
+    when(eventRepository.save(any(Event.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+    LocalDateTime endDateTime = startDateTime.plusHours(2);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        endDateTime,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    EventDto result = eventService.createEvent(request);
+
+    assertEquals("Tournoi de tennis", result.title());
+    assertEquals("Tournoi ouvert aux membres", result.description());
+    assertEquals("Montpellier", result.location());
+    assertEquals(startDateTime, result.startDateTime());
+    assertEquals(endDateTime, result.endDateTime());
+    assertEquals(BigDecimal.valueOf(10), result.affiliatedPrice());
+    assertEquals(BigDecimal.valueOf(15), result.nonAffiliatedPrice());
+    assertEquals(100, result.maxSeats());
+    assertEquals(Category.SPORT, result.category());
+    assertEquals(EventStatus.DRAFT, result.status());
+    assertEquals(1L, result.organizerId());
+    assertEquals(10L, result.clubId());
+
+    verify(eventRepository).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un utilisateur qui n'est pas organisateur
+   * ne peut pas créer un événement.
+   */
+  @Test
+  void shouldRejectEventCreationForNonOrganizer() {
+
+    User member = mock(User.class);
+
+    when(member.getUsername()).thenReturn("member@test.fr");
+    when(member.getRole()).thenReturn(Role.MEMBER);
+
+    authenticateAs(member);
+
+    when(userRepository.findByEmail("member@test.fr"))
+        .thenReturn(Optional.of(member));
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Vous n'êtes pas autorisé à créer un événement.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas créer un événement
+   * pour un club auquel il n'est pas affilié.
+   */
+  @Test
+  void shouldRejectEventCreationForUnaffiliatedClub() {
+
+    User organizer = mock(User.class);
+    Club affiliatedClub = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    when(affiliatedClub.getId()).thenReturn(20L);
+
+    authenticateAs(organizer);
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(clubRepository.findByMembers_Id(1L))
+        .thenReturn(List.of(affiliatedClub));
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Vous n'êtes pas autorisé à créer un événement pour ce club.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas créer un événement
+   * pour un club dont la validité est terminée.
+   */
+  @Test
+  void shouldRejectEventCreationForExpiredClub() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    when(club.getId()).thenReturn(10L);
+    when(club.getValidityEndDate()).thenReturn(LocalDate.now());
+
+    authenticateAs(organizer);
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(clubRepository.findByMembers_Id(1L))
+        .thenReturn(List.of(club));
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Vous n'êtes pas autorisé à créer un événement pour ce club.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être créé
+   * avec une date de début passée.
+   */
+  @Test
+  void shouldRejectEventCreationWithPastStartDate() {
+
+    LocalDateTime startDateTime = LocalDateTime.now().minusDays(1);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "La date de début doit être postérieure à la date et à l'heure actuelles.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être créé
+   * avec une date de fin antérieure ou égale à la date de début.
+   */
+  @Test
+  void shouldRejectEventCreationWithInvalidEndDate() {
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "La date de fin doit être postérieure à la date de début.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être créé
+   * avec un tarif affilié négatif.
+   */
+  @Test
+  void shouldRejectEventCreationWithNegativeAffiliatedPrice() {
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(-1),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Les tarifs doivent être supérieurs ou égaux à zéro.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être créé
+   * avec un tarif non affilié négatif.
+   */
+  @Test
+  void shouldRejectEventCreationWithNegativeNonAffiliatedPrice() {
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(-1),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Les tarifs doivent être supérieurs ou égaux à zéro.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être créé
+   * sans titre.
+   */
+  @Test
+  void shouldRejectEventCreationWithoutTitle() {
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "   ",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Veuillez renseigner tous les champs obligatoires.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement gratuit peut être créé
+   * sans date de fin.
+   */
+  @Test
+  void shouldCreateFreeEventWithoutEndDate() throws FunctionalException {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    when(club.getId()).thenReturn(10L);
+    when(club.getValidityEndDate()).thenReturn(null);
+
+    authenticateAs(organizer);
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(clubRepository.findByMembers_Id(1L))
+        .thenReturn(List.of(club));
+
+    when(eventRepository.save(any(Event.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Événement gratuit",
+        "Événement sans date de fin",
+        "Montpellier",
+        startDateTime,
+        null,
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        100,
+        Category.CULTURE,
+        10L
+    );
+
+    EventDto result = eventService.createEvent(request);
+
+    assertEquals("Événement gratuit", result.title());
+    assertEquals(null, result.endDateTime());
+    assertEquals(BigDecimal.ZERO, result.affiliatedPrice());
+    assertEquals(BigDecimal.ZERO, result.nonAffiliatedPrice());
+    assertEquals(EventStatus.DRAFT, result.status());
+
+    verify(eventRepository).save(any(Event.class));
+  }
+
+  /**
    * Place dans le contexte de sécurité un utilisateur authentifié.
    *
    * @param user utilisateur à placer dans le contexte de sécurité
@@ -372,5 +835,40 @@ class EventServiceTest {
     }
 
     return event;
+  }
+
+  /**
+   * Vérifie qu'un événement ne peut pas être créé
+   * avec un nombre maximal de places nul.
+   */
+  @Test
+  void shouldRejectEventCreationWithZeroMaxSeats() {
+
+    LocalDateTime startDateTime = LocalDateTime.now().plusDays(7);
+
+    CreateEventRequest request = new CreateEventRequest(
+        "Tournoi de tennis",
+        "Tournoi ouvert aux membres",
+        "Montpellier",
+        startDateTime,
+        startDateTime.plusHours(2),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        0,
+        Category.SPORT,
+        10L
+    );
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.createEvent(request)
+    );
+
+    assertEquals(
+        "Le nombre maximal de places doit être strictement supérieur à zéro.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
   }
 }
