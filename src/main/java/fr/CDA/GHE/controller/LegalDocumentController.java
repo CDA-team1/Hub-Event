@@ -1,58 +1,52 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.LegalDocumentDto;
-import fr.CDA.GHE.dto.PageDto;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.*;
+import fr.CDA.GHE.entity.enums.DocumentType;
+import fr.CDA.GHE.service.LegalDocumentService;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- * SEC-02 — Autorisations des routes documents légaux (voir {@link ClubController} pour les règles générales).
+ * SEC-02 — Autorisations des routes de consultation des documents légaux.
  * <p>
- * La gestion (CRUD) est réservée à l'ADMIN. La consultation publique se fait par TYPE
- * ({@code GET /documents/{type}}, type ∈ {GDPR, TERMS}) — endpoint distinct non présent dans
- * {@link LegalDocumentControllerDoc}. ⚠️ Attention à la collision de chemin avec {@code GET /documents/{id}}
- * (numérique) ci-dessous : prévoir un chemin dédié (ex. {@code /documents/type/{type}}) lors de sa création.
+ * Routes publiques (CU7 : consulter la politique RGPD, CU8 : consulter les CGU), accessibles
+ * sans authentification. La saisie/mise à jour est une route distincte et réservée à l'admin :
+ * {@code PUT /admin/documents/{type}}, voir {@link AdminLegalDocumentController}.
  */
 @RestController
 @RequestMapping("/documents")
 public class LegalDocumentController implements LegalDocumentControllerDoc {
 
-    @Override
-    @Secured("ROLE_ADMIN")
-    @GetMapping
-    public PageDto<LegalDocumentDto> getAll(Pageable pageable) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Document légal)");
+    private final LegalDocumentService legalDocumentService;
+
+    public LegalDocumentController(LegalDocumentService legalDocumentService) {
+        this.legalDocumentService = legalDocumentService;
     }
 
     @Override
-    @Secured("ROLE_ADMIN")
-    @GetMapping("/{id}")
-    public LegalDocumentDto getById(@PathVariable Long id) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Document légal)");
+    @GetMapping("/{type}")
+    public LegalDocumentDto getByType(@PathVariable DocumentType type) {
+        return legalDocumentService.extractByType(type);
     }
 
     @Override
-    @Secured("ROLE_ADMIN")
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public LegalDocumentDto create(@RequestBody LegalDocumentDto legalDocumentDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Document légal)");
-    }
+    @GetMapping(value = "/{type}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> getByTypePdf(@PathVariable DocumentType type) {
+        byte[] pdf = legalDocumentService.generatePdf(type);
 
-    @Override
-    @Secured("ROLE_ADMIN")
-    @PutMapping("/{id}")
-    public LegalDocumentDto update(@PathVariable Long id, @RequestBody LegalDocumentDto legalDocumentDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Document légal)");
-    }
+        ContentDisposition contentDisposition = ContentDisposition.inline()
+                .filename(type.name().toLowerCase() + ".pdf")
+                .build();
 
-    @Override
-    @Secured("ROLE_ADMIN")
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Document légal)");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .body(pdf);
     }
 }

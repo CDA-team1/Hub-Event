@@ -52,8 +52,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/search", "/events/*/comments").permitAll() // pas encore codés
             .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
-            // /documents/{type} public : à ajouter une fois un chemin dédié créé
-            // (sinon collision avec /documents/{id}, réservé ADMIN)
+            .requestMatchers(HttpMethod.GET, "/documents/*", "/documents/*/pdf").permitAll()
             .requestMatchers("/error").permitAll() // sinon écrase le code d'erreur d'origine
             .anyRequest().authenticated())
         // Sans httpBasic/formLogin, Spring renverrait 403 par défaut sans jeton -> on force le 401
