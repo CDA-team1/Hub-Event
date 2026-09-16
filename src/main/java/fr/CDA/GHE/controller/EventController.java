@@ -3,6 +3,8 @@ package fr.CDA.GHE.controller;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.EventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -56,11 +58,13 @@ public class EventController implements EventControllerDoc {
   }
 
   @Override
-  @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
+  @Secured("ROLE_ORGANIZER")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public EventDto create(@RequestBody EventDto eventDto) {
-    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  public EventDto create(@RequestBody CreateEventRequest request)
+      throws FunctionalException {
+
+    return eventService.createEvent(request);
   }
 
   @Override

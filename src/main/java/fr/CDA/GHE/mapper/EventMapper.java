@@ -1,5 +1,6 @@
 package fr.CDA.GHE.mapper;
 
+import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.Event;
@@ -48,6 +49,30 @@ public class EventMapper {
         event.getAffiliatedPrice(),
         event.getNonAffiliatedPrice(),
         event.getMaxSeats()
+    );
+  }
+
+  /**
+   * Convertit un événement en DTO destiné aux réponses de l'API.
+   *
+   * @param event événement à convertir
+   * @return DTO correspondant à l'événement
+   */
+  public EventDto toDto(Event event) {
+    return new EventDto(
+        event.getId(),
+        event.getTitle(),
+        event.getDescription(),
+        event.getLocation(),
+        event.getStartDateTime(),
+        event.getEndDateTime(),
+        event.getAffiliatedPrice(),
+        event.getNonAffiliatedPrice(),
+        event.getMaxSeats(),
+        event.getStatus(),
+        event.getCategory(),
+        event.getOrganizer().getId(),
+        event.getClub().getId()
     );
   }
 }
