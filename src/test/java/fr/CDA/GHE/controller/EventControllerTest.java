@@ -595,6 +595,119 @@ class EventControllerTest {
   }
 
   /**
+   * Vérifie qu'un organisateur authentifié
+   * peut annuler un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldCancelEventAsOrganizer() throws Exception {
+
+    EventDto cancelledEvent = new EventDto(
+        100L,
+        "Concert",
+        "Description",
+        "Montpellier",
+        LocalDateTime.of(2026, 11, 15, 20, 0),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        100,
+        EventStatus.CANCELLED,
+        Category.CULTURE,
+        1L,
+        10L
+    );
+
+    when(eventService.cancelEvent(100L))
+        .thenReturn(cancelledEvent);
+
+    mockMvc.perform(post("/events/100/cancel")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(100))
+        .andExpect(jsonPath("$.title").value("Concert"))
+        .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+    verify(eventService).cancelEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas annuler un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventCancellationForMember() throws Exception {
+
+    mockMvc.perform(post("/events/100/cancel")
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never()).cancelEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas annuler un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventCancellationWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(post("/events/100/cancel"))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never()).cancelEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié mais non propriétaire
+   * reçoit une réponse 403 lors de l'annulation.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventCancellationForNonOwnerOrganizer() throws Exception {
+
+    when(eventService.cancelEvent(100L))
+        .thenThrow(new ForbiddenException(
+            "Vous n’êtes pas autorisé à annuler cet événement."
+        ));
+
+    mockMvc.perform(post("/events/100/cancel")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService).cancelEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un événement non annulable
+   * retourne une réponse 400.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventCancellationWhenEventCannotBeCancelled()
+      throws Exception {
+
+    when(eventService.cancelEvent(100L))
+        .thenThrow(new FunctionalException(
+            "Cet événement ne peut pas être annulé dans son état actuel."
+        ));
+
+    mockMvc.perform(post("/events/100/cancel")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isBadRequest());
+
+    verify(eventService).cancelEvent(100L);
+  }
+
+  /**
    * Vérifie qu'un membre authentifié
    * ne peut pas terminer un événement.
    *
