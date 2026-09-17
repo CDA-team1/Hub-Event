@@ -1,7 +1,9 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.CommentDto;
+import fr.CDA.GHE.dto.CreateCommentRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,14 +39,16 @@ public interface CommentControllerDoc {
     })
     CommentDto getById(@Parameter(description = "Identifiant du commentaire") Long id);
 
-    @Operation(summary = "Crée un nouveau commentaire")
+    @Operation(summary = "Publie un nouveau commentaire sur un événement",
+            description = "Réservé aux utilisateurs connectés disposant d'un compte actif (CU12).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Commentaire créé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = CommentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Contenu vide, ou événement introuvable",
+                    content = @Content)
     })
-    CommentDto create(CommentDto commentDto);
+    CommentDto create(CreateCommentRequest request) throws FunctionalException;
 
     @Operation(summary = "Met à jour un commentaire existant")
     @ApiResponses(value = {

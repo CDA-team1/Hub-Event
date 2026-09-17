@@ -1,5 +1,6 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.CommentDto;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
@@ -229,4 +230,14 @@ public interface EventControllerDoc {
   })
   void removeImage(@Parameter(description = "Identifiant de l'événement") Long eventId,
                     @Parameter(description = "Identifiant de l'image") Long imageId);
+
+  @Operation(summary = "Retourne les commentaires d'un événement",
+      description = "Accessible sans authentification, trié du plus ancien au plus récent (CU12).")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Commentaires de l'événement",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = CommentDto.class))),
+      @ApiResponse(responseCode = "404", description = "Événement introuvable", content = @Content)
+  })
+  List<CommentDto> getComments(@Parameter(description = "Identifiant de l'événement") Long id);
 }
