@@ -1,7 +1,10 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.CommentDto;
+import fr.CDA.GHE.dto.CreateCommentRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.service.CommentService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -13,14 +16,20 @@ import org.springframework.web.bind.annotation.*;
  * (l'authentification est assurée par {@code anyRequest().authenticated()} côté SEC-01).
  * <p>
  * {@code update}/{@code delete} : contrôle de <strong>propriété</strong> (auteur) ou rôle ADMIN
- * (modération) à faire dans le service → 403 sinon.
+ * (modération) à faire dans le service → 403 sinon. Hors scope COM-02, restent en TODO.
  * <p>
- * La lecture publique des commentaires se fait via l'endpoint imbriqué {@code GET /events/{id}/comments}
- * (décision SEC-02 = public), non présent dans {@link CommentControllerDoc} : à laisser public quand créé.
+ * La lecture publique des commentaires se fait via l'endpoint imbriqué
+ * {@code GET /events/{id}/comments} (décision SEC-02 = public), voir {@link EventController}.
  */
 @RestController
 @RequestMapping("/comments")
 public class CommentController implements CommentControllerDoc {
+
+    private final CommentService commentService;
+
+    public CommentController(CommentService commentService) {
+        this.commentService = commentService;
+    }
 
     @Override
     @GetMapping
@@ -37,8 +46,8 @@ public class CommentController implements CommentControllerDoc {
     @Override
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto create(@RequestBody CommentDto commentDto) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Commentaire)");
+    public CommentDto create(@RequestBody CreateCommentRequest request) throws FunctionalException {
+        return commentService.createComment(request);
     }
 
     @Override

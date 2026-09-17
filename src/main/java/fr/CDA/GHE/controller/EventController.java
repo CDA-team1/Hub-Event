@@ -1,5 +1,6 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.CommentDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventDto;
@@ -11,6 +12,7 @@ import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.service.CommentService;
 import fr.CDA.GHE.service.EventService;
 import fr.CDA.GHE.service.ImageService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -46,15 +48,20 @@ public class EventController implements EventControllerDoc {
 
   private final ImageService imageService;
 
+  private final CommentService commentService;
+
   /**
-   * Initialise le contrôleur avec les services de gestion des événements et des images.
+   * Initialise le contrôleur avec les services de gestion des événements, des images et des
+   * commentaires.
    *
-   * @param eventService service de gestion des événements
-   * @param imageService service de gestion de la galerie photos des événements
+   * @param eventService   service de gestion des événements
+   * @param imageService   service de gestion de la galerie photos des événements
+   * @param commentService service de gestion des commentaires des événements
    */
-  public EventController(EventService eventService, ImageService imageService) {
+  public EventController(EventService eventService, ImageService imageService, CommentService commentService) {
     this.eventService = eventService;
     this.imageService = imageService;
+    this.commentService = commentService;
   }
 
   // Public : consultation des évènements publiés et terminés
@@ -186,5 +193,12 @@ public class EventController implements EventControllerDoc {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void removeImage(@PathVariable Long eventId, @PathVariable Long imageId) {
     imageService.removeImage(eventId, imageId);
+  }
+
+  // Public : consultation des commentaires d'un événement
+  @Override
+  @GetMapping("/{id}/comments")
+  public List<CommentDto> getComments(@PathVariable Long id) {
+    return commentService.extractByEvent(id);
   }
 }

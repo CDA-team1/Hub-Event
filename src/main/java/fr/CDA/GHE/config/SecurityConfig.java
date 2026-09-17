@@ -51,7 +51,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/auth/activate", "/auth/confirm-password-change").permitAll()
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/images/*").permitAll()
-            .requestMatchers(HttpMethod.GET, "/events/search", "/events/*/comments").permitAll() // pas encore codés
+            .requestMatchers(HttpMethod.GET, "/events/*/comments").permitAll()
+            .requestMatchers(HttpMethod.GET, "/events/search").permitAll() // pas encore codé
             .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/documents/*", "/documents/*/pdf").permitAll()
             .requestMatchers("/error").permitAll() // sinon écrase le code d'erreur d'origine
