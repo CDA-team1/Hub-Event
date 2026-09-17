@@ -1,5 +1,6 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.CommentDto;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventListDto;
@@ -13,6 +14,7 @@ import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
+import fr.CDA.GHE.service.CommentService;
 import fr.CDA.GHE.service.EventService;
 import fr.CDA.GHE.service.ImageService;
 import org.junit.jupiter.api.Test;
@@ -74,6 +76,13 @@ class EventControllerTest {
    */
   @MockitoBean
   private ImageService imageService;
+
+  /**
+   * Service des commentaires remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private CommentService commentService;
 
   /**
    * Vérifie que la route publique GET /events retourne
@@ -811,5 +820,42 @@ class EventControllerTest {
         .andExpect(status().isUnauthorized());
 
     verify(imageService, never()).removeImage(100L, 5L);
+  }
+
+  /**
+   * Vérifie que la route publique GET /events/{id}/comments
+   * retourne les commentaires fournis par le service.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnCommentsWithoutAuthentication() throws Exception {
+
+    CommentDto comment = new CommentDto(1L, 100L, "John D.",
+        "Super évènement !", LocalDateTime.of(2026, 9, 17, 10, 0));
+
+    when(commentService.extractByEvent(100L)).thenReturn(List.of(comment));
+
+    mockMvc.perform(get("/events/100/comments"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].authorDisplayName").value("John D."))
+        .andExpect(jsonPath("$[0].content").value("Super évènement !"));
+
+    verify(commentService).extractByEvent(100L);
+  }
+
+  /**
+   * Vérifie que la route GET /events/{id}/comments retourne 404
+   * lorsque l'événement n'existe pas.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnNotFoundWhenEventForCommentsDoesNotExist() throws Exception {
+
+    when(commentService.extractByEvent(999L)).thenThrow(new NotFoundException("Événement introuvable"));
+
+    mockMvc.perform(get("/events/999/comments"))
+        .andExpect(status().isNotFound());
   }
 }
