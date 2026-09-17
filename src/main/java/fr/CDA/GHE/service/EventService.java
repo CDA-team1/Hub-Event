@@ -3,6 +3,7 @@ package fr.CDA.GHE.service;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.dto.EventSearchCriteria;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
@@ -25,6 +26,7 @@ import fr.CDA.GHE.mapper.EventMapper;
 import fr.CDA.GHE.util.CurrentUser;
 
 import fr.CDA.GHE.repository.EventRepository;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
@@ -36,6 +38,7 @@ import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * Service gérant les événements.
@@ -136,6 +139,61 @@ public class EventService {
         sportEvents,
         pastEvents
     );
+  }
+
+  /**
+   * Recherche les événements publiés correspondant aux critères fournis (CU2).
+   * <p>
+   * Seuls les événements {@link EventStatus#PUBLISHED} sont retournés. Chaque critère est
+   * facultatif : seuls ceux effectivement renseignés sont appliqués, en complément du filtre
+   * de visibilité qui s'applique systématiquement.
+   * </p>
+   *
+   * @param criteria critères de recherche (tous facultatifs)
+   * @return les événements correspondants, triés chronologiquement, sous forme de cartes
+   */
+  @Transactional(readOnly = true)
+  public List<EventCardDto> searchEvents(EventSearchCriteria criteria) {
+
+    Specification<Event> specification =
+        Specification.where(EventSpecifications.hasStatus(EventStatus.PUBLISHED));
+
+    if (criteria.category() != null) {
+      specification = specification.and(EventSpecifications.hasCategory(criteria.category()));
+    }
+
+    if (criteria.minPrice() != null) {
+      specification = specification.and(EventSpecifications.hasMinPrice(criteria.minPrice()));
+    }
+
+    if (criteria.maxPrice() != null) {
+      specification = specification.and(EventSpecifications.hasMaxPrice(criteria.maxPrice()));
+    }
+
+    if (criteria.location() != null && !criteria.location().isBlank()) {
+      specification = specification.and(EventSpecifications.hasLocation(criteria.location()));
+    }
+
+    if (criteria.startDate() != null) {
+      specification = specification.and(
+          EventSpecifications.startsOnOrAfter(criteria.startDate().atStartOfDay())
+      );
+    }
+
+    if (criteria.endDate() != null) {
+      specification = specification.and(
+          EventSpecifications.startsOnOrBefore(criteria.endDate().atTime(LocalTime.MAX))
+      );
+    }
+
+    if (criteria.keywords() != null && !criteria.keywords().isBlank()) {
+      specification = specification.and(EventSpecifications.hasKeywords(criteria.keywords()));
+    }
+
+    return eventRepository.findAll(specification).stream()
+        .sorted(Comparator.comparing(Event::getStartDateTime))
+        .map(eventMapper::toCardDto)
+        .toList();
   }
 
   /**

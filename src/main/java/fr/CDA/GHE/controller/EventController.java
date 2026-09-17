@@ -1,15 +1,19 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.dto.EventSearchCriteria;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.ImageContentDto;
 import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
+import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.EventService;
 import fr.CDA.GHE.service.ImageService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,8 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -68,6 +74,34 @@ public class EventController implements EventControllerDoc {
   @GetMapping("/{id}")
   public EventDetailResponse getById(@PathVariable Long id) {
     return eventService.getEventDetail(id);
+  }
+
+  /**
+   * Recherche les événements publiés selon des critères multiples (CU2), tous facultatifs.
+   *
+   * @param category  catégorie recherchée
+   * @param minPrice  tarif non affilié minimum
+   * @param maxPrice  tarif non affilié maximum
+   * @param location  lieu recherché
+   * @param startDate borne de début de la période
+   * @param endDate   borne de fin de la période
+   * @param keywords  mots-clés recherchés dans le titre ou la description
+   * @return les événements correspondants, sous forme de cartes
+   */
+  @GetMapping("/search")
+  public List<EventCardDto> search(
+      @RequestParam(required = false) Category category,
+      @RequestParam(required = false) BigDecimal minPrice,
+      @RequestParam(required = false) BigDecimal maxPrice,
+      @RequestParam(required = false) String location,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+      @RequestParam(required = false) String keywords
+  ) {
+    EventSearchCriteria criteria = new EventSearchCriteria(
+        category, minPrice, maxPrice, location, startDate, endDate, keywords
+    );
+    return eventService.searchEvents(criteria);
   }
 
   @Override
