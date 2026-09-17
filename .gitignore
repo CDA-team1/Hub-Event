@@ -34,3 +34,6 @@ build/
 
 ### Env ###
 .env.properties
+
+### Fichiers uploadés (galerie photos, CU23) ###
+/uploads/
