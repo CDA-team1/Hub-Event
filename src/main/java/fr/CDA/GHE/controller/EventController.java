@@ -4,12 +4,20 @@ import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.ImageContentDto;
+import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.EventService;
+import fr.CDA.GHE.service.ImageService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * SEC-02 — Autorisations des routes évènements (voir {@link ClubController} pour les règles générales).
@@ -30,13 +38,17 @@ public class EventController implements EventControllerDoc {
    */
   private final EventService eventService;
 
+  private final ImageService imageService;
+
   /**
-   * Initialise le contrôleur avec le service de gestion des événements.
+   * Initialise le contrôleur avec les services de gestion des événements et des images.
    *
    * @param eventService service de gestion des événements
+   * @param imageService service de gestion de la galerie photos des événements
    */
-  public EventController(EventService eventService) {
+  public EventController(EventService eventService, ImageService imageService) {
     this.eventService = eventService;
+    this.imageService = imageService;
   }
 
   // Public : consultation des évènements publiés et terminés
@@ -104,5 +116,32 @@ public class EventController implements EventControllerDoc {
   public void delete(@PathVariable Long id) {
     // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
     throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  }
+
+  // Public : consultation d'une image de la galerie
+  @Override
+  @GetMapping("/{eventId}/images/{imageId}")
+  public ResponseEntity<byte[]> getImage(@PathVariable Long eventId, @PathVariable Long imageId) {
+    ImageContentDto image = imageService.getImageContent(eventId, imageId);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(image.contentType()))
+        .body(image.content());
+  }
+
+  @Override
+  @Secured("ROLE_ORGANIZER")
+  @PostMapping(value = "/{eventId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @ResponseStatus(HttpStatus.CREATED)
+  public List<ImageDto> addImages(@PathVariable Long eventId, @RequestParam("files") List<MultipartFile> files)
+      throws FunctionalException {
+    return imageService.addImages(eventId, files);
+  }
+
+  @Override
+  @Secured("ROLE_ORGANIZER")
+  @DeleteMapping("/{eventId}/images/{imageId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void removeImage(@PathVariable Long eventId, @PathVariable Long imageId) {
+    imageService.removeImage(eventId, imageId);
   }
 }
