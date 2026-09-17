@@ -4,6 +4,7 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * Interface de documentation Swagger/OpenAPI du {@link EventController}.
@@ -187,4 +192,120 @@ public interface EventControllerDoc {
           content = @Content)
   })
   void delete(@Parameter(description = "Identifiant de l'évènement") Long id);
+
+  @Operation(summary = "Annule un événement")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Événement annulé",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Événement non annulable dans son état actuel",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à annuler cet événement",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
+  })
+  EventDto cancel(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  ) throws FunctionalException;
+
+  @Operation(
+      summary = "Retourne le contenu d'une image de la galerie",
+      description = "Accessible sans authentification (CU23)."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Image trouvée",
+          content = @Content(mediaType = "image/*")
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement ou image introuvable",
+          content = @Content
+      )
+  })
+  ResponseEntity<byte[]> getImage(
+      @Parameter(description = "Identifiant de l'événement") Long eventId,
+      @Parameter(description = "Identifiant de l'image") Long imageId
+  );
+
+  @Operation(
+      summary = "Ajoute une ou plusieurs images à la galerie d'un événement",
+      description = "Réservé à l'organisateur propriétaire de l'événement (CU23, règles n°1 à 3)."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "201",
+          description = "Images ajoutées",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = ImageDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Aucun fichier fourni, ou fichier non image",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à modifier cette galerie",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
+  })
+  List<ImageDto> addImages(
+      @Parameter(description = "Identifiant de l'événement") Long eventId,
+      List<MultipartFile> files
+  ) throws FunctionalException;
+
+  @Operation(
+      summary = "Retire une image de la galerie d'un événement",
+      description = "Réservé à l'organisateur propriétaire de l'événement (CU23, règle n°4)."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "Image retirée",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à modifier cette galerie",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement ou image introuvable",
+          content = @Content
+      )
+  })
+  void removeImage(
+      @Parameter(description = "Identifiant de l'événement") Long eventId,
+      @Parameter(description = "Identifiant de l'image") Long imageId
+  );
 }

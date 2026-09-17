@@ -8,6 +8,8 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.Registration;
+import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Role;
@@ -15,6 +17,7 @@ import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import fr.CDA.GHE.exception.ForbiddenException;
+import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.EventRepository;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
@@ -76,9 +79,19 @@ class EventServiceTest {
   private ClubRepository clubRepository;
 
   /**
-   * Nettoie le contexte de sécurité après chaque test
-   * afin qu'une authentification ne perturbe pas le test suivant.
+   * Repository des inscriptions remplacé par un mock
+   * dans le contexte Spring de test.
    */
+  @MockitoBean
+  private RegistrationRepository registrationRepository;
+
+  /**
+   * Service d'envoi d'emails remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private EmailService emailService;
+
   @AfterEach
   void clearSecurityContext() {
     SecurityContextHolder.clearContext();
@@ -1773,5 +1786,248 @@ class EventServiceTest {
     );
 
     verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie que l'organisateur propriétaire peut annuler un événement publié
+   * possédant au moins un inscrit et que les participants sont informés.
+   */
+  @Test
+  void shouldCancelPublishedEventWithRegisteredUserForOwnerOrganizer()
+      throws FunctionalException {
+
+    User organizer = mock(User.class);
+    User registeredUser = mock(User.class);
+    User waitingUser = mock(User.class);
+    Club club = mock(Club.class);
+
+    Registration registeredRegistration = mock(Registration.class);
+    Registration waitingRegistration = mock(Registration.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    when(registeredUser.getEmail()).thenReturn("registered@test.fr");
+    when(waitingUser.getEmail()).thenReturn("waiting@test.fr");
+
+    when(registeredRegistration.getUser()).thenReturn(registeredUser);
+    when(waitingRegistration.getUser()).thenReturn(waitingUser);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(registrationRepository.countByEventAndStatus(
+        event,
+        RegistrationStatus.REGISTERED
+    )).thenReturn(1L);
+
+    when(registrationRepository.findByEvent(event))
+        .thenReturn(List.of(registeredRegistration, waitingRegistration));
+
+    when(eventRepository.save(event))
+        .thenReturn(event);
+
+    EventDto result = eventService.cancelEvent(100L);
+
+    assertEquals(EventStatus.CANCELLED, result.status());
+
+    verify(eventRepository).save(event);
+
+    verify(emailService).sendEventCancelledEmail(
+        "registered@test.fr",
+        "Événement publié"
+    );
+
+    verify(emailService).sendEventCancelledEmail(
+        "waiting@test.fr",
+        "Événement publié"
+    );
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas annuler
+   * l'événement appartenant à un autre organisateur.
+   */
+  @Test
+  void shouldRejectCancelWhenOrganizerIsNotOwner() {
+
+    User owner = mock(User.class);
+    User otherOrganizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(owner.getId()).thenReturn(1L);
+
+    when(otherOrganizer.getId()).thenReturn(2L);
+    when(otherOrganizer.getUsername()).thenReturn("other@test.fr");
+    when(otherOrganizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(otherOrganizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        owner,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("other@test.fr"))
+        .thenReturn(Optional.of(otherOrganizer));
+
+    ForbiddenException exception = assertThrows(
+        ForbiddenException.class,
+        () -> eventService.cancelEvent(100L)
+    );
+
+    assertEquals(
+        "Vous n’êtes pas autorisé à annuler cet événement.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie qu'un événement publié sans inscrit
+   * ne peut pas être annulé.
+   */
+  @Test
+  void shouldRejectCancelWhenEventHasNoRegisteredUser() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(registrationRepository.countByEventAndStatus(
+        event,
+        RegistrationStatus.REGISTERED
+    )).thenReturn(0L);
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.cancelEvent(100L)
+    );
+
+    assertEquals(
+        "Cet événement ne peut pas être annulé dans son état actuel.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+    verify(registrationRepository, never()).findByEvent(event);
+  }
+
+  /**
+   * Vérifie qu'un événement qui n'est pas publié
+   * ne peut pas être annulé.
+   */
+  @Test
+  void shouldRejectCancelWhenEventIsNotPublished() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement brouillon",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.cancelEvent(100L)
+    );
+
+    assertEquals(
+        "Cet événement ne peut pas être annulé dans son état actuel.",
+        exception.getMessage()
+    );
+
+    verify(eventRepository, never()).save(any(Event.class));
+    verify(registrationRepository, never())
+        .countByEventAndStatus(
+            event,
+            RegistrationStatus.REGISTERED
+        );
   }
 }
