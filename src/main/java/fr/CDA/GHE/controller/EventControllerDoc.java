@@ -194,50 +194,140 @@ public interface EventControllerDoc {
   })
   void delete(@Parameter(description = "Identifiant de l'évènement") Long id);
 
-  @Operation(summary = "Retourne le contenu d'une image de la galerie",
-      description = "Accessible sans authentification (CU23).")
+  @Operation(summary = "Annule un événement")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Image trouvée",
-          content = @Content(mediaType = "image/*")),
-      @ApiResponse(responseCode = "404", description = "Événement ou image introuvable",
-          content = @Content)
+      @ApiResponse(
+          responseCode = "200",
+          description = "Événement annulé",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Événement non annulable dans son état actuel",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à annuler cet événement",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
   })
-  ResponseEntity<byte[]> getImage(@Parameter(description = "Identifiant de l'événement") Long eventId,
-                                   @Parameter(description = "Identifiant de l'image") Long imageId);
+  EventDto cancel(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  ) throws FunctionalException;
 
-  @Operation(summary = "Ajoute une ou plusieurs images à la galerie d'un événement",
-      description = "Réservé à l'organisateur propriétaire de l'événement (CU23, règles n°1 à 3).")
+  @Operation(
+      summary = "Retourne le contenu d'une image de la galerie",
+      description = "Accessible sans authentification (CU23)."
+  )
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "201", description = "Images ajoutées",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = ImageDto.class))),
-      @ApiResponse(responseCode = "400", description = "Aucun fichier fourni, ou fichier non image",
-          content = @Content),
-      @ApiResponse(responseCode = "403", description = "Utilisateur non autorisé à modifier cette galerie",
-          content = @Content),
-      @ApiResponse(responseCode = "404", description = "Événement introuvable", content = @Content)
+      @ApiResponse(
+          responseCode = "200",
+          description = "Image trouvée",
+          content = @Content(mediaType = "image/*")
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement ou image introuvable",
+          content = @Content
+      )
   })
-  List<ImageDto> addImages(@Parameter(description = "Identifiant de l'événement") Long eventId,
-                            List<MultipartFile> files) throws FunctionalException;
+  ResponseEntity<byte[]> getImage(
+      @Parameter(description = "Identifiant de l'événement") Long eventId,
+      @Parameter(description = "Identifiant de l'image") Long imageId
+  );
 
-  @Operation(summary = "Retire une image de la galerie d'un événement",
-      description = "Réservé à l'organisateur propriétaire de l'événement (CU23, règle n°4).")
+  @Operation(
+      summary = "Ajoute une ou plusieurs images à la galerie d'un événement",
+      description = "Réservé à l'organisateur propriétaire de l'événement (CU23, règles n°1 à 3)."
+  )
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "204", description = "Image retirée", content = @Content),
-      @ApiResponse(responseCode = "403", description = "Utilisateur non autorisé à modifier cette galerie",
-          content = @Content),
-      @ApiResponse(responseCode = "404", description = "Événement ou image introuvable", content = @Content)
+      @ApiResponse(
+          responseCode = "201",
+          description = "Images ajoutées",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = ImageDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Aucun fichier fourni, ou fichier non image",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à modifier cette galerie",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
   })
-  void removeImage(@Parameter(description = "Identifiant de l'événement") Long eventId,
-                    @Parameter(description = "Identifiant de l'image") Long imageId);
+  List<ImageDto> addImages(
+      @Parameter(description = "Identifiant de l'événement") Long eventId,
+      List<MultipartFile> files
+  ) throws FunctionalException;
 
-  @Operation(summary = "Retourne les commentaires d'un événement",
-      description = "Accessible sans authentification, trié du plus ancien au plus récent (CU12).")
+  @Operation(
+      summary = "Retire une image de la galerie d'un événement",
+      description = "Réservé à l'organisateur propriétaire de l'événement (CU23, règle n°4)."
+  )
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Commentaires de l'événement",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = CommentDto.class))),
-      @ApiResponse(responseCode = "404", description = "Événement introuvable", content = @Content)
+      @ApiResponse(
+          responseCode = "204",
+          description = "Image retirée",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à modifier cette galerie",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement ou image introuvable",
+          content = @Content
+      )
+  })
+  void removeImage(
+      @Parameter(description = "Identifiant de l'événement") Long eventId,
+      @Parameter(description = "Identifiant de l'image") Long imageId
+  );
+
+  @Operation(
+      summary = "Retourne les commentaires d'un événement",
+      description = "Accessible sans authentification, trié du plus ancien au plus récent (CU12)."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Commentaires de l'événement",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = CommentDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
   })
   List<CommentDto> getComments(@Parameter(description = "Identifiant de l'événement") Long id);
 }
