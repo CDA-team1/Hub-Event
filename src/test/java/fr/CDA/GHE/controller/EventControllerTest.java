@@ -4,6 +4,8 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
+import fr.CDA.GHE.dto.ImageContentDto;
+import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.enums.EventStatus;
@@ -12,11 +14,13 @@ import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.service.EventService;
+import fr.CDA.GHE.service.ImageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,7 +32,9 @@ import java.util.List;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,6 +67,13 @@ class EventControllerTest {
    */
   @MockitoBean
   private EventService eventService;
+
+  /**
+   * Service des images remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private ImageService imageService;
 
   /**
    * Vérifie que la route publique GET /events retourne
@@ -766,5 +779,150 @@ class EventControllerTest {
         .andExpect(status().isBadRequest());
 
     verify(eventService).finishEvent(100L);
+  }
+
+  /**
+   * Vérifie que la route publique GET /events/{id}/images/{imageId}
+   * retourne le contenu de l'image fourni par le service.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnImageWithoutAuthentication() throws Exception {
+
+    when(imageService.getImageContent(100L, 5L))
+        .thenReturn(new ImageContentDto("fake-bytes".getBytes(), "image/png"));
+
+    mockMvc.perform(get("/events/100/images/5"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.IMAGE_PNG))
+        .andExpect(content().bytes("fake-bytes".getBytes()));
+
+    verify(imageService).getImageContent(100L, 5L);
+  }
+
+  /**
+   * Vérifie que la route GET /events/{id}/images/{imageId} retourne 404
+   * lorsque l'image n'existe pas.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnNotFoundWhenImageDoesNotExist() throws Exception {
+
+    when(imageService.getImageContent(100L, 999L))
+        .thenThrow(new NotFoundException("Image introuvable"));
+
+    mockMvc.perform(get("/events/100/images/999"))
+        .andExpect(status().isNotFound());
+
+    verify(imageService).getImageContent(100L, 999L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié peut ajouter des images
+   * à la galerie de son événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldAddImagesAsOrganizer() throws Exception {
+
+    MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+
+    when(imageService.addImages(eq(100L), any()))
+        .thenReturn(List.of(new ImageDto(5L, 100L)));
+
+    mockMvc.perform(multipart("/events/100/images")
+            .file(file)
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$[0].id").value(5))
+        .andExpect(jsonPath("$[0].eventId").value(100));
+
+    verify(imageService).addImages(eq(100L), any());
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas ajouter d'image à un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectImageUploadForMember() throws Exception {
+
+    MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+
+    mockMvc.perform(multipart("/events/100/images")
+            .file(file)
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(imageService, never()).addImages(any(), any());
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas ajouter d'image à un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectImageUploadWithoutAuthentication() throws Exception {
+
+    MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+
+    mockMvc.perform(multipart("/events/100/images").file(file))
+        .andExpect(status().isUnauthorized());
+
+    verify(imageService, never()).addImages(any(), any());
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié peut retirer une image
+   * de la galerie de son événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRemoveImageAsOrganizer() throws Exception {
+
+    mockMvc.perform(delete("/events/100/images/5")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isNoContent());
+
+    verify(imageService).removeImage(100L, 5L);
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas retirer une image d'un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectImageRemovalForMember() throws Exception {
+
+    mockMvc.perform(delete("/events/100/images/5")
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(imageService, never()).removeImage(100L, 5L);
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas retirer une image d'un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectImageRemovalWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(delete("/events/100/images/5"))
+        .andExpect(status().isUnauthorized());
+
+    verify(imageService, never()).removeImage(100L, 5L);
   }
 }
