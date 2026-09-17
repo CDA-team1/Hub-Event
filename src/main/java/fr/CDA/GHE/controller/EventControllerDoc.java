@@ -187,4 +187,39 @@ public interface EventControllerDoc {
           content = @Content)
   })
   void delete(@Parameter(description = "Identifiant de l'évènement") Long id);
+
+  @Operation(summary = "Annule un événement")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Événement annulé",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = EventDto.class)
+          )
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Événement non annulable dans son état actuel",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à annuler cet événement",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable",
+          content = @Content
+      )
+  })
+  EventDto cancel(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  ) throws FunctionalException;
 }

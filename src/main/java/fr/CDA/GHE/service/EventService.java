@@ -9,10 +9,13 @@ import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.Registration;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
+import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.exception.NotFoundException;
@@ -61,6 +64,16 @@ public class EventService {
   private final ClubRepository clubRepository;
 
   /**
+   * Repository permettant l'accès aux inscriptions.
+   */
+  private final RegistrationRepository registrationRepository;
+
+  /**
+   * Service utilisé pour envoyer les emails transactionnels.
+   */
+  private final EmailService emailService;
+
+  /**
    * Initialise le service avec ses dépendances.
    *
    * @param eventRepository repository d'accès aux événements
@@ -72,12 +85,16 @@ public class EventService {
       EventRepository eventRepository,
       EventMapper eventMapper,
       UserRepository userRepository,
-      ClubRepository clubRepository
+      ClubRepository clubRepository,
+      RegistrationRepository registrationRepository,
+      EmailService emailService
   ) {
     this.eventRepository = eventRepository;
     this.eventMapper = eventMapper;
     this.userRepository = userRepository;
     this.clubRepository = clubRepository;
+    this.registrationRepository = registrationRepository;
+    this.emailService = emailService;
   }
 
   /**
@@ -499,6 +516,69 @@ public class EventService {
     event.finish();
 
     Event savedEvent = eventRepository.save(event);
+
+    return eventMapper.toDto(savedEvent);
+  }
+
+  /**
+   * Annule un événement publié appartenant à l'organisateur authentifié.
+   * <p>
+   * L'annulation est utilisée lorsqu'un événement publié possède au moins
+   * un inscrit. L'événement est conservé en base au statut CANCELLED et
+   * les inscrits ainsi que les personnes en liste d'attente sont informés.
+   * </p>
+   *
+   * @param id identifiant de l'événement à annuler
+   * @return l'événement annulé
+   * @throws FunctionalException si l'événement ne peut pas être annulé
+   */
+  @Transactional
+  public EventDto cancelEvent(Long id) throws FunctionalException {
+
+    Event event = eventRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER
+        || !event.getOrganizer().getId().equals(organizer.getId())) {
+
+      throw new ForbiddenException(
+          "Vous n’êtes pas autorisé à annuler cet événement."
+      );
+    }
+
+    if (event.getStatus() != EventStatus.PUBLISHED) {
+      throw new FunctionalException(
+          "Cet événement ne peut pas être annulé dans son état actuel."
+      );
+    }
+
+    long registeredCount = registrationRepository.countByEventAndStatus(
+        event,
+        RegistrationStatus.REGISTERED
+    );
+
+    if (registeredCount == 0) {
+      throw new FunctionalException(
+          "Cet événement ne peut pas être annulé dans son état actuel."
+      );
+    }
+
+    List<Registration> registrations =
+        registrationRepository.findByEvent(event);
+
+    event.cancel();
+
+    Event savedEvent = eventRepository.save(event);
+
+    for (Registration registration : registrations) {
+      emailService.sendEventCancelledEmail(
+          registration.getUser().getEmail(),
+          event.getTitle()
+      );
+    }
 
     return eventMapper.toDto(savedEvent);
   }

@@ -78,6 +78,15 @@ public class EventController implements EventControllerDoc {
 
   @Override
   @Secured("ROLE_ORGANIZER")
+  @PostMapping("/{id}/cancel")
+  public EventDto cancel(@PathVariable Long id)
+      throws FunctionalException {
+
+    return eventService.cancelEvent(id);
+  }
+
+  @Override
+  @Secured("ROLE_ORGANIZER")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public EventDto create(@RequestBody CreateEventRequest request)
