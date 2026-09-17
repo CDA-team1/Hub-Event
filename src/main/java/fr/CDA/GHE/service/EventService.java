@@ -74,12 +74,20 @@ public class EventService {
   private final EmailService emailService;
 
   /**
+   * Service permettant de gérer les images associées aux événements.
+   */
+  private final ImageService imageService;
+
+  /**
    * Initialise le service avec ses dépendances.
    *
-   * @param eventRepository repository d'accès aux événements
-   * @param eventMapper     mapper permettant de convertir un événement en DTO
-   * @param userRepository  repository d'accès aux utilisateurs
-   * @param clubRepository  repository d'accès aux clubs
+   * @param eventRepository        repository d'accès aux événements
+   * @param eventMapper            mapper permettant de convertir un événement en DTO
+   * @param userRepository         repository d'accès aux utilisateurs
+   * @param clubRepository         repository d'accès aux clubs
+   * @param registrationRepository repository d'accès aux inscriptions
+   * @param emailService           service d'envoi des emails transactionnels
+   * @param imageService           service de gestion des images
    */
   public EventService(
       EventRepository eventRepository,
@@ -87,7 +95,8 @@ public class EventService {
       UserRepository userRepository,
       ClubRepository clubRepository,
       RegistrationRepository registrationRepository,
-      EmailService emailService
+      EmailService emailService,
+      ImageService imageService
   ) {
     this.eventRepository = eventRepository;
     this.eventMapper = eventMapper;
@@ -95,6 +104,7 @@ public class EventService {
     this.clubRepository = clubRepository;
     this.registrationRepository = registrationRepository;
     this.emailService = emailService;
+    this.imageService = imageService;
   }
 
   /**
@@ -581,5 +591,59 @@ public class EventService {
     }
 
     return eventMapper.toDto(savedEvent);
+  }
+
+  /**
+   * Supprime définitivement un événement lorsque les règles métier
+   * autorisent une suppression physique.
+   *
+   * @param id identifiant de l'événement à supprimer
+   * @throws FunctionalException si l'événement ne peut pas être supprimé
+   */
+  @Transactional
+  public void deleteEvent(Long id) throws FunctionalException {
+
+    Event event = eventRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER
+        || !event.getOrganizer().getId().equals(organizer.getId())) {
+
+      throw new ForbiddenException(
+          "Vous n’êtes pas autorisé à supprimer cet événement."
+      );
+    }
+
+    if (event.getStatus() == EventStatus.PUBLISHED) {
+
+      long registeredCount = registrationRepository.countByEventAndStatus(
+          event,
+          RegistrationStatus.REGISTERED
+      );
+
+      if (registeredCount > 0) {
+        throw new FunctionalException(
+            "Cet événement ne peut pas être supprimé car il possède des inscrits. "
+                + "Il doit être annulé."
+        );
+      }
+
+    } else if (event.getStatus() != EventStatus.DRAFT) {
+
+      throw new FunctionalException(
+          "Cet événement ne peut pas être supprimé dans son état actuel."
+      );
+    }
+
+    registrationRepository.deleteAll(
+        registrationRepository.findByEvent(event)
+    );
+
+    imageService.removeAllImagesForEvent(id);
+
+    eventRepository.delete(event);
   }
 }

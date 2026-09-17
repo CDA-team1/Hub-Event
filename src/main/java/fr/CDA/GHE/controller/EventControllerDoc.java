@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+
 /**
  * Interface de documentation Swagger/OpenAPI du {@link EventController}.
  * Voir {@link ClubControllerDoc} pour le détail du patron (séparation doc / mapping).
@@ -185,13 +186,37 @@ public interface EventControllerDoc {
       @Parameter(description = "Identifiant de l'événement") Long id
   ) throws FunctionalException;
 
-  @Operation(summary = "Supprime un évènement")
+  @Operation(summary = "Supprime définitivement un évènement")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "204", description = "Évènement supprimé", content = @Content),
-      @ApiResponse(responseCode = "404", description = "Aucun évènement pour cet identifiant",
-          content = @Content)
+      @ApiResponse(
+          responseCode = "204",
+          description = "Évènement supprimé",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "L'évènement ne peut pas être supprimé",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Utilisateur non authentifié",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Utilisateur non autorisé à supprimer cet évènement",
+          content = @Content
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Aucun évènement pour cet identifiant",
+          content = @Content
+      )
   })
-  void delete(@Parameter(description = "Identifiant de l'évènement") Long id);
+  void delete(
+      @Parameter(description = "Identifiant de l'évènement") Long id
+  ) throws FunctionalException;
 
   @Operation(summary = "Annule un événement")
   @ApiResponses(value = {
