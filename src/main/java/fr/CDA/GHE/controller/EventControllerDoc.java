@@ -7,6 +7,7 @@ import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
+import org.springframework.http.ResponseEntity;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
