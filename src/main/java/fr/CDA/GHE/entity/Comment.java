@@ -26,8 +26,8 @@ public class Comment {
      * n°5) : c'est l'affichage (mention « SUPPRIMÉ »), pas la donnée, qui change alors.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     /**
      * Événement sur lequel ce commentaire a été publié (règle métier n°2).
@@ -47,7 +47,7 @@ public class Comment {
 
     public Comment(String content, User author, Event event, LocalDateTime createdAt) {
         this.content = content;
-        this.author = author;
+        this.user = author;
         this.event = event;
         this.createdAt = createdAt;
     }
@@ -64,12 +64,12 @@ public class Comment {
         this.content = content;
     }
 
-    public User getAuthor() {
-        return author;
+    public User getUser() {
+        return user;
     }
 
-    public void setAuthor(User author) {
-        this.author = author;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Event getEvent() {
