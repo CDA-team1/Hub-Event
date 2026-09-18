@@ -49,11 +49,12 @@ class EventSpecificationsTest {
 
     @BeforeEach
     void setUp() {
-        organizer = userRepository.save(new User(
-                null, "Dupont", "Jean", "1 rue de Paris", "organizer@test.fr",
-                "0600000000", "password", AccountStatus.ACTIVE, Role.ORGANIZER,
-                false, null, null
-        ));
+        User newOrganizer = new User(
+                "Dupont", "Jean", "1 rue de Paris", "organizer@test.fr",
+                "0600000000", "password", Role.ORGANIZER
+        );
+        newOrganizer.setStatus(AccountStatus.ACTIVE);
+        organizer = userRepository.save(newOrganizer);
 
         club = clubRepository.save(new Club(
                 "Club Test", SPORT, "1 rue du Club", "club@test.fr", "0600000001"
