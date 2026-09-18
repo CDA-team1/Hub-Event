@@ -5,6 +5,7 @@ import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.entity.Club;
@@ -28,10 +29,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Tests de {@link UserService} avec une vraie base H2 (profil "test", voir
@@ -389,6 +393,51 @@ class UserServiceTest {
     @Test
     void deleteUserByAdmin_shouldThrow_whenNotFound() {
         assertThatThrownBy(() -> userService.deleteUserByAdmin(999L)).isInstanceOf(NotFoundException.class);
+    }
+
+    // --- suspendUser (SUSP-01) ---
+
+    @Test
+    void suspendUser_shouldSuspendIndefinitely_whenNoEndDate() throws FunctionalException {
+        User member = persistActiveMember("suspend1@test.com");
+
+        userService.suspendUser(member.getId(), new SuspendUserRequest("Fraude avérée", null));
+
+        User updated = userRepository.findById(member.getId()).orElseThrow();
+        assertThat(updated.isSuspended()).isTrue();
+        assertThat(updated.getSuspensionEndDate()).isNull();
+        assertThat(updated.getSuspensionReason()).isEqualTo("Fraude avérée");
+        verify(emailService).sendAccountSuspendedEmail(member.getEmail(), "Fraude avérée", null);
+    }
+
+    @Test
+    void suspendUser_shouldSuspendTemporarily_whenEndDateProvided() throws FunctionalException {
+        User member = persistActiveMember("suspend2@test.com");
+        LocalDate endDate = LocalDate.now().plusDays(7);
+
+        userService.suspendUser(member.getId(), new SuspendUserRequest("Comportement inapproprié", endDate));
+
+        User updated = userRepository.findById(member.getId()).orElseThrow();
+        assertThat(updated.isSuspended()).isTrue();
+        assertThat(updated.getSuspensionEndDate()).isEqualTo(endDate);
+        verify(emailService).sendAccountSuspendedEmail(member.getEmail(), "Comportement inapproprié", endDate);
+    }
+
+    @Test
+    void suspendUser_shouldThrow_whenReasonMissing() {
+        User member = persistActiveMember("suspend3@test.com");
+
+        assertThatThrownBy(() -> userService.suspendUser(member.getId(), new SuspendUserRequest("  ", null)))
+                .isInstanceOf(FunctionalException.class);
+
+        assertThat(userRepository.findById(member.getId()).orElseThrow().isSuspended()).isFalse();
+        verifyNoInteractions(emailService);
+    }
+
+    @Test
+    void suspendUser_shouldThrow_whenNotFound() {
+        assertThatThrownBy(() -> userService.suspendUser(999L, new SuspendUserRequest("Motif", null)))
+                .isInstanceOf(NotFoundException.class);
     }
 
     // --- Fixtures ---
