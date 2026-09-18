@@ -115,6 +115,24 @@ public class ImageService {
         log.info("SUPPRESSION image : eventId={} imageId={}", eventId, imageId);
     }
 
+  /**
+   * Supprime toutes les images associées à un événement,
+   * en base de données et sur le disque.
+   *
+   * @param eventId identifiant de l'événement concerné
+   */
+  @Transactional
+  public void removeAllImagesForEvent(Long eventId) {
+
+    List<Image> images = imageRepository.findByEvent_Id(eventId);
+
+    imageRepository.deleteAll(images);
+
+    for (Image image : images) {
+      deleteFileQuietly(image.getFilePath());
+    }
+  }
+
     /**
      * Retourne le contenu binaire d'une image (consultation publique, comme le détail de
      * l'événement).

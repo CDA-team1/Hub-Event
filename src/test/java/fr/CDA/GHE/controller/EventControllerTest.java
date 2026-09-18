@@ -34,6 +34,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -788,6 +789,130 @@ class EventControllerTest {
         .andExpect(status().isBadRequest());
 
     verify(eventService).finishEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié
+   * peut supprimer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldDeleteEventAsOrganizer() throws Exception {
+
+    mockMvc.perform(delete("/events/100")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isNoContent());
+
+    verify(eventService).deleteEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas supprimer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventDeletionForMember() throws Exception {
+
+    mockMvc.perform(delete("/events/100")
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never()).deleteEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas supprimer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventDeletionWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(delete("/events/100"))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never()).deleteEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un administrateur
+   * ne peut pas supprimer un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventDeletionForAdmin() throws Exception {
+
+    mockMvc.perform(delete("/events/100")
+            .with(user("admin@test.fr").roles("ADMIN")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never()).deleteEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié mais non propriétaire
+   * reçoit une réponse 403 lors de la suppression.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventDeletionForNonOwnerOrganizer() throws Exception {
+
+    doThrow(new ForbiddenException(
+        "Vous n’êtes pas autorisé à supprimer cet événement."
+    )).when(eventService).deleteEvent(100L);
+
+    mockMvc.perform(delete("/events/100")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService).deleteEvent(100L);
+  }
+
+  /**
+   * Vérifie qu'un événement publié avec au moins un inscrit
+   * ne peut pas être supprimé.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectEventDeletionWhenPublishedEventHasRegisteredUser()
+      throws Exception {
+
+    doThrow(new FunctionalException(
+        "Cet événement ne peut pas être supprimé car il possède des inscrits. "
+            + "Il doit être annulé."
+    )).when(eventService).deleteEvent(100L);
+
+    mockMvc.perform(delete("/events/100")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isBadRequest());
+
+    verify(eventService).deleteEvent(100L);
+  }
+
+  /**
+   * Vérifie que la suppression d'un événement inexistant
+   * retourne une réponse 404.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnNotFoundWhenDeletingUnknownEvent() throws Exception {
+
+    doThrow(new NotFoundException("Événement introuvable"))
+        .when(eventService).deleteEvent(999L);
+
+    mockMvc.perform(delete("/events/999")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isNotFound());
+
+    verify(eventService).deleteEvent(999L);
   }
 
   /**
