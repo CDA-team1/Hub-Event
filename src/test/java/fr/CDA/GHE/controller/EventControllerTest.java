@@ -17,6 +17,7 @@ import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.service.CommentService;
 import fr.CDA.GHE.service.EventService;
 import fr.CDA.GHE.service.ImageService;
+import fr.CDA.GHE.service.EventPdfService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,6 +42,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -84,6 +86,13 @@ class EventControllerTest {
    */
   @MockitoBean
   private CommentService commentService;
+
+  /**
+   * Service de génération PDF remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private EventPdfService eventPdfService;
 
   /**
    * Vérifie que la route publique GET /events retourne
@@ -182,6 +191,50 @@ class EventControllerTest {
         .andExpect(status().isNotFound());
 
     verify(eventService).getEventDetail(999L);
+  }
+
+  /**
+   * Vérifie que la route publique GET /events/{id}/pdf
+   * retourne le PDF généré par le service sans authentification.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnEventPdfWithoutAuthentication() throws Exception {
+
+    byte[] pdfContent = "%PDF-test".getBytes();
+
+    when(eventPdfService.generatePdf(1L))
+        .thenReturn(pdfContent);
+
+    mockMvc.perform(get("/events/1/pdf"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+        .andExpect(header().string(
+            "Content-Disposition",
+            "attachment; filename=\"event-1.pdf\""
+        ))
+        .andExpect(content().bytes(pdfContent));
+
+    verify(eventPdfService).generatePdf(1L);
+  }
+
+  /**
+   * Vérifie que la route GET /events/{id}/pdf retourne 404
+   * lorsque l'événement n'existe pas ou n'est pas accessible.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnNotFoundWhenEventPdfIsNotAccessible() throws Exception {
+
+    when(eventPdfService.generatePdf(999L))
+        .thenThrow(new NotFoundException("Événement introuvable"));
+
+    mockMvc.perform(get("/events/999/pdf"))
+        .andExpect(status().isNotFound());
+
+    verify(eventPdfService).generatePdf(999L);
   }
 
   /**
