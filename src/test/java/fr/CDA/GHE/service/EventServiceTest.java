@@ -15,7 +15,6 @@ import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
-import org.springframework.security.access.AccessDeniedException;
 import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.EventRepository;
@@ -1016,7 +1015,7 @@ class EventServiceTest {
         .thenReturn(Optional.of(otherOrganizer));
 
     assertThrows(
-        AccessDeniedException.class,
+        ForbiddenException.class,
         () -> eventService.updateEvent(100L, request)
     );
 
@@ -1479,7 +1478,7 @@ class EventServiceTest {
     );
 
     assertEquals(
-        "Vous n'êtes pas autorisé à publier cet événement.",
+        "Vous n’êtes pas autorisé à publier cet événement.",
         exception.getMessage()
     );
 
