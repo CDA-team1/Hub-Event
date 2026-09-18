@@ -29,7 +29,6 @@ import fr.CDA.GHE.repository.EventRepository;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -305,16 +304,8 @@ public class EventService {
     Event event = eventRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
-    User organizer = userRepository.findByEmail(CurrentUser.email())
-        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+    checkOwnership(event, "modifier cet événement");
 
-    if (organizer.getRole() != Role.ORGANIZER
-        || !event.getOrganizer().getId().equals(organizer.getId())) {
-
-      throw new AccessDeniedException(
-          "Vous n'êtes pas autorisé à modifier cet événement."
-      );
-    }
     // TODO EVT-05 : intégrer la modification des images lorsque le modèle Image
     // et la relation entre Event et Image seront implémentés.
     // Un événement FINISHED devra alors rester modifiable uniquement pour ses images.
@@ -416,6 +407,27 @@ public class EventService {
         .sorted(Comparator.comparing(Event::getStartDateTime))
         .map(eventMapper::toCardDto)
         .toList();
+  }
+
+  /**
+   * Vérifie que l'utilisateur actuellement authentifié est l'organisateur propriétaire de
+   * l'événement (SEC-03) : seul lui peut modifier/publier/annuler/supprimer son événement.
+   *
+   * @param event  événement concerné
+   * @param action décrit l'action refusée dans le message d'erreur (ex. "publier cet événement")
+   * @throws NotFoundException  si l'utilisateur authentifié n'existe plus en base
+   * @throws ForbiddenException si l'utilisateur n'est pas l'organisateur propriétaire
+   */
+  private void checkOwnership(Event event, String action) {
+
+    User organizer = userRepository.findByEmail(CurrentUser.email())
+        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+    if (organizer.getRole() != Role.ORGANIZER
+        || !event.getOrganizer().getId().equals(organizer.getId())) {
+
+      throw new ForbiddenException("Vous n’êtes pas autorisé à " + action + ".");
+    }
   }
 
   /**
@@ -523,16 +535,7 @@ public class EventService {
     Event event = eventRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
-    User organizer = userRepository.findByEmail(CurrentUser.email())
-        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
-
-    if (organizer.getRole() != Role.ORGANIZER
-        || !event.getOrganizer().getId().equals(organizer.getId())) {
-
-      throw new ForbiddenException(
-          "Vous n'êtes pas autorisé à publier cet événement."
-      );
-    }
+    checkOwnership(event, "publier cet événement");
 
     if (event.getStatus() != EventStatus.DRAFT) {
       throw new FunctionalException(
@@ -560,16 +563,7 @@ public class EventService {
     Event event = eventRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
-    User organizer = userRepository.findByEmail(CurrentUser.email())
-        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
-
-    if (organizer.getRole() != Role.ORGANIZER
-        || !event.getOrganizer().getId().equals(organizer.getId())) {
-
-      throw new ForbiddenException(
-          "Vous n’êtes pas autorisé à modifier le statut de cet événement."
-      );
-    }
+    checkOwnership(event, "modifier le statut de cet événement");
 
     if (event.getStatus() != EventStatus.PUBLISHED
         || event.getStartDateTime() == null
@@ -606,16 +600,7 @@ public class EventService {
     Event event = eventRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
-    User organizer = userRepository.findByEmail(CurrentUser.email())
-        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
-
-    if (organizer.getRole() != Role.ORGANIZER
-        || !event.getOrganizer().getId().equals(organizer.getId())) {
-
-      throw new ForbiddenException(
-          "Vous n’êtes pas autorisé à annuler cet événement."
-      );
-    }
+    checkOwnership(event, "annuler cet événement");
 
     if (event.getStatus() != EventStatus.PUBLISHED) {
       throw new FunctionalException(
@@ -664,16 +649,7 @@ public class EventService {
     Event event = eventRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
-    User organizer = userRepository.findByEmail(CurrentUser.email())
-        .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
-
-    if (organizer.getRole() != Role.ORGANIZER
-        || !event.getOrganizer().getId().equals(organizer.getId())) {
-
-      throw new ForbiddenException(
-          "Vous n’êtes pas autorisé à supprimer cet événement."
-      );
-    }
+    checkOwnership(event, "supprimer cet événement");
 
     if (event.getStatus() == EventStatus.PUBLISHED) {
 

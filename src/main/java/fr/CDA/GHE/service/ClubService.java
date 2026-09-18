@@ -3,14 +3,22 @@ package fr.CDA.GHE.service;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.entity.Club;
+import fr.CDA.GHE.entity.Event;
+import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.enums.EventStatus;
+import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.ClubMapper;
 import fr.CDA.GHE.repository.ClubRepository;
+import fr.CDA.GHE.repository.EventRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
 
 /**
  * Gère la création, la modification, la suppression et la consultation des clubs.
@@ -24,10 +32,12 @@ public class ClubService {
 
     private final ClubRepository clubRepository;
     private final ClubMapper clubMapper;
+    private final EventRepository eventRepository;
 
-    public ClubService(ClubRepository clubRepository, ClubMapper clubMapper){
+    public ClubService(ClubRepository clubRepository, ClubMapper clubMapper, EventRepository eventRepository){
         this.clubRepository = clubRepository;
         this.clubMapper = clubMapper;
+        this.eventRepository = eventRepository;
     }
 
     @Transactional(readOnly = true)
@@ -75,11 +85,53 @@ public class ClubService {
         return clubMapper.toDto(club);
     }
 
+    /**
+     * Supprime un club et ses conséquences en cascade (CU24, SFG §2.27, règles n°2 à 6).
+     * <p>
+     * « Supprimer » ne retire pas la ligne en base : {@code events.club_id} est une FK non
+     * nullable, et on veut préserver l'historique des événements du club (même principe que
+     * l'anonymisation d'un compte {@code User} plutôt que sa suppression). La suppression se
+     * traduit par {@link Club#endClubAffiliation}, déjà le signal utilisé ailleurs (voir
+     * {@code EventService.createEvent}) pour refuser toute nouvelle action sur un club qui n'est
+     * plus affilié.
+     * <p>
+     * Les affiliations du club sont supprimées ; un membre sans autre club devient non affilié ;
+     * un organisateur sans autre club perd son rôle (règle n°5, même logique que
+     * {@code UserService.updateMemberAffiliations}, CU27) ; les événements futurs publiés du
+     * club sont annulés (règle n°6, même logique que
+     * {@code AnonymizationRequestService.cancelUpcomingPublishedEvents}, CU29). Les événements
+     * passés, déjà annulés ou en brouillon ne sont pas concernés : ils gardent leur référence au
+     * club, qui continue d'exister en base.
+     *
+     * @param id identifiant du club à supprimer
+     * @throws NotFoundException   si aucun club ne correspond à l'identifiant
+     * @throws FunctionalException si le club est déjà supprimé (fin de validité déjà renseignée)
+     */
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id) throws FunctionalException {
         Club club = clubRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Club introuvable"));
-        clubRepository.delete(club);
+
+        if (club.getValidityEndDate() != null) {
+            throw new FunctionalException("Ce club est déjà supprimé.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        eventRepository.findByClub_Id(id).stream()
+                .filter(event -> event.getStatus() == EventStatus.PUBLISHED
+                        && event.getStartDateTime().isAfter(now))
+                .forEach(Event::cancel);
+
+        for (User member : new HashSet<>(club.getMembers())) {
+            club.removeMember(member);
+
+            if (member.getRole() == Role.ORGANIZER && member.getClubs().isEmpty()) {
+                member.setRole(Role.MEMBER);
+            }
+        }
+
+        club.endClubAffiliation(now.toLocalDate());
     }
 
     private void validate(ClubDto dto) throws FunctionalException {
