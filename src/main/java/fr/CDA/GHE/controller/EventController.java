@@ -14,8 +14,10 @@ import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.CommentService;
 import fr.CDA.GHE.service.EventService;
 import fr.CDA.GHE.service.ImageService;
+import fr.CDA.GHE.service.EventPdfService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -49,15 +51,27 @@ public class EventController implements EventControllerDoc {
   private final CommentService commentService;
 
   /**
-   * Initialise le contrôleur avec les services de gestion des événements, des images et des
-   * commentaires.
-   *
-   * @param eventService   service de gestion des événements
-   * @param imageService   service de gestion de la galerie photos des événements
-   * @param commentService service de gestion des commentaires des événements
+   * Service de génération des fiches événement au format PDF.
    */
-  public EventController(EventService eventService, ImageService imageService, CommentService commentService) {
+  private final EventPdfService eventPdfService;
+
+  /**
+   * Initialise le contrôleur avec les services de gestion des événements,
+   * des images, des commentaires et de génération PDF.
+   *
+   * @param eventService    service de gestion des événements
+   * @param eventPdfService service de génération des fiches événement au format PDF
+   * @param imageService    service de gestion de la galerie photos des événements
+   * @param commentService  service de gestion des commentaires des événements
+   */
+  public EventController(
+      EventService eventService,
+      EventPdfService eventPdfService,
+      ImageService imageService,
+      CommentService commentService
+  ) {
     this.eventService = eventService;
+    this.eventPdfService = eventPdfService;
     this.imageService = imageService;
     this.commentService = commentService;
   }
@@ -79,6 +93,34 @@ public class EventController implements EventControllerDoc {
   @GetMapping("/{id}")
   public EventDetailResponse getById(@PathVariable Long id) {
     return eventService.getEventDetail(id);
+  }
+
+  /**
+   * Télécharge la fiche détaillée d'un événement au format PDF.
+   * <p>
+   * Les règles d'accès à l'événement sont les mêmes que pour
+   * la consultation de son détail.
+   * </p>
+   *
+   * @param id identifiant de l'événement
+   * @return fichier PDF de la fiche détaillée de l'événement
+   */
+  @Override
+  @GetMapping(
+      value = "/{id}/pdf",
+      produces = MediaType.APPLICATION_PDF_VALUE
+  )
+  public ResponseEntity<byte[]> getPdf(@PathVariable Long id) {
+
+    byte[] pdf = eventPdfService.generatePdf(id);
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"event-" + id + ".pdf\""
+        )
+        .body(pdf);
   }
 
   /**

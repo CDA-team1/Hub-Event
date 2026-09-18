@@ -28,7 +28,9 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder();
   }
 
-  /** Utilisé par AuthService pour vérifier les identifiants au login. */
+  /**
+   * Utilisé par AuthService pour vérifier les identifiants au login.
+   */
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
       throws Exception {
@@ -50,6 +52,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup").permitAll()
             .requestMatchers(HttpMethod.GET, "/auth/activate", "/auth/confirm-password-change").permitAll()
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
+            .requestMatchers(HttpMethod.GET, "/events/*/pdf").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/comments").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/search").permitAll() // pas encore codé
             .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
