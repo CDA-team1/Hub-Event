@@ -61,6 +61,36 @@ public interface EventControllerDoc {
       @Parameter(description = "Identifiant de l'événement") Long id
   );
 
+  /**
+   * Télécharge la fiche détaillée d'un événement au format PDF.
+   *
+   * @param id identifiant de l'événement
+   * @return réponse HTTP contenant le fichier PDF généré
+   */
+  @Operation(
+      summary = "Télécharge la fiche détaillée d'un événement au format PDF",
+      description = "Applique les mêmes règles d'accès que la consultation "
+          + "du détail de l'événement."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Fiche PDF générée avec succès",
+          content = @Content(
+              mediaType = "application/pdf",
+              schema = @Schema(type = "string", format = "binary")
+          )
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "Événement introuvable ou non accessible",
+          content = @Content
+      )
+  })
+  ResponseEntity<byte[]> getPdf(
+      @Parameter(description = "Identifiant de l'événement") Long id
+  );
+
   @Operation(summary = "Crée un nouvel évènement")
   @ApiResponses(value = {
       @ApiResponse(
