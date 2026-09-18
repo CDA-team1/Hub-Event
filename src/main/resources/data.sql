@@ -120,27 +120,27 @@ VALUES (4, 4, 'https://i.ibb.co/Tx9JYxvh/event-boardgame.png',
 -- attente d'activation (id 4) n'en publie donc aucun.
 
 -- Sur le tournoi de foot à 5 (à venir)
-INSERT INTO comments (id, content, author_id, event_id, created_at)
+INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (1, 'Super initiative ! Je m''inscris avec grand plaisir, ça fait longtemps que je n''ai pas tapé dans un ballon :)',
         1, 1, '2026-09-10 14:00:00');
 
-INSERT INTO comments (id, content, author_id, event_id, created_at)
+INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (2, 'Belle initiative de l''équipe d''organisation. N''hésitez pas si vous avez besoin de bénévoles pour l''accueil.',
         2, 1, '2026-09-11 09:30:00');
 
-INSERT INTO comments (id, content, author_id, event_id, created_at)
+INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (3, 'Merci à tous pour votre enthousiasme ! Pensez à prévoir une bouteille d''eau, la salle peut vite chauffer.',
         3, 1, '2026-09-12 17:45:00');
 
 -- Sur l'exposition d'art contemporain (terminée)
-INSERT INTO comments (id, content, author_id, event_id, created_at)
+INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (4, 'Très belle exposition, les sculptures dialoguent vraiment bien avec les toiles abstraites.',
         1, 2, '2026-08-11 10:15:00');
 
-INSERT INTO comments (id, content, author_id, event_id, created_at)
+INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (5, 'Dommage d''avoir manqué le vernissage, est-ce qu''une captation vidéo sera mise en ligne ?',
         2, 2, '2026-08-11 19:00:00');
 
-INSERT INTO comments (id, content, author_id, event_id, created_at)
+INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (6, 'Merci à toutes les personnes venues nombreuses ! On prépare déjà la suite pour l''année prochaine.',
         3, 2, '2026-08-12 08:00:00');

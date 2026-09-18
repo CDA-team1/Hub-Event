@@ -92,6 +92,13 @@ class EventServiceTest {
   @MockitoBean
   private EmailService emailService;
 
+  /**
+   * Service de gestion des images remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private ImageService imageService;
+
   @AfterEach
   void clearSecurityContext() {
     SecurityContextHolder.clearContext();
@@ -2029,5 +2036,293 @@ class EventServiceTest {
             event,
             RegistrationStatus.REGISTERED
         );
+  }
+
+  /**
+   * Vérifie que l'organisateur propriétaire
+   * peut supprimer définitivement son événement brouillon.
+   */
+  @Test
+  void shouldDeleteDraftEventForOwnerOrganizer()
+      throws FunctionalException {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement brouillon",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(registrationRepository.findByEvent(event))
+        .thenReturn(List.of());
+
+    eventService.deleteEvent(100L);
+
+    verify(registrationRepository).findByEvent(event);
+    verify(registrationRepository).deleteAll(List.of());
+    verify(imageService).removeAllImagesForEvent(100L);
+    verify(eventRepository).delete(event);
+
+    verify(registrationRepository, never())
+        .countByEventAndStatus(
+            event,
+            RegistrationStatus.REGISTERED
+        );
+  }
+
+  /**
+   * Vérifie que l'organisateur propriétaire peut supprimer
+   * un événement publié lorsqu'il ne possède aucun inscrit.
+   */
+  @Test
+  void shouldDeletePublishedEventWithoutRegisteredUserForOwnerOrganizer()
+      throws FunctionalException {
+
+    User organizer = mock(User.class);
+    User waitingUser = mock(User.class);
+    Club club = mock(Club.class);
+    Registration waitingRegistration = mock(Registration.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(registrationRepository.countByEventAndStatus(
+        event,
+        RegistrationStatus.REGISTERED
+    )).thenReturn(0L);
+
+    when(registrationRepository.findByEvent(event))
+        .thenReturn(List.of(waitingRegistration));
+
+    eventService.deleteEvent(100L);
+
+    verify(registrationRepository)
+        .countByEventAndStatus(
+            event,
+            RegistrationStatus.REGISTERED
+        );
+
+    verify(registrationRepository).deleteAll(
+        List.of(waitingRegistration)
+    );
+
+    verify(imageService).removeAllImagesForEvent(100L);
+    verify(eventRepository).delete(event);
+  }
+
+  /**
+   * Vérifie qu'un événement publié possédant au moins un inscrit
+   * ne peut pas être supprimé physiquement.
+   */
+  @Test
+  void shouldRejectDeletePublishedEventWithRegisteredUser() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement publié",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.publish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    when(registrationRepository.countByEventAndStatus(
+        event,
+        RegistrationStatus.REGISTERED
+    )).thenReturn(1L);
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.deleteEvent(100L)
+    );
+
+    assertEquals(
+        "Cet événement ne peut pas être supprimé car il possède des inscrits. "
+            + "Il doit être annulé.",
+        exception.getMessage()
+    );
+
+    verify(registrationRepository, never()).findByEvent(event);
+    verify(registrationRepository, never()).deleteAll(any());
+    verify(imageService, never()).removeAllImagesForEvent(any());
+    verify(eventRepository, never()).delete(event);
+  }
+
+  /**
+   * Vérifie qu'un organisateur ne peut pas supprimer
+   * l'événement appartenant à un autre organisateur.
+   */
+  @Test
+  void shouldRejectDeleteWhenOrganizerIsNotOwner() {
+
+    User owner = mock(User.class);
+    User otherOrganizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(owner.getId()).thenReturn(1L);
+
+    when(otherOrganizer.getId()).thenReturn(2L);
+    when(otherOrganizer.getUsername()).thenReturn("other@test.fr");
+    when(otherOrganizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(otherOrganizer);
+
+    Event event = new Event(
+        "Événement brouillon",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().plusDays(5),
+        null,
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        owner,
+        club
+    );
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("other@test.fr"))
+        .thenReturn(Optional.of(otherOrganizer));
+
+    ForbiddenException exception = assertThrows(
+        ForbiddenException.class,
+        () -> eventService.deleteEvent(100L)
+    );
+
+    assertEquals(
+        "Vous n’êtes pas autorisé à supprimer cet événement.",
+        exception.getMessage()
+    );
+
+    verify(registrationRepository, never()).findByEvent(event);
+    verify(registrationRepository, never()).deleteAll(any());
+    verify(imageService, never()).removeAllImagesForEvent(any());
+    verify(eventRepository, never()).delete(event);
+  }
+
+  /**
+   * Vérifie qu'un événement terminé
+   * ne peut pas être supprimé physiquement.
+   */
+  @Test
+  void shouldRejectDeleteWhenEventIsFinished() {
+
+    User organizer = mock(User.class);
+    Club club = mock(Club.class);
+
+    when(organizer.getId()).thenReturn(1L);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    when(organizer.getRole()).thenReturn(Role.ORGANIZER);
+
+    authenticateAs(organizer);
+
+    Event event = new Event(
+        "Événement terminé",
+        "Description",
+        "Montpellier",
+        LocalDateTime.now().minusDays(2),
+        LocalDateTime.now().minusDays(1),
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(15),
+        50,
+        Category.CULTURE,
+        organizer,
+        club
+    );
+
+    event.finish();
+
+    when(eventRepository.findById(100L))
+        .thenReturn(Optional.of(event));
+
+    when(userRepository.findByEmail("organizer@test.fr"))
+        .thenReturn(Optional.of(organizer));
+
+    FunctionalException exception = assertThrows(
+        FunctionalException.class,
+        () -> eventService.deleteEvent(100L)
+    );
+
+    assertEquals(
+        "Cet événement ne peut pas être supprimé dans son état actuel.",
+        exception.getMessage()
+    );
+
+    verify(registrationRepository, never()).findByEvent(event);
+    verify(registrationRepository, never()).deleteAll(any());
+    verify(imageService, never()).removeAllImagesForEvent(any());
+    verify(eventRepository, never()).delete(event);
   }
 }

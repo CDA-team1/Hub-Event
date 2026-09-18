@@ -113,6 +113,24 @@ public class ImageService {
         return imageRepository.save(new Image(event, uploaded.url(), uploaded.deleteUrl()));
     }
 
+    /**
+     * Supprime toutes les images associées à un événement, en base et sur l'hébergeur externe
+     * (imgbb). Appelé avant la suppression définitive d'un événement (contrainte FK sur
+     * {@code images.event_id}).
+     *
+     * @param eventId identifiant de l'événement concerné
+     */
+    @Transactional
+    public void removeAllImagesForEvent(Long eventId) {
+        List<Image> images = imageRepository.findByEvent_Id(eventId);
+
+        imageRepository.deleteAll(images);
+
+        for (Image image : images) {
+            imgbbClient.delete(image.getDeleteUrl());
+        }
+    }
+
     private Event findEventOrThrow(Long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Événement introuvable"));

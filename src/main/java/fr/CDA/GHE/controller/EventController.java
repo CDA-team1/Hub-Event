@@ -33,7 +33,7 @@ import java.util.List;
  * à laisser public quand il sera créé.
  * <p>
  * {@code update}/{@code delete} : en plus du rôle, l'organisateur ne peut agir que sur les évènements
- * de SON club → contrôle de <strong>propriété</strong> à faire dans le service (403 sinon).
+ * dont il est propriétaire → contrôle de <strong>propriété</strong> effectué dans le service (403 sinon).
  */
 @RestController
 @RequestMapping("/events")
@@ -158,12 +158,11 @@ public class EventController implements EventControllerDoc {
   }
 
   @Override
-  @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
+  @Secured("ROLE_ORGANIZER")
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void delete(@PathVariable Long id) {
-    // TODO SEC-02 : contrôle de propriété (organisateur du club) → 403 si non propriétaire
-    throw new UnsupportedOperationException("TODO logique métier (tâche feature Évènement)");
+  public void delete(@PathVariable Long id) throws FunctionalException {
+    eventService.deleteEvent(id);
   }
 
   @Override
