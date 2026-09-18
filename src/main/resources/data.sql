@@ -64,27 +64,64 @@ INSERT INTO affiliation (club_id, user_id) VALUES (2, 3);
 INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
                      affiliated_price, non_affiliated_price, max_seats, status, category,
                      organizer_id, club_id)
-VALUES (1, 'Tournoi de badminton amical',
-        'Tournoi ouvert à tous les niveaux, en simple et en double. Matériel fourni sur place, venez avec une tenue de sport. Un goûter convivial clôturera la journée.',
-        'Gymnase municipal, 31000 Toulouse', '2026-12-05 18:00:00', '2026-12-05 21:00:00',
+VALUES (1, 'Tournoi de foot à 5 en nocturne',
+        'Tournoi amical de foot à 5, sur terrain synthétique éclairé, en plein cœur de ville. Ouvert à tous niveaux, ambiance conviviale et sportive garantie. Un goûter clôturera la soirée.',
+        'Complexe sportif de la Fontaine-Lestang, 31000 Toulouse', '2026-12-05 18:00:00', '2026-12-05 21:00:00',
         5.00, 10.00, 16, 'PUBLISHED', 'SPORT', 3, 1);
 
 -- 2) Terminé, club culture : montre des commentaires sur un évènement passé.
 INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
                      affiliated_price, non_affiliated_price, max_seats, status, category,
                      organizer_id, club_id)
-VALUES (2, 'Exposition photo : Toulouse, hier et aujourd''hui',
-        'Une rétrospective photographique mêlant clichés d''archives et prises de vue contemporaines de la Ville Rose. Visite libre, entrée gratuite pour les affiliés.',
+VALUES (2, 'Exposition d''art contemporain : regards sur la ville',
+        'Une exposition qui mêle sculptures contemporaines et peintures abstraites, dans un cadre lumineux avec vue sur la ville. Visite libre, entrée gratuite pour les affiliés.',
         'Médiathèque José Cabanis, 31000 Toulouse', '2026-08-10 10:00:00', '2026-08-10 18:00:00',
         0.00, 3.00, 40, 'FINISHED', 'CULTURE', 3, 2);
+
+-- 3) À venir, publié, club culture.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (3, 'Concert acoustique au bord du lac',
+        'Un concert acoustique en plein air, au coucher du soleil, au bord du lac de la Ramée. Ambiance intimiste garantie, food-trucks sur place. Places limitées, pensez à réserver.',
+        'Base de loisirs de la Ramée, 31170 Tournefeuille', '2026-10-18 19:00:00', '2026-10-18 22:00:00',
+        8.00, 15.00, 80, 'PUBLISHED', 'CULTURE', 3, 2);
+
+-- 4) À venir, publié, club sportif.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (4, 'Soirée jeux de société',
+        'Une soirée conviviale autour de grands classiques et de découvertes ludiques, animée par des bénévoles du club. Boissons chaudes et grignotage offerts. Ouvert à tous niveaux, débutants bienvenus.',
+        'Le Bocal, bar à jeux, 31000 Toulouse', '2026-11-14 19:30:00', '2026-11-14 23:00:00',
+        3.00, 6.00, 20, 'PUBLISHED', 'LEISURE', 3, 1);
+
+-- --- Images de démo (EVT-10) ---
+-- Hébergées sur imgbb (voir ImgbbClient), une par évènement, choisies pour être cohérentes
+-- avec le thème de chacun (ex. photo de concert sur l'évènement concert).
+INSERT INTO images (id, event_id, url, delete_url)
+VALUES (1, 1, 'https://i.ibb.co/HWxNh5F/event-football.png',
+        'https://ibb.co/rCcbdD7/18adba1b13d0a9b74de88917b0e777ff');
+
+INSERT INTO images (id, event_id, url, delete_url)
+VALUES (2, 2, 'https://i.ibb.co/5wRdw5H/event-museum.png',
+        'https://ibb.co/MQCbQR0/443d9e269bbc6491c9a61e602b0f12c1');
+
+INSERT INTO images (id, event_id, url, delete_url)
+VALUES (3, 3, 'https://i.ibb.co/6cHZ1tWx/event-music.png',
+        'https://ibb.co/wZSLwQzX/6853fd3e825aaedd7fa618e28b5d99c5');
+
+INSERT INTO images (id, event_id, url, delete_url)
+VALUES (4, 4, 'https://i.ibb.co/Tx9JYxvh/event-boardgame.png',
+        'https://ibb.co/ksNz5sHc/0f52ae3cb5a4ca51181143efa706eb4f');
 
 -- --- Commentaires de démo (COM-02) ---
 -- Auteurs limités aux comptes ACTIFS (règle CU12 : compte actif requis) : le membre en
 -- attente d'activation (id 4) n'en publie donc aucun.
 
--- Sur le tournoi de badminton (à venir)
+-- Sur le tournoi de foot à 5 (à venir)
 INSERT INTO comments (id, content, author_id, event_id, created_at)
-VALUES (1, 'Super initiative ! Je m''inscris avec grand plaisir, ça fait longtemps que je n''ai pas tenu une raquette :)',
+VALUES (1, 'Super initiative ! Je m''inscris avec grand plaisir, ça fait longtemps que je n''ai pas tapé dans un ballon :)',
         1, 1, '2026-09-10 14:00:00');
 
 INSERT INTO comments (id, content, author_id, event_id, created_at)
@@ -95,9 +132,9 @@ INSERT INTO comments (id, content, author_id, event_id, created_at)
 VALUES (3, 'Merci à tous pour votre enthousiasme ! Pensez à prévoir une bouteille d''eau, la salle peut vite chauffer.',
         3, 1, '2026-09-12 17:45:00');
 
--- Sur l'exposition photo (terminée)
+-- Sur l'exposition d'art contemporain (terminée)
 INSERT INTO comments (id, content, author_id, event_id, created_at)
-VALUES (4, 'Très belle exposition, j''ai adoré les clichés du Pont Neuf pris dans les années 60.',
+VALUES (4, 'Très belle exposition, les sculptures dialoguent vraiment bien avec les toiles abstraites.',
         1, 2, '2026-08-11 10:15:00');
 
 INSERT INTO comments (id, content, author_id, event_id, created_at)

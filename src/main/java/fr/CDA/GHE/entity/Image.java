@@ -5,8 +5,10 @@ import jakarta.persistence.*;
 /**
  * Entité représentant une image de la galerie d'un événement (CU23, SFG §2.26).
  * <p>
- * Le fichier lui-même est stocké sur le disque du serveur (pas en base) : {@code filePath}
- * n'est qu'un chemin relatif au répertoire de stockage configuré ({@code app.upload-dir}).
+ * Le fichier est hébergé sur un service externe (imgbb) plutôt que sur le disque du serveur :
+ * un déploiement sur un hébergeur cloud gratuit (ex. Render) a un système de fichiers éphémère
+ * (perdu à chaque redéploiement/redémarrage), et le stockage en base (BLOB) est écarté pour des
+ * raisons de sécurité et de performance.
  */
 @Entity
 @Table(name = "images")
@@ -25,19 +27,23 @@ public class Image {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
+    @Column(name = "url", nullable = false)
+    private String url;
 
-    @Column(name = "content_type", nullable = false)
-    private String contentType;
+    /**
+     * Lien de suppression retourné par imgbb à l'upload, utilisé pour retirer l'image de
+     * l'hébergeur externe (voir {@link fr.CDA.GHE.service.ImgbbClient#delete}).
+     */
+    @Column(name = "delete_url", nullable = false)
+    private String deleteUrl;
 
     public Image() {
     }
 
-    public Image(Event event, String filePath, String contentType) {
+    public Image(Event event, String url, String deleteUrl) {
         this.event = event;
-        this.filePath = filePath;
-        this.contentType = contentType;
+        this.url = url;
+        this.deleteUrl = deleteUrl;
     }
 
     public Long getId() {
@@ -52,19 +58,19 @@ public class Image {
         this.event = event;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getUrl() {
+        return url;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
-    public String getContentType() {
-        return contentType;
+    public String getDeleteUrl() {
+        return deleteUrl;
     }
 
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
+    public void setDeleteUrl(String deleteUrl) {
+        this.deleteUrl = deleteUrl;
     }
 }

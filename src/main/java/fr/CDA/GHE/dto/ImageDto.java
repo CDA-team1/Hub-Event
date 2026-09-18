@@ -2,12 +2,10 @@ package fr.CDA.GHE.dto;
 
 /**
  * Représentation d'une image de galerie exposée par l'API.
- * <p>
- * Ne porte pas le chemin disque (détail de stockage interne) : le contenu se récupère via
- * {@code GET /events/{eventId}/images/{id}}.
  *
  * @param id      identifiant de l'image
  * @param eventId identifiant de l'événement associé
+ * @param url     lien direct vers l'image, hébergée sur un service externe (imgbb)
  */
-public record ImageDto(Long id, Long eventId) {
+public record ImageDto(Long id, Long eventId, String url) {
 }

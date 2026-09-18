@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -228,27 +227,6 @@ public interface EventControllerDoc {
   EventDto cancel(
       @Parameter(description = "Identifiant de l'événement") Long id
   ) throws FunctionalException;
-
-  @Operation(
-      summary = "Retourne le contenu d'une image de la galerie",
-      description = "Accessible sans authentification (CU23)."
-  )
-  @ApiResponses(value = {
-      @ApiResponse(
-          responseCode = "200",
-          description = "Image trouvée",
-          content = @Content(mediaType = "image/*")
-      ),
-      @ApiResponse(
-          responseCode = "404",
-          description = "Événement ou image introuvable",
-          content = @Content
-      )
-  })
-  ResponseEntity<byte[]> getImage(
-      @Parameter(description = "Identifiant de l'événement") Long eventId,
-      @Parameter(description = "Identifiant de l'image") Long imageId
-  );
 
   @Operation(
       summary = "Ajoute une ou plusieurs images à la galerie d'un événement",
