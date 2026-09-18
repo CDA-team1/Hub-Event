@@ -5,6 +5,7 @@ import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.entity.Club;
@@ -401,6 +402,43 @@ public class UserService {
         userRepository.delete(user);
 
         log.info("SUPPRESSION compte (admin) : id={} email={}", id, user.getEmail());
+    }
+
+    /**
+     * Suspend un compte utilisateur (SUSP-01).
+     * <p>
+     * Une suspension sans date de fin est définitive ; avec une date de fin, elle est
+     * temporaire. Le blocage effectif de la connexion est géré côté {@code AuthService},
+     * pas ici. L'utilisateur est notifié par email du motif et de la durée.
+     * </p>
+     *
+     * @param id      identifiant du compte à suspendre
+     * @param request motif (obligatoire) et date de fin (facultative) de la suspension
+     * @throws NotFoundException   si aucun compte ne correspond à l'identifiant
+     * @throws FunctionalException si le motif est manquant
+     */
+    @Transactional
+    public void suspendUser(Long id, SuspendUserRequest request) throws FunctionalException {
+        if (request.reason() == null || request.reason().isBlank()) {
+            throw new FunctionalException("Le motif de la suspension est obligatoire.");
+        }
+
+        User user = findUserOrThrow(id);
+
+        if (request.endDate() == null) {
+            user.suspendIndefinitely(request.reason());
+        } else {
+            user.suspendTemporarily(request.endDate(), request.reason());
+        }
+
+        userRepository.save(user);
+
+        emailService.sendAccountSuspendedEmail(user.getEmail(), request.reason(), request.endDate());
+
+        log.info(
+                "SUSPENSION compte (admin) : id={} email={} endDate={}",
+                id, user.getEmail(), request.endDate()
+        );
     }
 
     private User findUserOrThrow(Long id) {

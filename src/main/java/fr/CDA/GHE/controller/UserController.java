@@ -4,6 +4,7 @@ import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.UserService;
@@ -76,5 +77,13 @@ public class UserController implements UserControllerDoc {
     public List<ClubDto> updateAffiliations(@PathVariable Long id, @RequestBody ClubAffiliationRequest request)
             throws FunctionalException {
         return userService.updateMemberAffiliations(id, request);
+    }
+
+    @Override
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/{id}/suspension")
+    public void suspend(@PathVariable Long id, @RequestBody SuspendUserRequest request)
+            throws FunctionalException {
+        userService.suspendUser(id, request);
     }
 }

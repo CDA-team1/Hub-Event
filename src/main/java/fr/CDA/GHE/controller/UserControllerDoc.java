@@ -4,6 +4,7 @@ import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -94,4 +95,17 @@ public interface UserControllerDoc {
     })
     List<ClubDto> updateAffiliations(@Parameter(description = "Identifiant de l'utilisateur") Long id,
                                       ClubAffiliationRequest request) throws FunctionalException;
+
+    @Operation(summary = "Suspend un compte utilisateur",
+            description = "Réservé à l'administrateur (SUSP-01). Une suspension sans date de fin est "
+                    + "définitive, avec une date de fin elle est temporaire. Le motif est obligatoire. "
+                    + "L'utilisateur est notifié par email.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Compte suspendu", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Motif manquant", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
+                    content = @Content)
+    })
+    void suspend(@Parameter(description = "Identifiant de l'utilisateur") Long id, SuspendUserRequest request)
+            throws FunctionalException;
 }

@@ -6,6 +6,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 /**
  * Envoie les emails transactionnels de l'application (SMTP).
  */
@@ -159,5 +162,32 @@ public class EmailService {
         to,
         eventTitle
     );
+  }
+
+  /**
+   * Envoie l'email de notification de suspension d'un compte (SUSP-01), avec le motif et
+   * la durée (définitive ou jusqu'à une date donnée).
+   *
+   * @param to      adresse email du destinataire
+   * @param reason  motif de la suspension
+   * @param endDate date de fin de la suspension, {@code null} si définitive
+   */
+  public void sendAccountSuspendedEmail(String to, String reason, LocalDate endDate) {
+    String duration = endDate == null
+        ? "de manière définitive"
+        : "jusqu'au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setTo(to);
+    message.setSubject("Votre compte a été suspendu - Hub évènementiel");
+    message.setText("""
+        Bonjour,
+
+        Votre compte a été suspendu %s.
+
+        Motif : %s""".formatted(duration, reason));
+
+    mailSender.send(message);
+    log.info("Email de suspension de compte envoyé à {}", to);
   }
 }
