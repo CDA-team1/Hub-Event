@@ -5,7 +5,10 @@ import fr.CDA.GHE.entity.Registration;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,4 +50,25 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
    * @return la première inscription en liste d'attente, si elle existe
    */
   Optional<Registration> findFirstByEventAndStatusOrderByRegistrationDateAsc(Event event, RegistrationStatus status);
+
+  /**
+   * Recherche les inscriptions confirmées d'un utilisateur dont l'événement chevauche
+   * la période demandée (CAL-01).
+   *
+   * @param user l'utilisateur concerné
+   * @param from début de la période recherchée
+   * @param to   fin de la période recherchée
+   * @return les inscriptions REGISTERED correspondantes
+   */
+  @Query("SELECT r FROM Registration r " +
+          "WHERE r.user = :user " +
+          "AND r.status = fr.CDA.GHE.entity.enums.RegistrationStatus.REGISTERED " +
+          "AND r.event.startDateTime <= :to " +
+          "AND COALESCE(r.event.endDateTime, r.event.startDateTime) >= :from")
+
+  List<Registration> findRegisteredByUserAndPeriod(
+          @Param("user") User user,
+          @Param("from") LocalDateTime from,
+          @Param("to") LocalDateTime to
+          );
 }
