@@ -98,11 +98,17 @@ public interface ClubControllerDoc {
      *
      * @param id identifiant du club à supprimer
      */
-    @Operation(summary = "Supprime un club")
+    @Operation(summary = "Supprime un club",
+            description = "Met fin à l'affiliation du club (le club n'est pas retiré de la base, "
+                    + "afin de préserver l'historique de ses événements) : supprime ses "
+                    + "affiliations, rétrograde les organisateurs sans autre club, annule ses "
+                    + "événements futurs publiés (CU24).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Club supprimé", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Le club est déjà supprimé",
+                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Aucun club pour cet identifiant",
                     content = @Content)
     })
-    void delete(@Parameter(description = "Identifiant du club") Long id);
+    void delete(@Parameter(description = "Identifiant du club") Long id) throws FunctionalException;
 }

@@ -62,7 +62,7 @@ public class ClubController implements ClubControllerDoc {
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) throws FunctionalException {
         clubService.delete(id);
     }
 }
