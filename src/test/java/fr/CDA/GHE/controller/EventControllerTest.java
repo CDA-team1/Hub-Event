@@ -5,7 +5,6 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
-import fr.CDA.GHE.dto.ImageContentDto;
 import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDetailResponse;
@@ -916,44 +915,6 @@ class EventControllerTest {
   }
 
   /**
-   * Vérifie que la route publique GET /events/{id}/images/{imageId}
-   * retourne le contenu de l'image fourni par le service.
-   *
-   * @throws Exception si l'exécution de la requête HTTP échoue
-   */
-  @Test
-  void shouldReturnImageWithoutAuthentication() throws Exception {
-
-    when(imageService.getImageContent(100L, 5L))
-        .thenReturn(new ImageContentDto("fake-bytes".getBytes(), "image/png"));
-
-    mockMvc.perform(get("/events/100/images/5"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.IMAGE_PNG))
-        .andExpect(content().bytes("fake-bytes".getBytes()));
-
-    verify(imageService).getImageContent(100L, 5L);
-  }
-
-  /**
-   * Vérifie que la route GET /events/{id}/images/{imageId} retourne 404
-   * lorsque l'image n'existe pas.
-   *
-   * @throws Exception si l'exécution de la requête HTTP échoue
-   */
-  @Test
-  void shouldReturnNotFoundWhenImageDoesNotExist() throws Exception {
-
-    when(imageService.getImageContent(100L, 999L))
-        .thenThrow(new NotFoundException("Image introuvable"));
-
-    mockMvc.perform(get("/events/100/images/999"))
-        .andExpect(status().isNotFound());
-
-    verify(imageService).getImageContent(100L, 999L);
-  }
-
-  /**
    * Vérifie qu'un organisateur authentifié peut ajouter des images
    * à la galerie de son événement.
    *
@@ -965,14 +926,15 @@ class EventControllerTest {
     MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
 
     when(imageService.addImages(eq(100L), any()))
-        .thenReturn(List.of(new ImageDto(5L, 100L)));
+        .thenReturn(List.of(new ImageDto(5L, 100L, "https://i.ibb.co/abc/photo.png")));
 
     mockMvc.perform(multipart("/events/100/images")
             .file(file)
             .with(user("organizer@test.fr").roles("ORGANIZER")))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$[0].id").value(5))
-        .andExpect(jsonPath("$[0].eventId").value(100));
+        .andExpect(jsonPath("$[0].eventId").value(100))
+        .andExpect(jsonPath("$[0].url").value("https://i.ibb.co/abc/photo.png"));
 
     verify(imageService).addImages(eq(100L), any());
   }

@@ -50,7 +50,6 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup").permitAll()
             .requestMatchers(HttpMethod.GET, "/auth/activate", "/auth/confirm-password-change").permitAll()
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
-            .requestMatchers(HttpMethod.GET, "/events/*/images/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/comments").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/search").permitAll() // pas encore codé
             .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()

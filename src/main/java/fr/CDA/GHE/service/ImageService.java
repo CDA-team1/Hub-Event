@@ -1,6 +1,5 @@
 package fr.CDA.GHE.service;
 
-import fr.CDA.GHE.dto.ImageContentDto;
 import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.Image;
@@ -16,22 +15,17 @@ import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.util.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Gère la galerie photos d'un événement (CU23, SFG §2.26).
  * <p>
- * Les fichiers sont stockés sur le disque du serveur, sous {@code app.upload-dir} ; seul le
- * chemin relatif est persisté en base ({@link Image#getFilePath()}).
+ * Les fichiers sont hébergés sur un service externe (imgbb, voir {@link ImgbbClient}) ; seuls le
+ * lien direct et le lien de suppression sont persistés en base ({@link Image}).
  */
 @Service
 public class ImageService {
@@ -42,16 +36,15 @@ public class ImageService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final ImageMapper imageMapper;
-    private final Path uploadDir;
+    private final ImgbbClient imgbbClient;
 
     public ImageService(ImageRepository imageRepository, EventRepository eventRepository,
-                         UserRepository userRepository, ImageMapper imageMapper,
-                         @Value("${app.upload-dir}") String uploadDir) {
+                         UserRepository userRepository, ImageMapper imageMapper, ImgbbClient imgbbClient) {
         this.imageRepository = imageRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.imageMapper = imageMapper;
-        this.uploadDir = Path.of(uploadDir);
+        this.imgbbClient = imgbbClient;
     }
 
     /**
@@ -84,7 +77,7 @@ public class ImageService {
         }
 
         List<Image> created = nonEmptyFiles.stream()
-                .map(file -> storeAndPersist(event, file))
+                .map(file -> uploadAndPersist(event, file))
                 .toList();
 
         log.info("AJOUT images : eventId={} count={}", eventId, created.size());
@@ -110,73 +103,31 @@ public class ImageService {
         Image image = findImageOrThrow(eventId, imageId);
 
         imageRepository.delete(image);
-        deleteFileQuietly(image.getFilePath());
+        imgbbClient.delete(image.getDeleteUrl());
 
         log.info("SUPPRESSION image : eventId={} imageId={}", eventId, imageId);
     }
 
-  /**
-   * Supprime toutes les images associées à un événement,
-   * en base de données et sur le disque.
-   *
-   * @param eventId identifiant de l'événement concerné
-   */
-  @Transactional
-  public void removeAllImagesForEvent(Long eventId) {
-
-    List<Image> images = imageRepository.findByEvent_Id(eventId);
-
-    imageRepository.deleteAll(images);
-
-    for (Image image : images) {
-      deleteFileQuietly(image.getFilePath());
+    private Image uploadAndPersist(Event event, MultipartFile file) {
+        ImgbbClient.UploadedImage uploaded = imgbbClient.upload(file);
+        return imageRepository.save(new Image(event, uploaded.url(), uploaded.deleteUrl()));
     }
-  }
 
     /**
-     * Retourne le contenu binaire d'une image (consultation publique, comme le détail de
-     * l'événement).
+     * Supprime toutes les images associées à un événement, en base et sur l'hébergeur externe
+     * (imgbb). Appelé avant la suppression définitive d'un événement (contrainte FK sur
+     * {@code images.event_id}).
      *
      * @param eventId identifiant de l'événement concerné
-     * @param imageId identifiant de l'image demandée
-     * @return le contenu de l'image et son type MIME
-     * @throws NotFoundException si l'événement ou l'image n'existe pas, ou si l'image
-     *                           n'appartient pas à cet événement
      */
-    @Transactional(readOnly = true)
-    public ImageContentDto getImageContent(Long eventId, Long imageId) {
-        Image image = findImageOrThrow(eventId, imageId);
+    @Transactional
+    public void removeAllImagesForEvent(Long eventId) {
+        List<Image> images = imageRepository.findByEvent_Id(eventId);
 
-        try {
-            byte[] content = Files.readAllBytes(uploadDir.resolve(image.getFilePath()));
-            return new ImageContentDto(content, image.getContentType());
-        } catch (IOException e) {
-            throw new NotFoundException("Image introuvable");
-        }
-    }
+        imageRepository.deleteAll(images);
 
-    private Image storeAndPersist(Event event, MultipartFile file) {
-        String fileName = UUID.randomUUID() + extractExtension(file.getOriginalFilename());
-        String relativePath = "events/" + event.getId() + "/" + fileName;
-
-        try {
-            Path targetPath = uploadDir.resolve(relativePath);
-            Files.createDirectories(targetPath.getParent());
-            file.transferTo(targetPath);
-        } catch (IOException e) {
-            // Ne devrait arriver qu'en cas de disque plein/permissions serveur ; pas une erreur
-            // de saisie utilisateur, donc pas une FunctionalException.
-            throw new IllegalStateException("Échec de l'enregistrement de l'image", e);
-        }
-
-        return imageRepository.save(new Image(event, relativePath, file.getContentType()));
-    }
-
-    private void deleteFileQuietly(String relativePath) {
-        try {
-            Files.deleteIfExists(uploadDir.resolve(relativePath));
-        } catch (IOException e) {
-            log.warn("Impossible de supprimer le fichier {} du disque", relativePath, e);
+        for (Image image : images) {
+            imgbbClient.delete(image.getDeleteUrl());
         }
     }
 
@@ -203,12 +154,5 @@ public class ImageService {
         if (organizer.getRole() != Role.ORGANIZER || !event.getOrganizer().getId().equals(organizer.getId())) {
             throw new ForbiddenException("Vous n'êtes pas autorisé à modifier la galerie de cet événement.");
         }
-    }
-
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null || !originalFilename.contains(".")) {
-            return "";
-        }
-        return originalFilename.substring(originalFilename.lastIndexOf('.'));
     }
 }

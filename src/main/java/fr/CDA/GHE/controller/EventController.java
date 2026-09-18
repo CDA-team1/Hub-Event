@@ -7,7 +7,6 @@ import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventSearchCriteria;
 import fr.CDA.GHE.dto.CreateEventRequest;
-import fr.CDA.GHE.dto.ImageContentDto;
 import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.entity.enums.Category;
@@ -18,7 +17,6 @@ import fr.CDA.GHE.service.ImageService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -165,16 +163,6 @@ public class EventController implements EventControllerDoc {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) throws FunctionalException {
     eventService.deleteEvent(id);
-  }
-
-  // Public : consultation d'une image de la galerie
-  @Override
-  @GetMapping("/{eventId}/images/{imageId}")
-  public ResponseEntity<byte[]> getImage(@PathVariable Long eventId, @PathVariable Long imageId) {
-    ImageContentDto image = imageService.getImageContent(eventId, imageId);
-    return ResponseEntity.ok()
-        .contentType(MediaType.parseMediaType(image.contentType()))
-        .body(image.content());
   }
 
   @Override
