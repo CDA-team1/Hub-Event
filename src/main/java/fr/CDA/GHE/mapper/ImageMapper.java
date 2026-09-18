@@ -13,7 +13,7 @@ import java.util.List;
 public class ImageMapper {
 
     public ImageDto toDto(Image image) {
-        return new ImageDto(image.getId(), image.getEvent().getId());
+        return new ImageDto(image.getId(), image.getEvent().getId(), image.getUrl());
     }
 
     public List<ImageDto> toDtoList(List<Image> images) {
