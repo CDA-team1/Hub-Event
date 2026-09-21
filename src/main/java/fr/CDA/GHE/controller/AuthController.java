@@ -1,6 +1,7 @@
 package fr.CDA.GHE.controller;
 
 
+import fr.CDA.GHE.dto.ActivateAdminAccountRequest;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.LoginRequest;
 import fr.CDA.GHE.dto.LoginResponse;
@@ -88,6 +89,25 @@ public class AuthController {
     @GetMapping("/confirm-password-change")
     public UserDto confirmPasswordChange(@RequestParam String token) throws FunctionalException {
         return userService.confirmPasswordChange(token);
+    }
+
+    /**
+     * Finalise un compte créé par un administrateur, à partir du lien reçu par email (CU25/
+     * CPT-06, CdC § « Validation de la création d'un compte ») — accessible sans
+     * authentification (le titulaire du compte ne peut pas encore se connecter).
+     *
+     * @param token   jeton transmis dans le lien
+     * @param request mot de passe temporaire, nouveau mot de passe et confirmation
+     * @return le compte activé
+     * @throws FunctionalException si le lien est invalide, si le compte ne peut plus être
+     *                             activé, si le mot de passe temporaire est incorrect, si les
+     *                             deux mots de passe saisis diffèrent, ou si le nouveau mot de
+     *                             passe ne respecte pas les critères de sécurité requis
+     */
+    @PostMapping("/confirm-account-creation")
+    public UserDto confirmAccountCreation(@RequestParam String token,
+                                           @RequestBody ActivateAdminAccountRequest request) throws FunctionalException {
+        return userService.confirmAccountCreation(token, request);
     }
 
     /**
