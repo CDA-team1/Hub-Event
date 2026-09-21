@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Expose les routes d'inscription et de désinscription des utilisateurs aux évènements.
  * <p>
- * SEC-02 : {@code register} (s'inscrire) est réservé au rôle MEMBER (décision SEC-02).
+ * {@code register} (s'inscrire) est ouvert à tout utilisateur connecté, quel que soit son
+ * rôle (CdC, CU9 : « membre affilié ou non, organisateur, administrateur ») — pas de
+ * {@code @Secured}, juste l'authentification déjà exigée par défaut dans SecurityConfig.
  * {@code unregister} n'a pas besoin de contrôle de propriété supplémentaire : il n'agit
  * jamais que sur l'inscription de l'utilisateur actuellement connecté.
  * </p>
@@ -28,7 +30,6 @@ public class RegistrationController implements RegistrationControllerDoc {
     }
 
     @Override
-    @Secured("ROLE_MEMBER")
     @PostMapping
     public ResponseEntity<RegistrationDto> register(@PathVariable Long eventId) throws FunctionalException {
         RegistrationDto created = registrationService.register(eventId);
