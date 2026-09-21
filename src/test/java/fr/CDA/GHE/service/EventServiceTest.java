@@ -16,6 +16,7 @@ import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.exception.ForbiddenException;
+import fr.CDA.GHE.repository.CommentRepository;
 import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.EventRepository;
 import fr.CDA.GHE.repository.ClubRepository;
@@ -83,6 +84,13 @@ class EventServiceTest {
    */
   @MockitoBean
   private RegistrationRepository registrationRepository;
+
+  /**
+   * Repository des commentaires remplacé par un mock
+   * dans le contexte Spring de test.
+   */
+  @MockitoBean
+  private CommentRepository commentRepository;
 
   /**
    * Service d'envoi d'emails remplacé par un mock
@@ -2081,6 +2089,7 @@ class EventServiceTest {
 
     verify(registrationRepository).findByEvent(event);
     verify(registrationRepository).deleteAll(List.of());
+    verify(commentRepository).deleteAllByEvent_Id(100L);
     verify(imageService).removeAllImagesForEvent(100L);
     verify(eventRepository).delete(event);
 
@@ -2152,6 +2161,7 @@ class EventServiceTest {
         List.of(waitingRegistration)
     );
 
+    verify(commentRepository).deleteAllByEvent_Id(100L);
     verify(imageService).removeAllImagesForEvent(100L);
     verify(eventRepository).delete(event);
   }
@@ -2212,6 +2222,7 @@ class EventServiceTest {
 
     verify(registrationRepository, never()).findByEvent(event);
     verify(registrationRepository, never()).deleteAll(any());
+    verify(commentRepository, never()).deleteAllByEvent_Id(any());
     verify(imageService, never()).removeAllImagesForEvent(any());
     verify(eventRepository, never()).delete(event);
   }
@@ -2267,6 +2278,7 @@ class EventServiceTest {
 
     verify(registrationRepository, never()).findByEvent(event);
     verify(registrationRepository, never()).deleteAll(any());
+    verify(commentRepository, never()).deleteAllByEvent_Id(any());
     verify(imageService, never()).removeAllImagesForEvent(any());
     verify(eventRepository, never()).delete(event);
   }
@@ -2321,6 +2333,7 @@ class EventServiceTest {
 
     verify(registrationRepository, never()).findByEvent(event);
     verify(registrationRepository, never()).deleteAll(any());
+    verify(commentRepository, never()).deleteAllByEvent_Id(any());
     verify(imageService, never()).removeAllImagesForEvent(any());
     verify(eventRepository, never()).delete(event);
   }

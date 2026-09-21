@@ -16,6 +16,7 @@ import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.repository.CommentRepository;
 import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
@@ -71,6 +72,11 @@ public class EventService {
   private final RegistrationRepository registrationRepository;
 
   /**
+   * Repository permettant l'accès aux commentaires.
+   */
+  private final CommentRepository commentRepository;
+
+  /**
    * Service utilisé pour envoyer les emails transactionnels.
    */
   private final EmailService emailService;
@@ -88,6 +94,7 @@ public class EventService {
    * @param userRepository         repository d'accès aux utilisateurs
    * @param clubRepository         repository d'accès aux clubs
    * @param registrationRepository repository d'accès aux inscriptions
+   * @param commentRepository      repository d'accès aux commentaires
    * @param emailService           service d'envoi des emails transactionnels
    * @param imageService           service de gestion des images
    */
@@ -97,6 +104,7 @@ public class EventService {
       UserRepository userRepository,
       ClubRepository clubRepository,
       RegistrationRepository registrationRepository,
+      CommentRepository commentRepository,
       EmailService emailService,
       ImageService imageService
   ) {
@@ -105,6 +113,7 @@ public class EventService {
     this.userRepository = userRepository;
     this.clubRepository = clubRepository;
     this.registrationRepository = registrationRepository;
+    this.commentRepository = commentRepository;
     this.emailService = emailService;
     this.imageService = imageService;
   }
@@ -675,6 +684,8 @@ public class EventService {
     registrationRepository.deleteAll(
         registrationRepository.findByEvent(event)
     );
+
+    commentRepository.deleteAllByEvent_Id(id);
 
     imageService.removeAllImagesForEvent(id);
 
