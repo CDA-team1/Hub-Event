@@ -442,11 +442,17 @@ public class EventService {
 
   /**
    * Vérifie si un événement peut être consulté par l'utilisateur courant.
+   * <p>
+   * Package-private et statique (plutôt que private) pour être réutilisée telle quelle par
+   * {@link CommentService}, qui doit appliquer exactement la même règle de visibilité que la
+   * consultation du détail d'un événement (COM-01) : les commentaires d'un brouillon ne
+   * doivent pas être accessibles à qui ne pourrait pas consulter l'événement lui-même.
+   * </p>
    *
    * @param event événement dont la visibilité doit être vérifiée
    * @return {@code true} si l'événement est accessible, sinon {@code false}
    */
-  private boolean isEventAccessible(Event event) {
+  static boolean isEventAccessible(Event event) {
 
     if (event.getStatus() == EventStatus.PUBLISHED
         || event.getStatus() == EventStatus.FINISHED) {
