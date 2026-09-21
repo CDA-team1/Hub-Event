@@ -115,8 +115,8 @@ import java.util.Set;
         @OneToMany(mappedBy = "user")
         private Set<Comment> comments = new HashSet<>();
 
-        @OneToMany(mappedBy = "user")
-        private Set<AnonymizationRequest> anonymizationRequests = new HashSet<>();
+        @OneToOne(mappedBy = "user")
+        private AnonymizationRequest anonymizationRequest;
 
         /**
          * Jeton d'activation envoyé par email à la création du compte (CU5/CU6).
@@ -460,14 +460,12 @@ import java.util.Set;
             comment.setUser(this);
         }
 
-        public Set<AnonymizationRequest> getAnonymizationRequests() {
-            return anonymizationRequests;
+        public AnonymizationRequest getAnonymizationRequest() {
+            return anonymizationRequest;
         }
 
-        public void addAnonymizationRequest(
-                AnonymizationRequest anonymizationRequest
-        ) {
-            anonymizationRequests.add(anonymizationRequest);
+        public void setAnonymizationRequest(AnonymizationRequest anonymizationRequest) {
+            this.anonymizationRequest = anonymizationRequest;
             anonymizationRequest.setUser(this);
         }
 
