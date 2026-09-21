@@ -25,8 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests de {@link RegistrationController}, centrés sur {@code register} (CdC, CU9 : « membre
  * affilié ou non, organisateur, administrateur » peuvent s'inscrire — pas de restriction de
  * rôle, contrairement à l'ancienne décision SEC-02 qui limitait cette route au rôle MEMBER).
- * {@link RegistrationService} est mocké : la logique métier est couverte par une future
- * {@code RegistrationServiceTest} (trou de couverture connu, hors périmètre de ce correctif).
+ * {@link RegistrationService} est mocké ici : la logique métier (dont le contrôle du statut
+ * de l'événement) est couverte par {@code RegistrationServiceTest}.
  */
 @SpringBootTest
 @ActiveProfiles("test")

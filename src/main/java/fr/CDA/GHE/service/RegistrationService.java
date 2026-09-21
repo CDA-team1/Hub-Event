@@ -5,6 +5,7 @@ import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.Registration;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
+import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -48,11 +49,12 @@ public class RegistrationService {
      * Inscrit l'utilisateur connecté à l'événement donné.
      * <p>
      * Règles vérifiées, dans l'ordre : le compte doit être {@link AccountStatus#ACTIVE},
-     * l'utilisateur ne doit pas déjà être inscrit à cet événement, et il ne doit pas avoir
-     * d'inscription sur un événement se déroulant sur un créneau qui chevauche celui-ci.
-     * Le statut de la nouvelle inscription dépend ensuite des places restantes :
-     * {@link RegistrationStatus#REGISTERED} s'il reste de la place, sinon
-     * {@link RegistrationStatus#WAITING_LIST}.
+     * l'événement doit être {@link EventStatus#PUBLISHED} (un brouillon, un événement annulé
+     * ou déjà terminé n'accepte pas de nouvelles inscriptions), l'utilisateur ne doit pas déjà
+     * être inscrit à cet événement, et il ne doit pas avoir d'inscription sur un événement se
+     * déroulant sur un créneau qui chevauche celui-ci. Le statut de la nouvelle inscription
+     * dépend ensuite des places restantes : {@link RegistrationStatus#REGISTERED} s'il reste
+     * de la place, sinon {@link RegistrationStatus#WAITING_LIST}.
      * </p>
      * <p>
      * Voir Dossier des spécifications générales, cas d'utilisation n°9 « S'inscrire à un
@@ -61,8 +63,9 @@ public class RegistrationService {
      *
      * @param eventId identifiant de l'événement auquel s'inscrire
      * @return l'inscription créée
-     * @throws FunctionalException si le compte n'est pas actif, si l'utilisateur est déjà
-     *                             inscrit, ou en cas de chevauchement avec un autre événement
+     * @throws FunctionalException si le compte n'est pas actif, si l'événement n'est pas
+     *                             publié, si l'utilisateur est déjà inscrit, ou en cas de
+     *                             chevauchement avec un autre événement
      */
     @Transactional
     public RegistrationDto register(Long eventId) throws FunctionalException {
@@ -76,6 +79,10 @@ public class RegistrationService {
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+        if (event.getStatus() != EventStatus.PUBLISHED) {
+            throw new FunctionalException("Cet événement n'est pas ouvert aux inscriptions.");
+        }
 
         if (registrationRepository.existsByUserAndEvent(user, event)) {
             throw new FunctionalException("Vous êtes déjà inscrit à cet événement.");
