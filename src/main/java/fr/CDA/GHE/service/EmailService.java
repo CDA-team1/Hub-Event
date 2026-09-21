@@ -48,24 +48,31 @@ public class EmailService {
 
   /**
    * Envoie l'email contenant le mot de passe temporaire d'un compte créé par un
-   * administrateur (CU25, SFG §2.28.1.4 : « un email contenant un mot de passe
-   * temporaire est envoyé à la personne »).
+   * administrateur, ainsi que le lien à cliquer pour le finaliser (CU25/CPT-06, CdC §
+   * « Validation de la création d'un compte ») : le compte reste INACTIF tant que ce lien
+   * n'a pas été utilisé pour saisir ce mot de passe temporaire et en choisir un définitif.
    *
-   * @param to                adresse email du destinataire
-   * @param temporaryPassword mot de passe temporaire généré par le système
+   * @param to                 adresse email du destinataire
+   * @param temporaryPassword  mot de passe temporaire généré par le système
+   * @param confirmationLink   lien complet à cliquer pour finaliser le compte
    */
-  public void sendAdminCreatedAccountEmail(String to, String temporaryPassword) {
+  public void sendAdminCreatedAccountEmail(String to, String temporaryPassword, String confirmationLink) {
     SimpleMailMessage message = new SimpleMailMessage();
     message.setTo(to);
     message.setSubject("Votre compte a été créé - Hub évènementiel");
     message.setText("""
         Bonjour,
-        
+
         Un compte vient d'être créé pour vous sur le Hub évènementiel par un administrateur.
-        
+
         Mot de passe temporaire : %s
-        
-        Connectez-vous avec cet identifiant pour accéder à votre compte.""".formatted(temporaryPassword));
+
+        Cliquez sur le lien suivant pour finaliser votre compte, en saisissant ce mot de \
+        passe temporaire puis un mot de passe définitif :
+        %s
+
+        Ce lien est à usage unique. Vous ne pourrez pas vous connecter tant que votre \
+        compte n'est pas finalisé.""".formatted(temporaryPassword, confirmationLink));
 
     mailSender.send(message);
     log.info("Email de création de compte (admin) envoyé à {}", to);

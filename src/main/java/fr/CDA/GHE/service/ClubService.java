@@ -40,6 +40,12 @@ public class ClubService {
         this.eventRepository = eventRepository;
     }
 
+    /**
+     * Retourne une page de clubs.
+     *
+     * @param pageable pagination demandée
+     * @return la page de clubs correspondante
+     */
     @Transactional(readOnly = true)
     public PageDto<ClubDto> extractAll(Pageable pageable){
         Page<Club> page = clubRepository.findAll(pageable);
@@ -54,12 +60,26 @@ public class ClubService {
         );
     }
 
+    /**
+     * Retourne un club par son identifiant.
+     *
+     * @param id identifiant du club
+     * @return le club trouvé
+     * @throws NotFoundException si aucun club ne correspond à l'identifiant
+     */
     @Transactional(readOnly = true)
     public ClubDto extractById(Long id){
         Club club = clubRepository.findById(id).orElseThrow(() -> new NotFoundException("Club introuvable"));
         return clubMapper.toDto(club);
     }
 
+    /**
+     * Crée un nouveau club (CU24).
+     *
+     * @param dto informations saisies pour le club à créer
+     * @return le club créé
+     * @throws FunctionalException si une règle métier n'est pas respectée
+     */
     @Transactional
     public ClubDto create(ClubDto dto) throws FunctionalException{
         validate(dto);
@@ -69,6 +89,18 @@ public class ClubService {
         return clubMapper.toDto(created);
     }
 
+    /**
+     * Modifie un club existant (CU24).
+     * <p>
+     * La date de fin de validité n'est pas modifiable ici : elle n'est jamais saisie par
+     * l'utilisateur, mais calculée par le système lors d'une suppression (voir {@link #delete}).
+     *
+     * @param id  identifiant du club à modifier
+     * @param dto nouvelles informations du club
+     * @return le club modifié
+     * @throws NotFoundException   si aucun club ne correspond à l'identifiant
+     * @throws FunctionalException si une règle métier n'est pas respectée
+     */
     @Transactional
     public ClubDto update(Long id, ClubDto dto) throws FunctionalException{
         validate(dto);

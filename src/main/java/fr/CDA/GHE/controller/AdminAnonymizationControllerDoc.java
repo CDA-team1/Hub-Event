@@ -29,16 +29,6 @@ public interface AdminAnonymizationControllerDoc {
     })
     PageDto<AnonymizationDto> getAll(Pageable pageable);
 
-    @Operation(summary = "Retourne une demande d'anonymisation par son identifiant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Demande trouvée",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = AnonymizationDto.class))),
-            @ApiResponse(responseCode = "404", description = "Aucune demande pour cet identifiant",
-                    content = @Content)
-    })
-    AnonymizationDto getById(@Parameter(description = "Identifiant de la demande") Long id);
-
     @Operation(summary = "Valide une demande d'anonymisation",
             description = "Anonymise le compte de l'utilisateur concerné : données personnelles remplacées par "
                     + "des valeurs aléatoires, statut ANONYMIZED. Si l'utilisateur est organisateur, ses "

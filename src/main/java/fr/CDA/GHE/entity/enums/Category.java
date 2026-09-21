@@ -1,4 +1,5 @@
 package fr.CDA.GHE.entity.enums;
+
 /**
  * Catégories possibles d'un événement ou d'un club.
  */

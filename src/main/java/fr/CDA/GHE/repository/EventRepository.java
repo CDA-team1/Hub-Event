@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.List;
 
 /**
- * Repository permettant l'accès aux événements en base de données.
+ * Repository JPA pour l'entité {@link Event}.
  * <p>
  * Il fournit les opérations CRUD standards de {@link JpaRepository},
  * ainsi que la possibilité d'effectuer des recherches dynamiques

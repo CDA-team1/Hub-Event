@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * Repository permettant l'accès aux clubs en base de données.
+ * Repository JPA pour l'entité {@link Club}.
  */
 public interface ClubRepository extends JpaRepository<Club, Long> {
 

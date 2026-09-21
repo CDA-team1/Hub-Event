@@ -106,8 +106,8 @@ public class AnonymizationRequestService {
      * Les données personnelles de l'utilisateur sont remplacées par des valeurs aléatoires et
      * son statut passe à {@link AccountStatus#ANONYMIZED} (connexion impossible dès lors,
      * cf. {@code AuthService.login}). Ses commentaires déjà publiés sont conservés (aucune
-     * suppression) : l'affichage de leur auteur sous la mention « SUPPRIMÉ » est une
-     * responsabilité de la fonctionnalité Commentaire, pas encore implémentée. Si l'utilisateur
+     * suppression) : l'affichage de leur auteur sous la mention « SUPPRIMÉ » est géré par
+     * {@code CommentMapper.formatAuthorDisplayName}, qui vérifie ce statut. Si l'utilisateur
      * est organisateur, ses évènements publiés à venir sont annulés, sans transfert à un autre
      * organisateur (règle CU29 n°7).
      *

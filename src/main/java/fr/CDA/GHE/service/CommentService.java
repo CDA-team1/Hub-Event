@@ -43,12 +43,17 @@ public class CommentService {
     }
 
     /**
-     * Publie un commentaire sur un événement pour l'utilisateur connecté (CU12, règles n°1 à 3).
+     * Publie un commentaire sur un événement accessible à l'utilisateur connecté (CU12, règles
+     * n°1 à 3).
+     * <p>
+     * Un commentaire ne peut être publié que sur un événement que l'utilisateur pourrait
+     * consulter (COM-01) : voir {@link EventService#isEventAccessible}.
+     * </p>
      *
      * @param request événement commenté et contenu saisi
      * @return le commentaire créé
-     * @throws FunctionalException si le compte n'est pas actif, si le contenu est vide, ou si
-     *                             l'événement n'existe pas
+     * @throws FunctionalException si le compte n'est pas actif ou si le contenu est vide
+     * @throws NotFoundException   si l'événement n'existe pas ou n'est pas accessible
      */
     @Transactional
     public CommentDto createComment(CreateCommentRequest request) throws FunctionalException {
@@ -66,6 +71,10 @@ public class CommentService {
         Event event = eventRepository.findById(request.eventId())
                 .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
+        if (!EventService.isEventAccessible(event)) {
+            throw new NotFoundException("Événement introuvable");
+        }
+
         Comment comment = new Comment(request.content(), author, event, LocalDateTime.now());
         Comment saved = commentRepository.save(comment);
 
@@ -75,16 +84,25 @@ public class CommentService {
     }
 
     /**
-     * Retourne les commentaires d'un événement, du plus ancien au plus récent (CU12, règle n°3).
-     * Consultation publique, comme le détail de l'événement.
+     * Retourne les commentaires d'un événement accessible à l'utilisateur courant, du plus
+     * ancien au plus récent (CU12, règle n°3).
+     * <p>
+     * Applique la même règle de visibilité que la consultation du détail de l'événement
+     * (COM-01) : voir {@link EventService#isEventAccessible}. Un événement publié ou terminé
+     * est accessible à tous, y compris sans authentification ; un brouillon uniquement à son
+     * organisateur.
+     * </p>
      *
      * @param eventId identifiant de l'événement
      * @return la liste des commentaires de l'événement
-     * @throws NotFoundException si l'événement n'existe pas
+     * @throws NotFoundException si l'événement n'existe pas ou n'est pas accessible
      */
     @Transactional(readOnly = true)
     public List<CommentDto> extractByEvent(Long eventId) {
-        if (!eventRepository.existsById(eventId)) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+        if (!EventService.isEventAccessible(event)) {
             throw new NotFoundException("Événement introuvable");
         }
 

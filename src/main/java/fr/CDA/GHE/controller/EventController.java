@@ -32,8 +32,8 @@ import java.util.List;
  * SEC-02 — Autorisations des routes évènements (voir {@link ClubController} pour les règles générales).
  * <p>
  * Les GET sont <strong>publics</strong> (liste des publiés, détail, recherche). La recherche
- * ({@code GET /events/search}) est un endpoint distinct, non présent dans {@link EventControllerDoc} :
- * à laisser public quand il sera créé.
+ * ({@code GET /events/search}) est un endpoint distinct, non présent dans {@link EventControllerDoc}
+ * (CU2, sans documentation Swagger dédiée).
  * <p>
  * {@code update}/{@code delete} : en plus du rôle, l'organisateur ne peut agir que sur les évènements
  * dont il est propriétaire → contrôle de <strong>propriété</strong> effectué dans le service (403 sinon).

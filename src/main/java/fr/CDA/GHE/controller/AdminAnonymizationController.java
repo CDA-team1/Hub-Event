@@ -35,13 +35,6 @@ public class AdminAnonymizationController implements AdminAnonymizationControlle
 
     @Override
     @Secured("ROLE_ADMIN")
-    @GetMapping("/{id}")
-    public AnonymizationDto getById(@PathVariable Long id) {
-        throw new UnsupportedOperationException("TODO logique métier (tâche feature Anonymisation)");
-    }
-
-    @Override
-    @Secured("ROLE_ADMIN")
     @PostMapping("/{id}/validate")
     public AnonymizationDto validate(@PathVariable Long id) throws FunctionalException {
         return anonymizationRequestService.validateRequest(id);

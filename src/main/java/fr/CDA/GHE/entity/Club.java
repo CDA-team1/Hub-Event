@@ -76,14 +76,11 @@ public class Club {
   )
   private Set<User> members = new HashSet<>();
 
-  /**
-   * Événements rattachés au club.
-   * <p>
-   * Event est le côté propriétaire de la relation grâce à son attribut {@code club}.
-   */
-  //TODO : À RÉACTIVER lorsque Event.clubs sera présent sur dev.
-  //@OneToMany(mappedBy = "club")
-  //private Set<Event> events = new HashSet<>();
+  // Pas de relation inverse Club -> Event, bien qu'Event.club existe et soit actif (FK
+  // event_id -> club_id) : aucun code du projet n'a besoin de naviguer depuis un Club vers ses
+  // événements, l'accès se faisant déjà via EventRepository.findByClub_Id (voir
+  // ClubService.delete). Même principe qu'ailleurs dans le projet : une relation inverse ne
+  // s'ajoute qu'avec un consommateur direct, pas par anticipation.
 
   /**
    * Constructeur vide requis par JPA.
@@ -283,13 +280,4 @@ public class Club {
     return removed;
   }
 
-  /**
-   * Retourne les événements rattachés au club.
-   *
-   * @return les événements du club
-   */
-  //TODO : À RÉACTIVER lorsque Event.clubs sera présent sur dev.
-  // public Set<Event> getEvents() {
-  //   return events;
-  // }
 }

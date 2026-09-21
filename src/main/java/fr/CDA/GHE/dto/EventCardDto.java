@@ -9,8 +9,9 @@ import java.time.LocalDateTime;
  * DTO représentant un événement sous forme de carte
  * dans les listes publiques d'événements.
  * <p>
- * TODO : ajouter une image de couverture lorsque la gestion des images
- * et la règle de sélection de l'image principale seront définies.
+ * TODO : ajouter une image de couverture — la gestion des images est déjà implémentée
+ * (ImageRepository/ImageService), mais la règle de sélection de l'image principale parmi
+ * la galerie d'un événement reste à définir.
  * <p>
  * TODO : confirmer si la description doit être affichée sur les cartes
  * avant de l'ajouter à ce DTO.

@@ -113,50 +113,13 @@ public class Event {
   @JoinColumn(name = "club_id", nullable = false)
   private Club club;
 
-  // TODO : À RÉACTIVER lorsque Image.event sera implémenté.
-  //
-  // Cette relation représente le côté inverse de Event <-> Image.
-  // L'entité Image devra posséder l'attribut "event" correspondant.
-  //
-  // /**
-  //  * Images associées à l'événement.
-  //  * <p>
-  //  * Cette collection représente le côté inverse de la relation : l'attribut
-  //  * {@code event} de {@link Image} porte la clé étrangère.
-  //  * </p>
-  //  */
-  // @OneToMany(mappedBy = "event")
-  // private Set<Image> images = new HashSet<>();
-
-  // TODO : À RÉACTIVER lorsque Comment.event sera implémenté.
-  //
-  // Cette relation représente le côté inverse de Event <-> Comment.
-  // L'entité Comment devra posséder l'attribut "event" correspondant.
-  //
-  // /**
-  //  * Commentaires associés à l'événement.
-  //  * <p>
-  //  * Cette collection représente le côté inverse de la relation : l'attribut
-  //  * {@code event} de {@link Comment} porte la clé étrangère.
-  //  * </p>
-  //  */
-  // @OneToMany(mappedBy = "event")
-  // private Set<Comment> comments = new HashSet<>();
-
-  // TODO : À RÉACTIVER lorsque Registration.event sera implémenté.
-  //
-  // Cette relation représente le côté inverse de Event <-> Registration.
-  // L'entité Registration devra posséder l'attribut "event" correspondant.
-  //
-  // /**
-  //  * Inscriptions associées à l'événement.
-  //  * <p>
-  //  * Cette collection représente le côté inverse de la relation : l'attribut
-  //  * {@code event} de {@link Registration} porte la clé étrangère.
-  //  * </p>
-  //  */
-  // @OneToMany(mappedBy = "event")
-  // private Set<Registration> registrations = new HashSet<>();
+  // Pas de relation inverse Event -> Image/Comment/Registration, bien que Image.event,
+  // Comment.event et Registration.event existent et soient actifs : aucun code du projet
+  // n'a besoin de naviguer depuis un Event vers ses images/commentaires/inscriptions, chaque
+  // accès se faisant via une requête dédiée (ImageRepository.findByEvent_Id,
+  // CommentRepository.findByEvent_IdOrderByCreatedAtAsc, RegistrationRepository.findByEvent).
+  // Même principe qu'ailleurs dans le projet (ex. User n'a pas de collection de Club) : une
+  // relation inverse ne s'ajoute qu'avec un consommateur direct, pas par anticipation.
 
   /**
    * Constructeur vide requis par JPA.
@@ -460,72 +423,4 @@ public class Event {
     this.club = club;
   }
 
-  // TODO : À RÉACTIVER avec la relation Event <-> Image
-  // lorsque Image.event et Image.setEvent(Event) seront implémentés.
-  //
-  // /**
-  //  * Retourne les images associées à l'événement.
-  //  *
-  //  * @return les images de l'événement
-  //  */
-  // public Set<Image> getImages() {
-  //   return images;
-  // }
-  //
-  // /**
-  //  * Ajoute une image à l'événement et synchronise le côté propriétaire de la
-  //  * relation en affectant cet événement à l'image.
-  //  *
-  //  * @param image image à associer à l'événement
-  //  */
-  // public void addImage(Image image) {
-  //   images.add(image);
-  //   image.setEvent(this);
-  // }
-
-  // TODO : À RÉACTIVER avec la relation Event <-> Comment
-  // lorsque Comment.event et Comment.setEvent(Event) seront implémentés.
-  //
-  // /**
-  //  * Retourne les commentaires associés à l'événement.
-  //  *
-  //  * @return les commentaires de l'événement
-  //  */
-  // public Set<Comment> getComments() {
-  //   return comments;
-  // }
-  //
-  // /**
-  //  * Ajoute un commentaire à l'événement et synchronise le côté propriétaire de
-  //  * la relation en affectant cet événement au commentaire.
-  //  *
-  //  * @param comment commentaire à associer à l'événement
-  //  */
-  // public void addComment(Comment comment) {
-  //   comments.add(comment);
-  //   comment.setEvent(this);
-  // }
-
-  // TODO : À RÉACTIVER avec la relation Event <-> Registration
-  // lorsque Registration.event et Registration.setEvent(Event) seront implémentés.
-  //
-  // /**
-  //  * Retourne les inscriptions associées à l'événement.
-  //  *
-  //  * @return les inscriptions de l'événement
-  //  */
-  // public Set<Registration> getRegistrations() {
-  //   return registrations;
-  // }
-  //
-  // /**
-  //  * Ajoute une inscription à l'événement et synchronise le côté propriétaire de
-  //  * la relation en affectant cet événement à l'inscription.
-  //  *
-  //  * @param registration inscription à associer à l'événement
-  //  */
-  // public void addRegistration(Registration registration) {
-  //   registrations.add(registration);
-  //   registration.setEvent(this);
-  // }
 }

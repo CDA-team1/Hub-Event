@@ -1,5 +1,6 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.dto.ActivateAdminAccountRequest;
 import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
@@ -263,12 +264,10 @@ public class UserService {
      * <p>
      * Statut {@link AccountStatus#INACTIVE} par défaut, comme pour le signup self-service.
      * Un mot de passe temporaire est généré par le système (jamais choisi par l'admin) et
-     * envoyé par email (règle métier de l'action « Bouton Valider »).
-     * <p>
-     * TODO CPT-06 (à créer) : endpoint de confirmation permettant au titulaire du compte de
-     * saisir son mot de passe temporaire puis un mot de passe définitif, faisant passer le
-     * compte à ACTIF (CdC §Validation de la création d'un compte). Tant que cet endpoint
-     * n'existe pas, un compte créé ici reste INACTIF.
+     * envoyé par email avec un lien de confirmation à usage unique (règle métier de l'action
+     * « Bouton Valider »). Voir {@link #confirmAccountCreation} pour la suite du parcours
+     * (CdC § « Validation de la création d'un compte » : saisie du mot de passe temporaire
+     * puis d'un mot de passe définitif, avant passage du compte à ACTIF).
      *
      * @param request informations saisies par l'administrateur
      * @return le compte créé
@@ -293,6 +292,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setStatus(AccountStatus.INACTIVE);
         user.setRole(request.role());
+        user.setActivationToken(UUID.randomUUID().toString());
 
         User created = userRepository.save(user);
         assignClubs(created, request.clubIds());
@@ -300,9 +300,58 @@ public class UserService {
         log.info("CREATION compte (admin) : id={} email={} role={}",
                 created.getId(), created.getEmail(), created.getRole());
 
-        emailService.sendAdminCreatedAccountEmail(created.getEmail(), temporaryPassword);
+        String confirmationLink = baseUrl + "/auth/confirm-account-creation?token=" + created.getActivationToken();
+        emailService.sendAdminCreatedAccountEmail(created.getEmail(), temporaryPassword, confirmationLink);
 
         return userMapper.toDto(created);
+    }
+
+    /**
+     * Finalise un compte créé par un administrateur, à partir du lien reçu par email (CU25/
+     * CPT-06, CdC § « Validation de la création d'un compte »).
+     * <p>
+     * Contrairement à {@link #activateAccount(String)} (self-service, où l'utilisateur a déjà
+     * choisi son propre mot de passe à l'inscription), ce parcours exige de ressaisir le mot
+     * de passe temporaire généré par l'admin (vérifié par comparaison avec le mot de passe
+     * actuellement enregistré) avant de choisir un mot de passe définitif.
+     *
+     * @param token   jeton transmis dans le lien
+     * @param request mot de passe temporaire, nouveau mot de passe et confirmation
+     * @return le compte activé
+     * @throws FunctionalException si le lien est invalide, si le compte ne peut plus être
+     *                             activé, si le mot de passe temporaire est incorrect, si les
+     *                             deux mots de passe saisis diffèrent, ou si le nouveau mot de
+     *                             passe ne respecte pas les critères de sécurité requis
+     */
+    @Transactional
+    public UserDto confirmAccountCreation(String token, ActivateAdminAccountRequest request) throws FunctionalException {
+        User user = userRepository.findByActivationToken(token)
+                .orElseThrow(() -> new FunctionalException("Le compte associé à ce lien n'existe pas."));
+
+        if (user.getStatus() != AccountStatus.INACTIVE) {
+            throw new FunctionalException("Ce compte est déjà actif ou ne peut plus être activé.");
+        }
+
+        if (!passwordEncoder.matches(request.temporaryPassword(), user.getPassword())) {
+            throw new FunctionalException("Mot de passe temporaire incorrect.");
+        }
+
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new FunctionalException("Les mots de passe ne correspondent pas.");
+        }
+
+        if (!isStrongPassword(request.newPassword())) {
+            throw new FunctionalException("Le mot de passe ne respecte pas les critères de sécurité requis.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setStatus(AccountStatus.ACTIVE);
+        user.setActivationToken(null); // jeton à usage unique
+
+        log.info("VALIDATION création compte (admin) : id={} email={}", user.getId(), user.getEmail());
+
+        // Entité gérée : le dirty checking JPA persiste les changements au commit.
+        return userMapper.toDto(user);
     }
 
     /**

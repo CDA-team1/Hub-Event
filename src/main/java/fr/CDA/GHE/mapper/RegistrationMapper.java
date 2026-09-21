@@ -10,6 +10,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class RegistrationMapper {
 
+    /**
+     * Convertit une inscription en DTO.
+     *
+     * @param registration inscription à convertir
+     * @return DTO correspondant à l'inscription
+     */
     public RegistrationDto toDto(Registration registration) {
         return new RegistrationDto(
                 registration.getId(),

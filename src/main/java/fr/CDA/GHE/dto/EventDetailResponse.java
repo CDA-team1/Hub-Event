@@ -26,12 +26,12 @@ public record EventDetailResponse(
     Integer maxSeats
 ) {
 
-  // TODO EVT-03 : ajouter remainingSeats et waitingCount
-  // lorsque REG-01 sera intégré dans dev.
+  // TODO EVT-03 : ajouter remainingSeats et waitingCount — les inscriptions (REG-01) sont
+  // déjà intégrées côté données (RegistrationRepository), il reste à les exposer ici.
 
-  // TODO EVT-03 : ajouter gallery
-  // lorsque la gestion des images sera implémentée.
+  // TODO EVT-03 : ajouter gallery — la gestion des images est déjà implémentée
+  // (ImageRepository/ImageService), il reste à l'exposer ici.
 
-  // TODO EVT-03 : ajouter comments
-  // lorsque la gestion des commentaires sera implémentée.
+  // TODO EVT-03 : ajouter comments — la gestion des commentaires est déjà implémentée
+  // (CommentRepository/CommentService), il reste à l'exposer ici.
 }

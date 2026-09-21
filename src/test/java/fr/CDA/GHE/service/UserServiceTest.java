@@ -1,5 +1,6 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.dto.ActivateAdminAccountRequest;
 import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
@@ -272,6 +273,7 @@ class UserServiceTest {
 
         assertThat(dto.status()).isEqualTo(AccountStatus.INACTIVE);
         assertThat(dto.role()).isEqualTo(Role.MEMBER);
+        assertThat(userRepository.findById(dto.id()).orElseThrow().getActivationToken()).isNotBlank();
     }
 
     @Test
@@ -303,6 +305,74 @@ class UserServiceTest {
         UserDto dto = userService.createUserByAdmin(request);
 
         assertThat(clubRepository.findByMembers_Id(dto.id())).extracting(Club::getId).containsExactly(club.getId());
+    }
+
+    // --- confirmAccountCreation (CU25/CPT-06) ---
+
+    @Test
+    void confirmAccountCreation_shouldActivateAccount_whenAllValid() throws FunctionalException {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        UserDto dto = userService.confirmAccountCreation("valid-token", request);
+
+        assertThat(dto.status()).isEqualTo(AccountStatus.ACTIVE);
+        User reloaded = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(reloaded.getActivationToken()).isNull();
+        assertThat(passwordEncoder.matches("NewStr0ng!Pass", reloaded.getPassword())).isTrue();
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenTokenUnknown() {
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("unknown-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenAlreadyActive() throws FunctionalException {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+        userService.confirmAccountCreation("valid-token", request);
+        user.setActivationToken("valid-token"); // ré-injecté pour re-tester le contrôle de statut
+        userRepository.save(user);
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenTemporaryPasswordIncorrect() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest("wrong-temporary-password", "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenPasswordsDoNotMatch() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "AnotherPass1!");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenNewPasswordIsWeak() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "faible", "faible");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
     }
 
     @Test

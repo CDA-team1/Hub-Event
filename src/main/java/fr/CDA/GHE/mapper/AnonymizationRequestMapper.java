@@ -19,6 +19,12 @@ public class AnonymizationRequestMapper {
         this.userMapper = userMapper;
     }
 
+    /**
+     * Convertit une demande d'anonymisation en DTO.
+     *
+     * @param request demande à convertir
+     * @return DTO correspondant à la demande
+     */
     public AnonymizationDto toDto(AnonymizationRequest request) {
         return new AnonymizationDto(
                 request.getId(),
@@ -28,6 +34,12 @@ public class AnonymizationRequestMapper {
         );
     }
 
+    /**
+     * Convertit une liste de demandes d'anonymisation en liste de DTO.
+     *
+     * @param requests demandes à convertir
+     * @return la liste des DTO correspondants
+     */
     public List<AnonymizationDto> toDtoList(List<AnonymizationRequest> requests) {
         return requests.stream().map(this::toDto).toList();
     }

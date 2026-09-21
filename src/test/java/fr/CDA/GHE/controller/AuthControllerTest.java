@@ -159,4 +159,35 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Le lien de confirmation est invalide."));
     }
+
+    @Test
+    void confirmAccountCreation_shouldReturn200_whenValid() throws Exception {
+        UserDto activated = new UserDto(1L, "Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, AccountStatus.ACTIVE, Role.MEMBER);
+        when(userService.confirmAccountCreation(eq("valid-token"), any())).thenReturn(activated);
+
+        mockMvc.perform(post("/auth/confirm-account-creation")
+                        .param("token", "valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"temporaryPassword":"TempPass1!","newPassword":"NewStr0ng!Pass",
+                                "confirmPassword":"NewStr0ng!Pass"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void confirmAccountCreation_shouldReturn400_whenTemporaryPasswordIncorrect() throws Exception {
+        when(userService.confirmAccountCreation(eq("valid-token"), any()))
+                .thenThrow(new FunctionalException("Mot de passe temporaire incorrect."));
+
+        mockMvc.perform(post("/auth/confirm-account-creation")
+                        .param("token", "valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"temporaryPassword":"wrong","newPassword":"NewStr0ng!Pass",
+                                "confirmPassword":"NewStr0ng!Pass"}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Mot de passe temporaire incorrect."));
+    }
 }

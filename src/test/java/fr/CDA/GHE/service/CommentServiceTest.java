@@ -34,7 +34,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 /**
  * Tests de {@link CommentService} avec une vraie base H2 (profil "test", voir
  * {@code GheApplicationTests}) : vérifie le comportement réel des requêtes dérivées (tri
- * chronologique, existence de l'événement) et du formatage de l'auteur, plutôt qu'un
+ * chronologique, existence de l'événement), du formatage de l'auteur, et de la règle de
+ * visibilité (COM-01) partagée avec {@link EventService#isEventAccessible}, plutôt qu'un
  * repository mocké.
  * <p>
  * {@code @Transactional} annule les écritures après chaque test.
@@ -115,6 +116,7 @@ class CommentServiceTest {
     void extractByEvent_shouldReturnCommentsOrderedByCreationDate() {
         User author = persistActiveUser("john.doe@test.com", "Doe", "John");
         Event event = persistEvent(author);
+        authenticateAs(author);
 
         commentRepository.save(new Comment("Deuxième message", author, event,
                 LocalDateTime.of(2026, 1, 2, 10, 0)));
@@ -132,6 +134,7 @@ class CommentServiceTest {
         User author = persistActiveUser("john.doe@test.com", "Doe", "John");
         Event event = persistEvent(author);
         commentRepository.save(new Comment(CONTENT, author, event, LocalDateTime.now()));
+        authenticateAs(author);
 
         author.setStatus(AccountStatus.ANONYMIZED);
         userRepository.save(author);
@@ -145,6 +148,76 @@ class CommentServiceTest {
     void extractByEvent_shouldThrow_whenEventDoesNotExist() {
         assertThatThrownBy(() -> commentService.extractByEvent(999L))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void extractByEvent_shouldReturnComments_whenEventIsPublishedAndUserIsAnonymous() {
+        User author = persistActiveUser("john.doe@test.com", "Doe", "John");
+        Event event = persistPublishedEvent(author);
+        commentRepository.save(new Comment(CONTENT, author, event, LocalDateTime.now()));
+
+        List<CommentDto> comments = commentService.extractByEvent(event.getId());
+
+        assertThat(comments).hasSize(1);
+    }
+
+    @Test
+    void extractByEvent_shouldReturnComments_whenEventIsPublishedAndUserIsAuthenticated() {
+        User author = persistActiveUser("john.doe@test.com", "Doe", "John");
+        User reader = persistActiveUser("reader@test.com", "Reader", "Rita");
+        Event event = persistPublishedEvent(author);
+        commentRepository.save(new Comment(CONTENT, author, event, LocalDateTime.now()));
+        authenticateAs(reader);
+
+        List<CommentDto> comments = commentService.extractByEvent(event.getId());
+
+        assertThat(comments).hasSize(1);
+    }
+
+    @Test
+    void extractByEvent_shouldThrow_whenEventIsDraftAndUserIsAnonymous() {
+        User author = persistActiveUser("john.doe@test.com", "Doe", "John");
+        Event event = persistEvent(author);
+        commentRepository.save(new Comment(CONTENT, author, event, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> commentService.extractByEvent(event.getId()))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void extractByEvent_shouldThrow_whenEventIsDraftAndUserIsNotOwner() {
+        User author = persistActiveUser("john.doe@test.com", "Doe", "John");
+        User other = persistActiveUser("other@test.com", "Martin", "Paul");
+        Event event = persistEvent(author);
+        commentRepository.save(new Comment(CONTENT, author, event, LocalDateTime.now()));
+        authenticateAs(other);
+
+        assertThatThrownBy(() -> commentService.extractByEvent(event.getId()))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void extractByEvent_shouldReturnComments_whenEventIsDraftAndUserIsOwner() {
+        User author = persistActiveUser("john.doe@test.com", "Doe", "John");
+        Event event = persistEvent(author);
+        commentRepository.save(new Comment(CONTENT, author, event, LocalDateTime.now()));
+        authenticateAs(author);
+
+        List<CommentDto> comments = commentService.extractByEvent(event.getId());
+
+        assertThat(comments).hasSize(1);
+    }
+
+    @Test
+    void createComment_shouldThrow_whenEventIsNotAccessible() {
+        User author = persistActiveUser("john.doe@test.com", "Doe", "John");
+        User other = persistActiveUser("other@test.com", "Martin", "Paul");
+        Event event = persistEvent(author);
+        authenticateAs(other);
+
+        assertThatThrownBy(() -> commentService.createComment(new CreateCommentRequest(event.getId(), CONTENT)))
+                .isInstanceOf(NotFoundException.class);
+        assertThat(commentRepository.findByEvent_IdOrderByCreatedAtAsc(event.getId())).isEmpty();
     }
 
     private User persistActiveUser(String email, String lastName, String firstName) {
@@ -166,6 +239,12 @@ class CommentServiceTest {
         Event event = new Event("Titre", "Description", "Lieu",
                 LocalDateTime.now().plusDays(1), null,
                 BigDecimal.TEN, BigDecimal.TEN, 50, Category.SPORT, organizer, club);
+        return eventRepository.save(event);
+    }
+
+    private Event persistPublishedEvent(User organizer) {
+        Event event = persistEvent(organizer);
+        event.publish();
         return eventRepository.save(event);
     }
 

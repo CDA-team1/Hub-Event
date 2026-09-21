@@ -17,10 +17,29 @@ import java.util.Optional;
  */
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
 
+  /**
+   * Recherche toutes les inscriptions à un évènement donné.
+   *
+   * @param event l'évènement concerné
+   * @return les inscriptions à cet évènement
+   */
   List<Registration> findByEvent(Event event);
 
+  /**
+   * Recherche toutes les inscriptions d'un utilisateur donné.
+   *
+   * @param user l'utilisateur concerné
+   * @return les inscriptions de cet utilisateur
+   */
   List<Registration> findByUser(User user);
 
+  /**
+   * Compte les inscriptions à un évènement possédant un statut donné (ex. places occupées).
+   *
+   * @param event  l'évènement concerné
+   * @param status le statut recherché
+   * @return le nombre d'inscriptions correspondantes
+   */
   long countByEventAndStatus(Event event, RegistrationStatus status);
 
   /**

@@ -16,6 +16,7 @@ import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.repository.CommentRepository;
 import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
@@ -71,6 +72,11 @@ public class EventService {
   private final RegistrationRepository registrationRepository;
 
   /**
+   * Repository permettant l'accès aux commentaires.
+   */
+  private final CommentRepository commentRepository;
+
+  /**
    * Service utilisé pour envoyer les emails transactionnels.
    */
   private final EmailService emailService;
@@ -88,6 +94,7 @@ public class EventService {
    * @param userRepository         repository d'accès aux utilisateurs
    * @param clubRepository         repository d'accès aux clubs
    * @param registrationRepository repository d'accès aux inscriptions
+   * @param commentRepository      repository d'accès aux commentaires
    * @param emailService           service d'envoi des emails transactionnels
    * @param imageService           service de gestion des images
    */
@@ -97,6 +104,7 @@ public class EventService {
       UserRepository userRepository,
       ClubRepository clubRepository,
       RegistrationRepository registrationRepository,
+      CommentRepository commentRepository,
       EmailService emailService,
       ImageService imageService
   ) {
@@ -105,6 +113,7 @@ public class EventService {
     this.userRepository = userRepository;
     this.clubRepository = clubRepository;
     this.registrationRepository = registrationRepository;
+    this.commentRepository = commentRepository;
     this.emailService = emailService;
     this.imageService = imageService;
   }
@@ -220,9 +229,10 @@ public class EventService {
   @Transactional(readOnly = true)
   public EventDetailResponse getEventDetail(Long id) {
 
-    // TODO EVT-03 : utiliser @EntityGraph ou JOIN FETCH pour charger
-    // les inscriptions, les images et les commentaires lorsque ces relations
-    // seront disponibles dans Event.
+    // TODO EVT-03 : compléter EventDetailResponse (places restantes, liste d'attente,
+    // galerie, commentaires) — les briques de données existent déjà (RegistrationRepository,
+    // ImageRepository, CommentRepository), il ne reste qu'à les interroger et les exposer ici ;
+    // pas besoin d'attendre une relation inverse sur Event (voir Event.java).
 
     Event event = eventRepository.findById(id)
         .orElseThrow(() ->
@@ -306,9 +316,9 @@ public class EventService {
 
     checkOwnership(event, "modifier cet événement");
 
-    // TODO EVT-05 : intégrer la modification des images lorsque le modèle Image
-    // et la relation entre Event et Image seront implémentés.
-    // Un événement FINISHED devra alors rester modifiable uniquement pour ses images.
+    // Un événement FINISHED reste modifiable uniquement pour ses images : cette exception est
+    // déjà satisfaite par la conception (POST/DELETE /events/{id}/images, voir ImageService,
+    // ne passent pas par cette méthode et ignorent volontairement le statut de l'événement).
     if (event.getStatus() == EventStatus.FINISHED) {
       throw new FunctionalException(
           "Un événement passé ne peut plus être modifié, à l'exception de ses images."
@@ -432,11 +442,17 @@ public class EventService {
 
   /**
    * Vérifie si un événement peut être consulté par l'utilisateur courant.
+   * <p>
+   * Package-private et statique (plutôt que private) pour être réutilisée telle quelle par
+   * {@link CommentService}, qui doit appliquer exactement la même règle de visibilité que la
+   * consultation du détail d'un événement (COM-01) : les commentaires d'un brouillon ne
+   * doivent pas être accessibles à qui ne pourrait pas consulter l'événement lui-même.
+   * </p>
    *
    * @param event événement dont la visibilité doit être vérifiée
    * @return {@code true} si l'événement est accessible, sinon {@code false}
    */
-  private boolean isEventAccessible(Event event) {
+  static boolean isEventAccessible(Event event) {
 
     if (event.getStatus() == EventStatus.PUBLISHED
         || event.getStatus() == EventStatus.FINISHED) {
@@ -675,6 +691,8 @@ public class EventService {
     registrationRepository.deleteAll(
         registrationRepository.findByEvent(event)
     );
+
+    commentRepository.deleteAllByEvent_Id(id);
 
     imageService.removeAllImagesForEvent(id);
 
