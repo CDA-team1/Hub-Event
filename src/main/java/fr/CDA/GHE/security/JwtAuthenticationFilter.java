@@ -1,5 +1,9 @@
 package fr.CDA.GHE.security;
 
+import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.enums.AccountStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -14,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.IOException;
+import java.time.LocalDate;
 
 /**
  * Filtre chargé de traiter l'authentification JWT
@@ -21,6 +26,8 @@ import java.io.IOException;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+  private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
@@ -71,18 +78,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         UserDetails userDetails =
             userDetailsService.loadUserByUsername(email);
 
-        UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(
-                userDetails,
-                null,
-                userDetails.getAuthorities()
-            );
+        if (isAccountUsable(userDetails)) {
+          UsernamePasswordAuthenticationToken authentication =
+              new UsernamePasswordAuthenticationToken(
+                  userDetails,
+                  null,
+                  userDetails.getAuthorities()
+              );
 
-        SecurityContextHolder.getContext()
-            .setAuthentication(authentication);
+          SecurityContextHolder.getContext()
+              .setAuthentication(authentication);
+        }
       }
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  /**
+   * Revérifie, à chaque requête, les mêmes règles que {@code AuthService.login} (compte
+   * {@link AccountStatus#ACTIVE} et non suspendu) — sans quoi un compte suspendu ou anonymisé
+   * après l'émission d'un JWT garderait l'accès jusqu'à l'expiration de ce jeton (jusqu'à 1h,
+   * voir {@code jwt.expiration-ms}).
+   *
+   * @param userDetails principal chargé pour la requête courante (l'entité {@link User} elle-même)
+   * @return {@code true} si le compte peut être authentifié pour cette requête
+   */
+  private boolean isAccountUsable(UserDetails userDetails) {
+    if (!(userDetails instanceof User user)) {
+      return true; // ne devrait jamais arriver, voir JpaUserDetailsService
+    }
+
+    if (user.getStatus() != AccountStatus.ACTIVE) {
+      log.info("REFUS authentification JWT (compte non actif) : email={}", user.getEmail());
+      return false;
+    }
+
+    if (user.isSuspended()) {
+      LocalDate endDate = user.getSuspensionEndDate();
+      boolean stillBlocked = endDate == null || LocalDate.now().isBefore(endDate);
+      if (stillBlocked) {
+        log.info("REFUS authentification JWT (compte suspendu) : email={}", user.getEmail());
+        return false;
+      }
+    }
+
+    return true;
   }
 }
