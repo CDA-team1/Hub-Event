@@ -5,6 +5,11 @@ import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration de la documentation OpenAPI/Swagger de l'API.
+ * <p>
+ * Définit le titre, la version et la description affichés dans l'interface Swagger UI.
+ */
 @Configuration
 public class SwaggerConfig {
 

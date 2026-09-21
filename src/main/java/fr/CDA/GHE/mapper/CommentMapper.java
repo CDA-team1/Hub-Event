@@ -14,6 +14,12 @@ import java.util.List;
 @Component
 public class CommentMapper {
 
+    /**
+     * Convertit un commentaire en DTO.
+     *
+     * @param comment commentaire à convertir
+     * @return DTO correspondant au commentaire
+     */
     public CommentDto toDto(Comment comment) {
         return new CommentDto(
                 comment.getId(),
@@ -24,6 +30,12 @@ public class CommentMapper {
         );
     }
 
+    /**
+     * Convertit une liste de commentaires en liste de DTO.
+     *
+     * @param comments commentaires à convertir
+     * @return la liste des DTO correspondants
+     */
     public List<CommentDto> toDtoList(List<Comment> comments) {
         return comments.stream().map(this::toDto).toList();
     }

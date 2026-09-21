@@ -10,14 +10,12 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * SEC-02 — Câblage des autorisations sur les routes des clubs (matrice {@code docs/SEC-02-matrice-routes.md}).
+ * SEC-02 — Autorisations des routes des clubs.
  * <p>
- * Seuls les rôles sont exprimés ici via {@code @Secured} ; les routes publiques (GET) n'ont pas
- * d'annotation (elles seront en {@code permitAll} dans le {@code SecurityConfig} de SEC-01).
- * <p>
- * ⚠️ Les {@code @Secured} restent inertes tant que SEC-01 n'a pas activé
- * {@code @EnableMethodSecurity(securedEnabled = true)}. Les corps sont des TODO : la logique
- * métier sera remplie par la tâche feature, <strong>sans retirer les annotations de sécurité</strong>.
+ * Seuls les rôles sont exprimés ici via {@code @Secured} (actif grâce à
+ * {@code @EnableMethodSecurity(securedEnabled = true)} dans {@code SecurityConfig}) ; les
+ * routes publiques (GET) n'ont pas d'annotation, elles sont en {@code permitAll} côté
+ * {@code SecurityConfig}.
  */
 @RestController
 @RequestMapping("/clubs")

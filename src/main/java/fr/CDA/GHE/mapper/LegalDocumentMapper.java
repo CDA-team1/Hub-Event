@@ -10,6 +10,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class LegalDocumentMapper {
 
+    /**
+     * Convertit un document légal en DTO.
+     *
+     * @param document document à convertir
+     * @return DTO correspondant au document
+     */
     public LegalDocumentDto toDto(LegalDocument document) {
         return new LegalDocumentDto(
                 document.getId(),

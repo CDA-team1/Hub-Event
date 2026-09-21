@@ -229,9 +229,10 @@ public class EventService {
   @Transactional(readOnly = true)
   public EventDetailResponse getEventDetail(Long id) {
 
-    // TODO EVT-03 : utiliser @EntityGraph ou JOIN FETCH pour charger
-    // les inscriptions, les images et les commentaires lorsque ces relations
-    // seront disponibles dans Event.
+    // TODO EVT-03 : compléter EventDetailResponse (places restantes, liste d'attente,
+    // galerie, commentaires) — les briques de données existent déjà (RegistrationRepository,
+    // ImageRepository, CommentRepository), il ne reste qu'à les interroger et les exposer ici ;
+    // pas besoin d'attendre une relation inverse sur Event (voir Event.java).
 
     Event event = eventRepository.findById(id)
         .orElseThrow(() ->
@@ -315,9 +316,9 @@ public class EventService {
 
     checkOwnership(event, "modifier cet événement");
 
-    // TODO EVT-05 : intégrer la modification des images lorsque le modèle Image
-    // et la relation entre Event et Image seront implémentés.
-    // Un événement FINISHED devra alors rester modifiable uniquement pour ses images.
+    // Un événement FINISHED reste modifiable uniquement pour ses images : cette exception est
+    // déjà satisfaite par la conception (POST/DELETE /events/{id}/images, voir ImageService,
+    // ne passent pas par cette méthode et ignorent volontairement le statut de l'événement).
     if (event.getStatus() == EventStatus.FINISHED) {
       throw new FunctionalException(
           "Un événement passé ne peut plus être modifié, à l'exception de ses images."

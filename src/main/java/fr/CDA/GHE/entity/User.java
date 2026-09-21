@@ -403,6 +403,12 @@ import java.util.Set;
             this.suspensionReason = suspensionReason;
         }
 
+        /**
+         * Suspend temporairement le compte jusqu'à une date donnée.
+         *
+         * @param suspensionEndDate date de fin de la suspension
+         * @param suspensionReason  motif de la suspension
+         */
         public void suspendTemporarily(
                 LocalDate suspensionEndDate,
                 String suspensionReason
@@ -412,83 +418,171 @@ import java.util.Set;
             this.suspensionReason = suspensionReason;
         }
 
+        /**
+         * Suspend le compte pour une durée indéfinie (aucune date de fin).
+         *
+         * @param suspensionReason motif de la suspension
+         */
         public void suspendIndefinitely(String suspensionReason) {
             this.suspended = true;
             this.suspensionEndDate = null;
             this.suspensionReason = suspensionReason;
         }
 
+        /**
+         * Lève la suspension du compte.
+         */
         public void liftSuspension() {
             this.suspended = false;
             this.suspensionEndDate = null;
             this.suspensionReason = null;
         }
 
+        /**
+         * Retourne les clubs auxquels l'utilisateur est affilié.
+         *
+         * @return les clubs affiliés
+         */
         public Set<Club> getClubs() {
             return clubs;
         }
 
+        /**
+         * Affilie l'utilisateur au club donné (maintient les deux côtés de la relation).
+         *
+         * @param club club auquel affilier l'utilisateur
+         */
         public void addClub(Club club) {
             clubs.add(club);
             club.getMembers().add(this);
         }
 
+        /**
+         * Retourne les événements organisés par l'utilisateur.
+         *
+         * @return les événements organisés
+         */
         public Set<Event> getOrganizedEvents() {
             return organizedEvents;
         }
 
+        /**
+         * Ajoute un événement organisé par l'utilisateur (maintient les deux côtés de la relation).
+         *
+         * @param event événement à associer
+         */
         public void addOrganizedEvent(Event event) {
             organizedEvents.add(event);
             event.setOrganizer(this);
         }
 
+        /**
+         * Retourne les inscriptions de l'utilisateur.
+         *
+         * @return les inscriptions
+         */
         public Set<Registration> getRegistrations() {
             return registrations;
         }
 
+        /**
+         * Ajoute une inscription à l'utilisateur (maintient les deux côtés de la relation).
+         *
+         * @param registration inscription à associer
+         */
         public void addRegistration(Registration registration) {
             registrations.add(registration);
             registration.setUser(this);
         }
 
+        /**
+         * Retourne les commentaires publiés par l'utilisateur.
+         *
+         * @return les commentaires
+         */
         public Set<Comment> getComments() {
             return comments;
         }
 
+        /**
+         * Ajoute un commentaire à l'utilisateur (maintient les deux côtés de la relation).
+         *
+         * @param comment commentaire à associer
+         */
         public void addComment(Comment comment) {
             comments.add(comment);
             comment.setUser(this);
         }
 
+        /**
+         * Retourne la demande d'anonymisation de l'utilisateur.
+         *
+         * @return la demande d'anonymisation, ou {@code null} si aucune n'a été faite
+         */
         public AnonymizationRequest getAnonymizationRequest() {
             return anonymizationRequest;
         }
 
+        /**
+         * Associe une demande d'anonymisation à l'utilisateur (maintient les deux côtés de la relation).
+         *
+         * @param anonymizationRequest demande d'anonymisation à associer
+         */
         public void setAnonymizationRequest(AnonymizationRequest anonymizationRequest) {
             this.anonymizationRequest = anonymizationRequest;
             anonymizationRequest.setUser(this);
         }
 
+        /**
+         * Retourne le jeton d'activation du compte.
+         *
+         * @return le jeton d'activation, ou {@code null} si le compte est déjà activé
+         */
         public String getActivationToken() {
             return activationToken;
         }
 
+        /**
+         * Modifie le jeton d'activation du compte.
+         *
+         * @param activationToken nouveau jeton, éventuellement {@code null}
+         */
         public void setActivationToken(String activationToken) {
             this.activationToken = activationToken;
         }
 
+        /**
+         * Retourne le nouveau mot de passe en attente de confirmation.
+         *
+         * @return le mot de passe en attente, ou {@code null} si aucun changement n'est en cours
+         */
         public String getPendingPassword() {
             return pendingPassword;
         }
 
+        /**
+         * Modifie le mot de passe en attente de confirmation.
+         *
+         * @param pendingPassword nouveau mot de passe en attente, déjà encodé, éventuellement {@code null}
+         */
         public void setPendingPassword(String pendingPassword) {
             this.pendingPassword = pendingPassword;
         }
 
+        /**
+         * Retourne le jeton de confirmation du changement de mot de passe.
+         *
+         * @return le jeton de confirmation, ou {@code null} si aucun changement n'est en cours
+         */
         public String getPasswordChangeToken() {
             return passwordChangeToken;
         }
 
+        /**
+         * Modifie le jeton de confirmation du changement de mot de passe.
+         *
+         * @param passwordChangeToken nouveau jeton, éventuellement {@code null}
+         */
         public void setPasswordChangeToken(String passwordChangeToken) {
             this.passwordChangeToken = passwordChangeToken;
         }
@@ -527,6 +621,4 @@ import java.util.Set;
         public boolean isEnabled() {
             return true;
         }
-
-        // TODO : Event - organizedEvents(OneToMAny), Comment(OneToMany)
     }

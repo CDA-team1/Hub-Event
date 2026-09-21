@@ -6,9 +6,9 @@ package fr.CDA.GHE.dto;
  * {@code GET /clubs} est une route publique.
  *
  * @param id        identifiant du membre
- * @param firstname prénom du membre
- * @param lastname  nom de famille du membre
+ * @param firstName prénom du membre
+ * @param lastName  nom de famille du membre
  * @param email     adresse email du membre
  */
-public record MemberSummaryDto(Long id, String firstname, String lastname, String email) {
+public record MemberSummaryDto(Long id, String firstName, String lastName, String email) {
 }

@@ -23,6 +23,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
 
+  /**
+   * Fournit l'encodeur utilisé pour hasher et vérifier les mots de passe des comptes.
+   */
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
@@ -37,6 +40,10 @@ public class SecurityConfig {
     return configuration.getAuthenticationManager();
   }
 
+  /**
+   * Définit les règles d'autorisation HTTP de l'application : routes publiques, filtre
+   * d'authentification JWT, session stateless.
+   */
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
@@ -48,14 +55,14 @@ public class SecurityConfig {
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
         .authorizeHttpRequests(auth -> auth
-            // Routes publiques (docs/SEC-02-matrice-routes.md)
+            // Routes publiques
             .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup").permitAll()
             .requestMatchers(HttpMethod.POST, "/auth/confirm-account-creation").permitAll()
             .requestMatchers(HttpMethod.GET, "/auth/activate", "/auth/confirm-password-change").permitAll()
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/pdf").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/comments").permitAll()
-            .requestMatchers(HttpMethod.GET, "/events/search").permitAll() // pas encore codé
+            .requestMatchers(HttpMethod.GET, "/events/search").permitAll()
             .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/documents/*", "/documents/*/pdf").permitAll()
             .requestMatchers("/error").permitAll() // sinon écrase le code d'erreur d'origine

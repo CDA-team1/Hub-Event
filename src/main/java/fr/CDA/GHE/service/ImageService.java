@@ -51,8 +51,9 @@ public class ImageService {
      * Ajoute une ou plusieurs images à la galerie d'un événement (CU23, règles n°1 à 3).
      * <p>
      * Réservé à l'organisateur propriétaire de l'événement. L'ajout d'images reste possible
-     * quel que soit le statut de l'événement (y compris FINISHED — voir le TODO EVT-05 sur
-     * {@code EventService.updateEvent}, qui prévoit explicitement cette exception).
+     * quel que soit le statut de l'événement (y compris FINISHED) : contrairement aux autres
+     * champs, la galerie ne passe pas par {@code EventService.updateEvent}, qui bloque
+     * justement toute modification d'un événement FINISHED en dehors de ses images.
      *
      * @param eventId identifiant de l'événement concerné
      * @param files   fichiers image envoyés
