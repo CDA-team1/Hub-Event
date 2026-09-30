@@ -20,6 +20,13 @@ export const routes: Routes = [
       import('./features/account/signup-page/signup-page').then((m) => m.SignupPage),
   },
   {
+    path: 'connexion',
+    title: 'Connexion',
+    loadComponent: () =>
+      import('./features/auth/login-page/login-page').then((m) => m.LoginPage,
+      ),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>

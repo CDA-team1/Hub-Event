@@ -5,7 +5,7 @@ import fr.CDA.GHE.dto.LoginResponse;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
-import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.exception.UnauthorizedException;
 import fr.CDA.GHE.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,7 @@ class AuthServiceTest {
      * passer sans vérifier).
      */
     @Test
-    void login_shouldSucceed_whenCredentialsAreValidAndAccountIsActive() throws FunctionalException {
+    void login_shouldSucceed_whenCredentialsAreValidAndAccountIsActive() {
         persistUser("secret.story@test.com", AccountStatus.ACTIVE, false, null);
 
         LoginResponse response = authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD));
@@ -68,7 +68,7 @@ class AuthServiceTest {
         persistUser("secret.story@test.com", AccountStatus.ACTIVE, false, null);
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("secret.story@test.com", "MauvaisMotDePasse123!")))
-                .isInstanceOf(FunctionalException.class);
+                .isInstanceOf(UnauthorizedException.class);
     }
 
     /**
@@ -78,7 +78,7 @@ class AuthServiceTest {
     @Test
     void login_shouldThrow_whenEmailIsUnknown() {
         assertThatThrownBy(() -> authService.login(new LoginRequest("unknown@test.com", RAW_PASSWORD)))
-                .isInstanceOf(FunctionalException.class);
+                .isInstanceOf(UnauthorizedException.class);
     }
 
     /**
@@ -89,7 +89,7 @@ class AuthServiceTest {
         persistUser("secret.story@test.com", AccountStatus.INACTIVE, false, null);
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD)))
-                .isInstanceOf(FunctionalException.class);
+                .isInstanceOf(UnauthorizedException.class);
     }
 
     /**
@@ -100,14 +100,14 @@ class AuthServiceTest {
         persistUser("secret.story@test.com", AccountStatus.ACTIVE, true, null);
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD)))
-                .isInstanceOf(FunctionalException.class);
+                .isInstanceOf(UnauthorizedException.class);
     }
 
     /**
      * Vérifie qu'une suspension temporaire déjà terminée ne bloque plus la connexion.
      */
     @Test
-    void login_shouldSucceed_whenTemporarySuspensionHasEnded() throws FunctionalException {
+    void login_shouldSucceed_whenTemporarySuspensionHasEnded() {
         persistUser("secret.story@test.com", AccountStatus.ACTIVE, true, LocalDate.now().minusDays(1));
 
         LoginResponse response = authService.login(new LoginRequest("secret.story@test.com", RAW_PASSWORD));
