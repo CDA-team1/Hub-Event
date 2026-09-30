@@ -43,6 +43,17 @@ public class ApiExceptionHandler {
     }
 
     /**
+     * Gère les {@link UnauthorizedException} et retourne un 401 Unauthorized.
+     *
+     * @param ex l'exception levée
+     * @return la réponse HTTP avec le message d'erreur
+     */
+    @ExceptionHandler(UnauthorizedException.class)
+    protected ResponseEntity<String> handleUnauthorized(UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    /**
      * Gère les {@link FunctionalException} et retourne un 400 Bad Request.
      *
      * @param ex l'exception levée
