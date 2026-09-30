@@ -4,7 +4,7 @@ import fr.CDA.GHE.dto.LoginRequest;
 import fr.CDA.GHE.dto.LoginResponse;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
-import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.exception.UnauthorizedException;
 import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -50,30 +50,30 @@ public class AuthService {
      *
      * @param request email et mot de passe saisis par l'utilisateur
      * @return le jeton JWT et le rôle de l'utilisateur authentifié
-     * @throws FunctionalException si les identifiants sont invalides, si le compte
-     *                             n'est pas actif, ou s'il est suspendu
+     * @throws UnauthorizedException si les identifiants sont invalides, si le compte
+     *                               n'est pas actif, ou s'il est suspendu
      */
-    public LoginResponse login(LoginRequest request) throws FunctionalException {
+    public LoginResponse login(LoginRequest request) {
 
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.email(), request.password()));
         } catch (AuthenticationException e) {
-            throw new FunctionalException("Email ou mot de passe invalide");
+            throw new UnauthorizedException("Email ou mot de passe invalide");
         }
 
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new FunctionalException("Email ou mot de passe invalide"));
+                .orElseThrow(() -> new UnauthorizedException("Email ou mot de passe invalide"));
 
         if (user.getStatus() != AccountStatus.ACTIVE){
-            throw new FunctionalException("Compte inactif ou anonymisé, connexion impossible");
+            throw new UnauthorizedException("Compte inactif ou anonymisé, connexion impossible");
         }
 
         if (user.isSuspended()){
             LocalDate endDate = user.getSuspensionEndDate();
             boolean stillBlocked = (endDate == null) || LocalDate.now().isBefore(endDate);
             if (stillBlocked){
-                throw new FunctionalException("Compte suspendu");
+                throw new UnauthorizedException("Compte suspendu");
             }
         }
 

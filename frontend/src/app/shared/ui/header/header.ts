@@ -1,5 +1,6 @@
-import {Component, signal} from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Auth } from '../../../core/auth/auth';
 
 @Component({
   imports: [RouterLink, RouterLinkActive],
@@ -8,10 +9,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   templateUrl: './header.html',
 })
 export class Header {
-  // Signal local temporaire : sera remplacé par le service Auth (core/auth) à AUTH-01
-  protected readonly isConnected = signal(false);
+  private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
 
-  protected toggleConnected(): void {
-    this.isConnected.update((value) => !value);
+  protected readonly isConnected = this.auth.isAuthenticated;
+
+  protected async logout(): Promise<void> {
+    this.auth.logout();
+    await this.router.navigate(['/']);
   }
 }

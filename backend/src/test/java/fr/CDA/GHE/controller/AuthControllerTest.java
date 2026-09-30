@@ -5,6 +5,7 @@ import fr.CDA.GHE.dto.UserDto;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.exception.UnauthorizedException;
 import fr.CDA.GHE.security.JwtService;
 import fr.CDA.GHE.service.AuthService;
 import fr.CDA.GHE.service.UserService;
@@ -64,26 +65,26 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_shouldReturn400_whenCredentialsAreInvalid() throws Exception {
+    void login_shouldReturn401_whenCredentialsAreInvalid() throws Exception {
         when(authService.login(any()))
-                .thenThrow(new FunctionalException("Email ou mot de passe invalide"));
+                .thenThrow(new UnauthorizedException("Email ou mot de passe invalide"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"john.doe@test.com\",\"password\":\"wrong\"}"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().string("Email ou mot de passe invalide"));
     }
 
     @Test
-    void login_shouldReturn400_whenAccountNotActive() throws Exception {
+    void login_shouldReturn401_whenAccountNotActive() throws Exception {
         when(authService.login(any()))
-                .thenThrow(new FunctionalException("Compte inactif ou anonymisé, connexion impossible"));
+                .thenThrow(new UnauthorizedException("Compte inactif ou anonymisé, connexion impossible"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"john.doe@test.com\",\"password\":\"secret\"}"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().string("Compte inactif ou anonymisé, connexion impossible"));
     }
 

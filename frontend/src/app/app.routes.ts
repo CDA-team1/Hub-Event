@@ -16,6 +16,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'connexion',
+    title: 'Connexion',
+    loadComponent: () =>
+      import('./features/auth/login-page/login-page').then((m) => m.LoginPage,
+      ),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>
