@@ -1,17 +1,13 @@
-import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-
-/**
- * À poser sur une requête dont le 401 ne signifie pas "session expirée" (ex. l'appel de login
- * lui-même, où 401 veut dire "identifiants invalides") : désactive la redirection et le message
- * générique pour cette requête, le message réel du back est conservé tel quel.
- */
-export const SKIP_AUTH_REDIRECT = new HttpContextToken<boolean>(() => false);
+import { Auth } from '../auth/auth';
+import { SKIP_AUTH_REDIRECT } from './skip-auth-redirect';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
+  const auth = inject(Auth);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -27,6 +23,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             message = typeof error.error === 'string' ? error.error : 'Non autorisé.';
           } else {
             message = 'Votre session a expiré. Veuillez vous reconnecter.';
+            auth.logout();
             void router.navigate(['/connexion']);
           }
           break;

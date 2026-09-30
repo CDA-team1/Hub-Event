@@ -2,8 +2,8 @@ import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http
 import { Service, computed, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Role } from '../../domain/role';
-import { SKIP_AUTH_REDIRECT } from '../http/error-interceptor';
 import { API_URL } from '../http/api-url';
+import { SKIP_AUTH_REDIRECT } from '../http/skip-auth-redirect';
 import { persistedSignal } from '../storage/persisted-signal';
 
 interface Session {
