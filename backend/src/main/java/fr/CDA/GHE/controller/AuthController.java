@@ -42,11 +42,11 @@ public class AuthController {
      *
      * @param request email et mot de passe saisis
      * @return 200 OK avec le jeton JWT et le rôle de l'utilisateur
-     * @throws FunctionalException si les identifiants sont invalides ou si le compte
-     *                             n'est pas actif/est suspendu
+     * @throws fr.CDA.GHE.exception.UnauthorizedException si les identifiants sont invalides ou
+     *                                                     si le compte n'est pas actif/est suspendu
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) throws FunctionalException{
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }

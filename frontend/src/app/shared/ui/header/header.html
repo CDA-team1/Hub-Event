@@ -7,9 +7,9 @@
   </nav>
 
   @if (isConnected()) {
-    <span>Connecté(e) - <button type="button" (click)="toggleConnected()">Se déconnecter</button>
+    <span>Connecté(e) - <button type="button" (click)="logout()">Se déconnecter</button>
     </span>
   } @else {
-    <span>Non connecté(e) - <button type="button" (click)="toggleConnected()">Se connecter</button></span>
+    <a routerLink="/connexion">Se connecter</a>
   }
 </header>

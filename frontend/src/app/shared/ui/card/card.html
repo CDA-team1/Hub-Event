@@ -1,0 +1,38 @@
+<article class="card">
+  @if (data().imageUrl) {
+    <img class="card__image" [src]="data().imageUrl" [alt]="data().title" />
+  } @else {
+    <div class="card__image-placeholder" aria-hidden="true"></div>
+  }
+
+  <div class="card__content">
+    <h2 class="card__title">
+      {{ data().title }}
+    </h2>
+
+    @for (info of data().information; track $index) {
+      <p class="card__info">
+        {{ info }}
+      </p>
+    }
+
+    <div class="card__footer">
+      @if (data().category) {
+        <span
+          class="card__category"
+          [class.card__category--culture]="data().category === 'CULTURE'"
+          [class.card__category--sport]="data().category === 'SPORT'"
+          [class.card__category--leisure]="data().category === 'LEISURE'"
+        >
+          {{ data().category }}
+        </span>
+      }
+
+      @if (data().actionLabel) {
+        <button class="card__action" type="button" (click)="triggerAction()">
+          {{ data().actionLabel }}
+        </button>
+      }
+    </div>
+  </div>
+</article>
