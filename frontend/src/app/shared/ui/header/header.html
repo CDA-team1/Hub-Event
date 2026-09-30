@@ -1,0 +1,15 @@
+<header>
+  <a routerLink="/" class="logo">Hub évènementiel</a>
+
+  <nav>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true}">Accueil</a>
+    <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
+  </nav>
+
+  @if (isConnected()) {
+    <span>Connecté(e) - <button type="button" (click)="toggleConnected()">Se déconnecter</button>
+    </span>
+  } @else {
+    <span>Non connecté(e) - <button type="button" (click)="toggleConnected()">Se connecter</button></span>
+  }
+</header>
