@@ -1,0 +1,30 @@
+<div class="carousel">
+  <button
+    type="button"
+    class="nav prev"
+    [disabled]="items().length < 2"
+    (click)="show(index() - 1)"
+    aria-label="Élément précédent"
+  >
+    ⬅ (à remplacer au besoin)
+  </button>
+
+  <div class="track">
+    @for (item of items(); track $index) {
+      <div class="slide" #slide>
+        <ng-container [ngTemplateOutlet]="renderItem()"
+                      [ngTemplateOutletContext]="{ $implicit: item }" />
+      </div>
+    }
+  </div>
+
+  <button
+    type="button"
+    class="nav next"
+    [disabled]="items().length < 2"
+    (click)="show(index() + 1)"
+    aria-label="Élément suivant"
+  >
+    ⮕ (à remplacer au besoin)
+  </button>
+</div>
