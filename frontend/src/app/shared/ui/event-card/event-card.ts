@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 
-import { EventCard as EventCardModel } from '../../../core/events/event-card';
+import { EventCardDto } from '../../../core/events/event.model';
 import { Card, CardData } from '../card/card';
 
 @Component({
@@ -10,7 +10,7 @@ import { Card, CardData } from '../card/card';
   styleUrl: './event-card.css',
 })
 export class EventCard {
-  readonly event = input.required<EventCardModel>();
+  readonly event = input.required<EventCardDto>();
   readonly showActions = input(false);
 
   readonly registerToggled = output<number>();

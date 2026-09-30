@@ -1,0 +1,36 @@
+.carousel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.nav {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
