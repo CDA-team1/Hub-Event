@@ -1,0 +1,15 @@
+<section class="signup-page">
+  <h1>Création de compte non affilié</h1>
+
+  @if (success()) {
+    <p class="signup-page__success">
+      Votre compte a bien été créé. Vérifiez vos emails pour activer votre compte.
+    </p>
+  } @else {
+    <app-signup-form
+      [emailError]="emailError()"
+      (submitted)="signup($event)"
+      (cancelled)="cancel()"
+    />
+  }
+</section>
