@@ -1,0 +1,75 @@
+.card {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+}
+
+.card__image,
+.card__image-placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.card__image {
+  object-fit: cover;
+}
+
+.card__image-placeholder {
+  background: #e2e8f0;
+}
+
+.card__content {
+  padding: 0.75rem;
+}
+
+.card__title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.card__info {
+  margin: 0 0 0.3rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.card__category {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.card__category--culture {
+  color: #2892c3;
+  background: rgb(40 146 195 / 12%);
+}
+
+.card__category--sport {
+  color: #d2694a;
+  background: rgb(210 105 74 / 12%);
+}
+
+.card__category--leisure {
+  color: #2e9c86;
+  background: rgb(46 156 134 / 12%);
+}
+
+.card__action {
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
