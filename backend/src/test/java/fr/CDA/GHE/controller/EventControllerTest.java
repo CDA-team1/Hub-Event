@@ -110,7 +110,8 @@ class EventControllerTest {
         null,
         BigDecimal.valueOf(10),
         BigDecimal.valueOf(15),
-        Category.CULTURE
+        Category.CULTURE,
+            null
     );
 
     EventListDto eventListDto = new EventListDto(
@@ -155,7 +156,8 @@ class EventControllerTest {
         null,
         BigDecimal.valueOf(10),
         BigDecimal.valueOf(15),
-        100
+        100,
+            List.of()
     );
 
     when(eventService.getEventDetail(1L))
