@@ -17,15 +17,8 @@
     }
 
     <div class="card__footer">
-      @if (data().category) {
-        <span
-          class="card__category"
-          [class.card__category--culture]="data().category === 'CULTURE'"
-          [class.card__category--sport]="data().category === 'SPORT'"
-          [class.card__category--leisure]="data().category === 'LEISURE'"
-        >
-          {{ data().category }}
-        </span>
+      @if (data().category; as category) {
+        <app-category-badge [category]="category" />
       }
 
       @if (data().actionLabel) {

@@ -1,16 +1,18 @@
 import { Component, input, output } from '@angular/core';
+import { Category } from '../../../core/events/event.model';
+import { CategoryBadge } from '../category-badge/category-badge';
 
 export interface CardData {
   title: string;
   imageUrl?: string;
-  category?: string;
+  category?: Category;
   information: string[];
   actionLabel?: string;
 }
 
 @Component({
   selector: 'app-card',
-  imports: [],
+  imports: [CategoryBadge],
   templateUrl: './card.html',
   styleUrl: './card.css',
 })

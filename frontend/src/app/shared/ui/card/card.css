@@ -45,28 +45,6 @@
   margin-top: 0.5rem;
 }
 
-.card__category {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.card__category--culture {
-  color: #2892c3;
-  background: rgb(40 146 195 / 12%);
-}
-
-.card__category--sport {
-  color: #d2694a;
-  background: rgb(210 105 74 / 12%);
-}
-
-.card__category--leisure {
-  color: #2e9c86;
-  background: rgb(46 156 134 / 12%);
-}
-
 .card__action {
   padding: 0.5rem 1rem;
   border: 0;
