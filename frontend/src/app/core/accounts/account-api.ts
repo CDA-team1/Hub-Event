@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -12,5 +12,11 @@ export class AccountApi {
 
   signup(request: CreateUserRequest): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/auth/signup`, request);
+  }
+
+  activateAccount(token: string): Observable<void> {
+    const params = new HttpParams().set('token', token);
+
+    return this.http.get<void>(`${this.apiUrl}/auth/activate`, { params });
   }
 }

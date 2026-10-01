@@ -1,0 +1,32 @@
+.activate-account-page {
+  width: min(100% - 2rem, 700px);
+  margin: 3rem auto;
+}
+
+.activate-account-page h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
+}
+
+.activate-account-page__success,
+.activate-account-page__error {
+  padding: 1rem;
+  border-radius: 7px;
+  background: #f1f5f9;
+}
+
+.activate-account-page__success h2,
+.activate-account-page__error h2 {
+  margin-top: 0;
+}
+
+@media (max-width: 700px) {
+  .activate-account-page {
+    width: min(100% - 1rem, 700px);
+    margin: 1rem auto;
+  }
+
+  .activate-account-page h1 {
+    font-size: 1.4rem;
+  }
+}
