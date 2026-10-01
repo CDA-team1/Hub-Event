@@ -10,6 +10,7 @@ export interface EventCardDto {
   affiliatedPrice: number;
   nonAffiliatedPrice: number;
   category: Category;
+  imageUrl: string | null;
 }
 
 export interface EventListDto {

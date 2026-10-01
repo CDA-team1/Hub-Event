@@ -17,6 +17,7 @@ export class EventCard {
 
   readonly cardData = computed<CardData>(() => ({
     title: this.event().title,
+    imageUrl: this.event().imageUrl ?? undefined,
     category: this.event().category,
     information: [
       this.event().startDateTime,
@@ -25,6 +26,7 @@ export class EventCard {
       `Tarif non affilié : ${this.event().nonAffiliatedPrice} €`,
     ],
     actionLabel: this.showActions() ? "S'inscrire" : undefined,
+    link: ['/evenements', this.event().id],
   }));
 
   toggleRegistration(): void {
