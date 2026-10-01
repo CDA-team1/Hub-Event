@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,7 +55,8 @@ public class EventPdfServiceTest {
         LocalDateTime.of(2026, 11, 20, 21, 0),
         BigDecimal.valueOf(10),
         BigDecimal.valueOf(15),
-        100
+        100,
+            List.of()
     );
 
     when(eventService.getEventDetail(1L))
