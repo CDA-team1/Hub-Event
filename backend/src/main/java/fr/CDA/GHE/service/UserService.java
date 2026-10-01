@@ -64,18 +64,21 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final String baseUrl;
+    private final String frontendUrl;
 
     public UserService(UserRepository userRepository, ClubRepository clubRepository, UserMapper userMapper,
-                        ClubMapper clubMapper, PasswordEncoder passwordEncoder, EmailService emailService,
-                        @Value("${app.base-url}") String baseUrl) {
-        this.userRepository = userRepository;
-        this.clubRepository = clubRepository;
-        this.userMapper = userMapper;
-        this.clubMapper = clubMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
-        this.baseUrl = baseUrl;
-    }
+                   ClubMapper clubMapper, PasswordEncoder passwordEncoder, EmailService emailService,
+                   @Value("${app.base-url}") String baseUrl,
+                   @Value("${app.frontend-url}") String frontendUrl) {
+    this.userRepository = userRepository;
+    this.clubRepository = clubRepository;
+    this.userMapper = userMapper;
+    this.clubMapper = clubMapper;
+    this.passwordEncoder = passwordEncoder;
+    this.emailService = emailService;
+    this.baseUrl = baseUrl;
+    this.frontendUrl = frontendUrl;
+}
 
     /**
      * Crée un compte membre non affilié (CU5, SFG §2.8).
@@ -108,7 +111,7 @@ public class UserService {
         log.info("CREATION compte non affilié : id={} email={}", created.getId(), created.getEmail());
 
         // CU5 règle métier n°10 / CU6 : email d'activation (lien à usage unique).
-        String activationLink = baseUrl + "/auth/activate?token=" + created.getActivationToken();
+        String activationLink = frontendUrl + "/activation-compte?token=" + created.getActivationToken();
         emailService.sendActivationEmail(created.getEmail(), activationLink);
 
         return userMapper.toDto(created);
