@@ -9,10 +9,6 @@ import java.time.LocalDateTime;
  * DTO représentant un événement sous forme de carte
  * dans les listes publiques d'événements.
  * <p>
- * TODO : ajouter une image de couverture — la gestion des images est déjà implémentée
- * (ImageRepository/ImageService), mais la règle de sélection de l'image principale parmi
- * la galerie d'un événement reste à définir.
- * <p>
  * TODO : confirmer si la description doit être affichée sur les cartes
  * avant de l'ajouter à ce DTO.
  *
@@ -24,15 +20,17 @@ import java.time.LocalDateTime;
  * @param affiliatedPrice    tarif pour les membres affiliés
  * @param nonAffiliatedPrice tarif pour les membres non affiliés
  * @param category           catégorie de l'événement
+ * @param imageUrl           URL de l'image de couverture, {@code null} si aucune image (EVT-12)
  */
 public record EventCardDto(
-    Long id,
-    String title,
-    String location,
-    LocalDateTime startDateTime,
-    LocalDateTime endDateTime,
-    BigDecimal affiliatedPrice,
-    BigDecimal nonAffiliatedPrice,
-    Category category
+        Long id,
+        String title,
+        String location,
+        LocalDateTime startDateTime,
+        LocalDateTime endDateTime,
+        BigDecimal affiliatedPrice,
+        BigDecimal nonAffiliatedPrice,
+        Category category,
+        String imageUrl
 ) {
 }

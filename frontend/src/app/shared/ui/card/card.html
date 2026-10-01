@@ -1,4 +1,4 @@
-<article class="card">
+<article class="card" [class.card--clickable]="data().link" [routerLink]="data().link">
   @if (data().imageUrl) {
     <img class="card__image" [src]="data().imageUrl" [alt]="data().title" />
   } @else {
@@ -17,19 +17,12 @@
     }
 
     <div class="card__footer">
-      @if (data().category) {
-        <span
-          class="card__category"
-          [class.card__category--culture]="data().category === 'CULTURE'"
-          [class.card__category--sport]="data().category === 'SPORT'"
-          [class.card__category--leisure]="data().category === 'LEISURE'"
-        >
-          {{ data().category }}
-        </span>
+      @if (data().category; as category) {
+        <app-category-badge [category]="category" />
       }
 
       @if (data().actionLabel) {
-        <button class="card__action" type="button" (click)="triggerAction()">
+        <button class="card__action" type="button" (click)="triggerAction($event)">
           {{ data().actionLabel }}
         </button>
       }

@@ -1,4 +1,51 @@
 <section>
-  <h1>Accueil</h1>
-  <p>Page d'accueil - contenu à venir (EVT-02)</p>
+  <h2>Culture</h2>
+  @if (cultureEvents().length > 0) {
+    <app-carousel [items]="cultureEvents()">
+      <ng-template let-event>
+        <app-event-card [event]="event" />
+      </ng-template>
+    </app-carousel>
+  } @else {
+    <p>Aucun événement à afficher !</p>
+  }
+</section>
+
+<section>
+  <h2>Sport</h2>
+  @if (sportEvents().length > 0) {
+    <app-carousel [items]="sportEvents()">
+      <ng-template let-event>
+        <app-event-card [event]="event" />
+      </ng-template>
+    </app-carousel>
+  } @else {
+    <p>Aucun événement à afficher !</p>
+  }
+</section>
+
+<section>
+  <h2>Loisirs</h2>
+  @if (leisureEvents().length > 0) {
+    <app-carousel [items]="leisureEvents()">
+      <ng-template let-event>
+        <app-event-card [event]="event" />
+      </ng-template>
+    </app-carousel>
+  } @else {
+    <p>Aucun événement à afficher !</p>
+  }
+</section>
+
+<section>
+  <h2>Événements passés</h2>
+  @if (pastEvents().length > 0) {
+    <div class="past-events">
+      @for (event of pastEvents(); track event.id) {
+        <app-event-card [event]="event" />
+      }
+    </div>
+  } @else {
+      <p>Aucun événement passé à afficher !</p>
+    }
 </section>

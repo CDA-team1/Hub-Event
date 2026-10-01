@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service gérant le calendrier personnel des utilisateurs (CAL-01).
@@ -27,15 +28,18 @@ public class CalendarService {
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
+    private final ImageService imageService;
 
     public CalendarService(
             RegistrationRepository registrationRepository,
             UserRepository userRepository,
-            EventMapper eventMapper
-    ){
+            EventMapper eventMapper,
+            ImageService imageService
+    ) {
         this.registrationRepository = registrationRepository;
         this.userRepository = userRepository;
         this.eventMapper = eventMapper;
+        this.imageService = imageService;
     }
 
     /**
@@ -47,7 +51,7 @@ public class CalendarService {
      * @return les événements correspondants, triés chronologiquement, sous forme de cartes
      */
     @Transactional(readOnly = true)
-    public List<EventCardDto> getMyCalendar(LocalDate from, LocalDate to){
+    public List<EventCardDto> getMyCalendar(LocalDate from, LocalDate to) {
 
         User user = userRepository.findByEmail(CurrentUser.email())
                 .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
@@ -55,11 +59,20 @@ public class CalendarService {
         LocalDateTime fromDateTime = from.atStartOfDay();
         LocalDateTime toDateTime = to.atTime(LocalTime.MAX);
 
-        return registrationRepository.findRegisteredByUserAndPeriod(user, fromDateTime,
-                toDateTime).stream()
+        List<Event> events = registrationRepository.findRegisteredByUserAndPeriod
+                        (user, fromDateTime, toDateTime)
+                .stream()
                 .map(Registration::getEvent)
                 .sorted(Comparator.comparing(Event::getStartDateTime))
-                .map(eventMapper::toCardDto)
+                .toList();
+
+        Map<Long, String> coverImageUrls = imageService.findCoverImageUrlsByEventIds(events
+                .stream()
+                .map(Event::getId)
+                .toList());
+
+        return events.stream()
+                .map(event -> eventMapper.toCardDto(event, coverImageUrls.get(event.getId())))
                 .toList();
     }
 }
