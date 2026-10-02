@@ -1,0 +1,41 @@
+.my-account-page {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.my-account-page__content {
+  width: min(100%, 900px);
+}
+
+.my-account-page h1 {
+  margin: 0 0 1.5rem;
+}
+
+.my-account-page__loading,
+.my-account-page__saving,
+.my-account-page__error,
+.my-account-page__success {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 7px;
+}
+
+.my-account-page__loading,
+.my-account-page__saving {
+  background: #f1f5f9;
+}
+
+.my-account-page__error {
+  background: #fee2e2;
+}
+
+.my-account-page__success {
+  background: #dcfce7;
+}
+
+@media (max-width: 700px) {
+  .my-account-page {
+    padding: 1.25rem 1rem;
+  }
+}

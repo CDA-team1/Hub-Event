@@ -6,6 +6,8 @@ import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.ClubSummaryDto;
+import fr.CDA.GHE.dto.UserProfileDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
@@ -142,6 +144,44 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
+     /**
+     * Retourne le profil de l'utilisateur connecté (CU13, SFG §2.16).
+     * <p>
+     * L'utilisateur est identifié à partir du JWT et non à partir d'un identifiant
+     * fourni par le client. Les clubs affiliés sont retournés sous forme de résumés
+     * car ils sont uniquement consultables depuis la page "Mon compte".
+     *
+     * @return le profil de l'utilisateur connecté
+     * @throws FunctionalException si le compte n'est pas actif
+     */
+    @Transactional(readOnly = true)
+    public UserProfileDto getOwnAccount() throws FunctionalException {
+        User user = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            throw new FunctionalException(
+                    "Votre compte doit être actif pour consulter vos informations."
+            );
+        }
+
+        List<ClubSummaryDto> clubs = clubRepository.findByMembers_Id(user.getId())
+                .stream()
+                .map(club -> new ClubSummaryDto(club.getId(), club.getName()))
+                .toList();
+
+        return new UserProfileDto(
+                user.getId(),
+                user.getLastName(),
+                user.getFirstName(),
+                user.getPostalAddress(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getStatus(),
+                user.getRole(),
+                clubs
+        );
+    }
     /**
      * Modifie le compte de l'utilisateur connecté (CU13, SFG §2.16).
      * <p>

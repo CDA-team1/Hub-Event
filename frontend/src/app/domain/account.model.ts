@@ -12,3 +12,12 @@ export interface AccountDto {
   status: AccountStatus;
   role: Role;
 }
+
+export interface ClubSummaryDto {
+  id: number;
+  name: string;
+}
+
+export interface UserProfileDto extends AccountDto {
+  clubs: ClubSummaryDto[];
+}

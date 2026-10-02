@@ -6,6 +6,7 @@ import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.UserProfileDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
@@ -148,6 +149,47 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.activateAccount("valid-token"))
                 .isInstanceOf(FunctionalException.class);
     }
+
+    // --- getOwnAccount (CU13) ---
+
+@Test
+void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
+        throws FunctionalException {
+    User user = persistActiveMember("john.doe@test.com");
+    Club club = persistClub("Club de Test");
+
+    club.getMembers().add(user);
+    clubRepository.save(club);
+
+    authenticateAs(user);
+
+    UserProfileDto dto = userService.getOwnAccount();
+
+    assertThat(dto.id()).isEqualTo(user.getId());
+    assertThat(dto.lastName()).isEqualTo("Doe");
+    assertThat(dto.firstName()).isEqualTo("John");
+    assertThat(dto.postalAddress()).isEqualTo("1 rue de Test");
+    assertThat(dto.email()).isEqualTo("john.doe@test.com");
+    assertThat(dto.status()).isEqualTo(AccountStatus.ACTIVE);
+    assertThat(dto.role()).isEqualTo(Role.MEMBER);
+
+    assertThat(dto.clubs()).hasSize(1);
+    assertThat(dto.clubs().get(0).id()).isEqualTo(club.getId());
+    assertThat(dto.clubs().get(0).name()).isEqualTo("Club de Test");
+}
+
+    @Test
+    void getOwnAccount_shouldThrow_whenAccountNotActive() {
+    User user = persistInactiveMemberWithToken(
+            "john.doe@test.com",
+            "some-token"
+        );
+
+        authenticateAs(user);
+
+        assertThatThrownBy(() -> userService.getOwnAccount())
+            .isInstanceOf(FunctionalException.class);
+}
 
     // --- updateOwnAccount / confirmPasswordChange (CU13) ---
 

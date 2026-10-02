@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.dto.UserProfileDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +17,20 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  */
 @Tag(name = "Mon compte", description = "Consultation et modification de son propre compte (CU13)")
 public interface UserProfileControllerDoc {
+
+    @Operation(
+            summary = "Consulte le compte de l'utilisateur connecté",
+            description = "Retourne les informations du compte identifié via le JWT ainsi que ses clubs affiliés. "
+                    + "Les clubs sont uniquement consultables depuis cette page."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profil de l'utilisateur connecté",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileDto.class))),
+            @ApiResponse(responseCode = "400", description = "Compte non actif",
+                    content = @Content)
+    })
+    UserProfileDto getOwnAccount() throws FunctionalException;
 
     @Operation(summary = "Modifie le compte de l'utilisateur connecté",
             description = "Email revérifié unique uniquement s'il change. Mot de passe laissé vide = non "
