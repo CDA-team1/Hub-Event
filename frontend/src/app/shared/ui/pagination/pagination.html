@@ -1,0 +1,7 @@
+@if (totalPages() > 1) {
+  <nav class="pagination" aria-label="Pagination">
+    <button type="button" (click)="previous()" [disabled]="isFirst()">Précédent</button>
+    <p>Page {{ page() + 1 }} sur {{ totalPages() }} · {{ totalElements() }} élément(s)</p>
+    <button type="button" (click)="next()" [disabled]="isLast()">Suivant</button>
+  </nav>
+}
