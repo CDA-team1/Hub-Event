@@ -1,0 +1,7 @@
+<dialog #dialog aria-describedby="confirmation-message" (close)="onClose()">
+  <p id="confirmation-message">{{ message() }}</p>
+  <div class="actions">
+    <button type="button" class="cancel" (click)="dialog.close('cancel')">{{ cancelLabel() }}</button>
+    <button type="button" class="confirm" (click)="dialog.close('confirm')">{{ confirmLabel() }}</button>
+  </div>
+</dialog>
