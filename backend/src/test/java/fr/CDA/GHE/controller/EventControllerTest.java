@@ -981,7 +981,7 @@ class EventControllerTest {
     MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
 
     when(imageService.addImages(eq(100L), any()))
-        .thenReturn(List.of(new ImageDto(5L, 100L, "https://i.ibb.co/abc/photo.png")));
+        .thenReturn(List.of(new ImageDto(5L, 100L, "https://i.ibb.co/abc/photo.png", true)));
 
     mockMvc.perform(multipart("/events/100/images")
             .file(file)
@@ -1075,6 +1075,53 @@ class EventControllerTest {
         .andExpect(status().isUnauthorized());
 
     verify(imageService, never()).removeImage(100L, 5L);
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié peut définir la preview
+   * d'un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldChangePreviewAsOrganizer() throws Exception {
+
+    mockMvc.perform(put("/events/100/images/5/preview")
+                    .with(user("organizer@test.fr").roles("ORGANIZER")))
+            .andExpect(status().isNoContent());
+
+    verify(imageService).changePreview(100L, 5L);
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié
+   * ne peut pas définir la preview d'un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectPreviewChangeForMember() throws Exception {
+
+    mockMvc.perform(put("/events/100/images/5/preview")
+                    .with(user("member@test.fr").roles("MEMBER")))
+            .andExpect(status().isForbidden());
+
+    verify(imageService, never()).changePreview(100L, 5L);
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié
+   * ne peut pas définir la preview d'un événement.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectPreviewChangeWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(put("/events/100/images/5/preview"))
+            .andExpect(status().isUnauthorized());
+
+    verify(imageService, never()).changePreview(100L, 5L);
   }
 
   /**

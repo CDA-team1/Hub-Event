@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Gère la galerie photos d'un événement (CU23, SFG §2.26).
@@ -80,9 +81,13 @@ public class ImageService {
             }
         }
 
-        List<Image> created = nonEmptyFiles.stream()
-                .map(file -> uploadAndPersist(event, file))
-                .toList();
+        boolean eventHasPreview = imageRepository.existsByEvent_IdAndIsPreviewTrue(eventId);
+
+        List<Image> created = new ArrayList<>();
+        for (MultipartFile file : nonEmptyFiles) {
+            boolean makePreview = !eventHasPreview && created.isEmpty();
+            created.add(uploadAndPersist(event, file, makePreview));
+        }
 
         log.info("AJOUT images : eventId={} count={}", eventId, created.size());
 
@@ -105,17 +110,50 @@ public class ImageService {
         checkOwnership(event);
 
         Image image = findImageOrThrow(eventId, imageId);
+        boolean wasPreview = image.isPreview();
 
         imageRepository.delete(image);
         imgbbClient.delete(image.getDeleteUrl());
 
+        if (wasPreview) {
+            imageRepository.findByEvent_Id(eventId).stream()
+                    .filter(remaining -> !remaining.getId().equals(imageId))
+                    .min(Comparator.comparing(Image::getId))
+                    .ifPresent(next -> next.setPreview(true));
+        }
+
         log.info("SUPPRESSION image : eventId={} imageId={}", eventId, imageId);
     }
 
-    private Image uploadAndPersist(Event event, MultipartFile file) {
+    private Image uploadAndPersist(Event event, MultipartFile file, boolean isPreview) {
         ImgbbClient.UploadedImage uploaded = imgbbClient.upload(file);
-        return imageRepository.save(new Image(event, uploaded.url(), uploaded.deleteUrl()));
+        Image image = new Image(event, uploaded.url(), uploaded.deleteUrl());
+        image.setPreview(isPreview);
+        return imageRepository.save(image);
     }
+
+        /**
+         * Désigne une image comme preview de son événement, l'ancienne preview est désactivée.
+         * <p>
+         * Réservé à l'organisateur propriétaire de l'événement.
+         *
+         * @param eventId identifiant de l'événement concerné
+         * @param imageId identifiant de l'image à définir comme preview
+         * @throws NotFoundException si l'événement ou l'image n'existe pas, ou si l'image
+         *                           n'appartient pas à cet événement
+         */
+        @Transactional
+        public void changePreview(Long eventId, Long imageId) {
+            Event event = findEventOrThrow(eventId);
+            checkOwnership(event);
+
+            Image newPreview = findImageOrThrow(eventId, imageId);
+
+            imageRepository.findByEvent_Id(eventId).forEach(image -> image.setPreview(false));
+            newPreview.setPreview(true);
+
+            log.info("CHANGEMENT preview : eventId={} imageId={}", eventId, imageId);
+        }
 
     /**
      * Supprime toutes les images associées à un événement, en base et sur l'hébergeur externe
@@ -135,35 +173,38 @@ public class ImageService {
         }
     }
 
-    /**
-     * Retourne l'image de couverture de plusieurs événements à la fois (celle avec l'id le
-     * plus petit, donc la première ajoutée à la galerie), pour l'affichage en liste (cartes).
-     * <p>
-     * Les événements sans aucune image n'apparaissent pas dans la map retournée.
-     *
-     * @param eventIds identifiants des événements concernés
-     * @return une map associant chaque identifiant d'événement à l'URL de son image de couverture
-     */
-    public Map<Long, String> findCoverImageUrlsByEventIds(List<Long> eventIds) {
-        return imageRepository.findByEvent_IdIn(eventIds).stream()
-                .collect(Collectors.groupingBy(
-                        image -> image.getEvent().getId(),
-                        Collectors.collectingAndThen(
-                                Collectors.minBy(Comparator.comparing(Image::getId)),
-                                optionalImage -> optionalImage.map(Image::getUrl).orElse(null)
-                        )
-                ));
-    }
+        /**
+         * Retourne l'image de prévisualisation (preview) de plusieurs événements à la fois, pour
+         * l'affichage en liste (cartes).
+         * <p>
+         * Les événements sans image n'apparaissent pas dans la map retournée.
+         *
+         * @param eventIds identifiants des événements concernés
+         * @return une map associant chaque identifiant d'événement à l'URL de sa preview
+         */
+        public Map<Long, String> findCoverImageUrlsByEventIds(List<Long> eventIds) {
+            return imageRepository.findByEvent_IdInAndIsPreviewTrue(eventIds).stream()
+                    .collect(Collectors.toMap(
+                            image -> image.getEvent().getId(),
+                            Image::getUrl,
+                            (first, second) -> first
+                    ));
+        }
 
-    /**
-     * Retourne la galerie complète d'un événement, pour l'affichage sur sa page de détail.
-     *
-     * @param eventId identifiant de l'événement concerné
-     * @return la liste des images de la galerie, sous forme de DTO
-     */
-    public List<ImageDto> findGalleryForEvent(Long eventId) {
-        return imageMapper.toDtoList(imageRepository.findByEvent_Id(eventId));
-    }
+        /**
+         * Retourne la galerie complète d'un événement, pour l'affichage sur sa page de détail :
+         * la preview en premier, puis les autres images par ordre d'ajout.
+         *
+         * @param eventId identifiant de l'événement concerné
+         * @return la liste des images de la galerie, sous forme de DTO
+         */
+        public List<ImageDto> findGalleryForEvent(Long eventId) {
+            List<Image> images = imageRepository.findByEvent_Id(eventId).stream()
+                    .sorted(Comparator.comparing(Image::isPreview).reversed()
+                            .thenComparing(Image::getId))
+                    .toList();
+            return imageMapper.toDtoList(images);
+        }
 
     private Event findEventOrThrow(Long eventId) {
         return eventRepository.findById(eventId)

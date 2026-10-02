@@ -19,7 +19,8 @@ public class ImageMapper {
      * @return DTO correspondant à l'image
      */
     public ImageDto toDto(Image image) {
-        return new ImageDto(image.getId(), image.getEvent().getId(), image.getUrl());
+        return new ImageDto(image.getId(), image.getEvent().getId(), image.getUrl(),
+                image.isPreview());
     }
 
     /**
