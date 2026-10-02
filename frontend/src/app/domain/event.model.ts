@@ -28,7 +28,9 @@ export interface EventDetailResponse {
   startDateTime: string;
   endDateTime: string | null;
   affiliatedPrice: number;
+  nonAffiliatedPrice: number;
   maxSeats: number;
+  gallery: ImageDto[];
 }
 
 export interface EventDto {
@@ -86,6 +88,7 @@ export interface ImageDto {
   id: number;
   eventId: number;
   url: string;
+  isPreview: boolean;
 }
 
 export interface CommentDto {

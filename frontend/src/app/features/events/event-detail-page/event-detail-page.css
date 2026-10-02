@@ -1,3 +1,39 @@
-section {
+:host {
+  display: block;
   padding: 1.5rem 2rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 0;
+}
+
+.fact dt {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.fact dd {
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+}
+
+.event__section {
+  margin-top: 2rem;
+}
+
+.event__section h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+
+.event__description {
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-line;
 }
