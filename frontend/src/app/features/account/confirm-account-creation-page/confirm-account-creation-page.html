@@ -1,0 +1,27 @@
+<main class="confirm-account-page">
+  <section class="confirm-account-page__content" aria-label="Confirmation de compte">
+    <h1>Confirmation de compte</h1>
+
+    @if (success()) {
+      <p class="confirm-account-page__success" role="status">Votre compte est maintenant actif.</p>
+    } @else if (invalidLink) {
+      <p class="confirm-account-page__error" role="alert">
+        {{ errorMessage() }}
+      </p>
+    } @else {
+      @if (errorMessage()) {
+        <p class="confirm-account-page__error" role="alert">
+          {{ errorMessage() }}
+        </p>
+      }
+
+      <app-confirm-account-form (submitted)="confirm($event)" />
+
+      @if (loading()) {
+        <p class="confirm-account-page__loading" role="status">Validation en cours...</p>
+      }
+    }
+  </section>
+
+  <p class="confirm-account-page__information">La validation passe le compte au statut ACTIF.</p>
+</main>

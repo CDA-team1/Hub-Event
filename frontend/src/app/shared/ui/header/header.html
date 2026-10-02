@@ -2,7 +2,9 @@
   <a routerLink="/" class="logo">Hub évènementiel</a>
 
   <nav>
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true}">Accueil</a>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+      >Accueil</a
+    >
     <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
     @if (isConnected()) {
       <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
@@ -10,7 +12,11 @@
   </nav>
 
   @if (isConnected()) {
-    <span>Connecté(e) - <button type="button" (click)="logout()">Se déconnecter</button>
+    <a routerLink="/mon-compte" routerLinkActive="active">Mon compte</a>
+
+    <span>
+      Connecté(e) -
+      <button type="button" (click)="logout()">Se déconnecter</button>
     </span>
   } @else {
     <a routerLink="/connexion">Se connecter</a>

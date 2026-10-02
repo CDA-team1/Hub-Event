@@ -26,6 +26,10 @@ function toSearchParams(criteria: EventSearchCriteria): Record<string, string> {
   return params;
 }
 
+export function isValidEventId(id: number): boolean {
+  return Number.isInteger(id) && id > 0;
+}
+
 @Service()
 export class EventApi {
   private readonly apiUrl = inject(API_URL);
@@ -38,20 +42,23 @@ export class EventApi {
   }
 
   eventDetail(id: Signal<number>) {
-    return httpResource<EventDetailResponse>(() => `${this.apiUrl}/events/${id()}`);
+    return httpResource<EventDetailResponse>(() =>
+      isValidEventId(id()) ? `${this.apiUrl}/events/${id()}` : undefined,
+    );
   }
 
   search(criteria: Signal<EventSearchCriteria>) {
     return httpResource<EventCardDto[]>(
-      () => ({url: `${this.apiUrl}/events/search`, params: toSearchParams(criteria())}),
-      {defaultValue: []},
+      () => ({ url: `${this.apiUrl}/events/search`, params: toSearchParams(criteria()) }),
+      { defaultValue: [] },
     );
   }
 
   comment(id: Signal<number>) {
-    return httpResource<CommentDto[]>(() => `${this.apiUrl}/events/${id()}/comments`, {
-      defaultValue: [],
-    });
+    return httpResource<CommentDto[]>(
+      () => (isValidEventId(id()) ? `${this.apiUrl}/events/${id()}/comments` : undefined),
+      { defaultValue: [] },
+    );
   }
 
   async create(request: CreateEventRequest): Promise<EventDto> {
@@ -96,7 +103,7 @@ export class EventApi {
 
   async getPdf(id: number): Promise<Blob> {
     return firstValueFrom(
-      this.http.get(`${this.apiUrl}/events/${id}/pdf`, {responseType: 'blob'}),
+      this.http.get(`${this.apiUrl}/events/${id}/pdf`, { responseType: 'blob' }),
     );
   }
 

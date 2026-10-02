@@ -1,0 +1,29 @@
+.gallery__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gallery__item {
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e2e8f0;
+}
+
+.gallery__item--preview {
+  grid-column: 1 / -1;
+}
+
+.gallery__item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.gallery__item--preview img {
+  max-height: 480px;
+}

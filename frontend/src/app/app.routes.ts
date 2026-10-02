@@ -50,6 +50,21 @@ export const routes: Routes = [
       import('./features/calendar/calendar-page/calendar-page').then((m) => m.CalendarPage),
   },
   {
+    path: 'confirmation-compte',
+    title: 'Confirmation du compte',
+    loadComponent: () =>
+      import('./features/account/confirm-account-creation-page/confirm-account-creation-page').then(
+        (m) => m.ConfirmAccountCreationPage,
+      ),
+  },
+  {
+    path: 'mon-compte',
+    title: 'Modifier mon compte',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/account/my-account-page/my-account-page').then((m) => m.MyAccountPage),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>

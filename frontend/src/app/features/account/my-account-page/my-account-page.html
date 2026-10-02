@@ -1,0 +1,34 @@
+<main class="my-account-page">
+  <section class="my-account-page__content" aria-label="Modification de mon compte">
+    <h1>Modifier mon compte</h1>
+
+    @if (loading()) {
+      <p class="my-account-page__loading" role="status">Chargement de vos informations...</p>
+    } @else {
+      @if (errorMessage()) {
+        <p class="my-account-page__error" role="alert">
+          {{ errorMessage() }}
+        </p>
+      }
+
+      @if (successMessage()) {
+        <p class="my-account-page__success" role="status">
+          {{ successMessage() }}
+        </p>
+      }
+
+      @if (profile(); as currentProfile) {
+        <app-account-form
+          [profile]="currentProfile"
+          [emailError]="emailError()"
+          (submitted)="update($event)"
+          (cancelled)="cancel()"
+        />
+
+        @if (saving()) {
+          <p class="my-account-page__saving" role="status">Enregistrement en cours...</p>
+        }
+      }
+    }
+  </section>
+</main>

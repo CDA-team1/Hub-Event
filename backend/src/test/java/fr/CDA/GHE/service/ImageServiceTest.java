@@ -158,6 +158,108 @@ class ImageServiceTest {
                 .isInstanceOf(NotFoundException.class);
     }
 
+    @Test
+    void addImages_shouldMakeOnlyTheFirstImagePreview_whenEventHasNoImage() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        when(imgbbClient.upload(any())).thenReturn(
+                new ImgbbClient.UploadedImage("https://i.ibb.co/1.png", "https://ibb.co/delete/1"),
+                new ImgbbClient.UploadedImage("https://i.ibb.co/2.png", "https://ibb.co/delete/2"));
+
+        List<ImageDto> created = imageService.addImages(event.getId(), List.of(photo(), photo()));
+
+        assertThat(created).extracting(ImageDto::isPreview).containsExactly(true, false);
+    }
+
+    @Test
+    void addImages_shouldKeepExistingPreview_whenEventAlreadyHasOne() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        when(imgbbClient.upload(any())).thenReturn(
+                new ImgbbClient.UploadedImage("https://i.ibb.co/1.png", "https://ibb.co/delete/1"),
+                new ImgbbClient.UploadedImage("https://i.ibb.co/2.png", "https://ibb.co/delete/2"));
+
+        imageService.addImages(event.getId(), List.of(photo()));
+        List<ImageDto> second = imageService.addImages(event.getId(), List.of(photo()));
+
+        assertThat(second.get(0).isPreview()).isFalse();
+        assertThat(imageRepository.findByEvent_IdInAndIsPreviewTrue(List.of(event.getId()))).hasSize(1);
+    }
+
+    @Test
+    void changePreview_shouldMakeChosenImageTheOnlyPreview() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        when(imgbbClient.upload(any())).thenReturn(
+                new ImgbbClient.UploadedImage("https://i.ibb.co/1.png", "https://ibb.co/delete/1"),
+                new ImgbbClient.UploadedImage("https://i.ibb.co/2.png", "https://ibb.co/delete/2"));
+        List<ImageDto> created = imageService.addImages(event.getId(), List.of(photo(), photo()));
+        Long secondId = created.get(1).id();
+
+        imageService.changePreview(event.getId(), secondId);
+
+        List<Image> previews = imageRepository.findByEvent_IdInAndIsPreviewTrue(List.of(event.getId()));
+        assertThat(previews).extracting(Image::getId).containsExactly(secondId);
+        assertThat(imageService.findCoverImageUrlsByEventIds(List.of(event.getId())))
+                .containsEntry(event.getId(), "https://i.ibb.co/2.png");
+    }
+
+    @Test
+    void changePreview_shouldThrow_whenCallerIsNotTheOwner() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        when(imgbbClient.upload(any()))
+                .thenReturn(new ImgbbClient.UploadedImage("https://i.ibb.co/1.png", "https://ibb.co/delete/1"));
+        Long imageId = imageService.addImages(event.getId(), List.of(photo())).get(0).id();
+        authenticateAs(persistOrganizer("other@test.com"));
+
+        assertThatThrownBy(() -> imageService.changePreview(event.getId(), imageId))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void removeImage_shouldPromoteOldestRemainingImage_whenPreviewIsRemoved() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        when(imgbbClient.upload(any())).thenReturn(
+                new ImgbbClient.UploadedImage("https://i.ibb.co/1.png", "https://ibb.co/delete/1"),
+                new ImgbbClient.UploadedImage("https://i.ibb.co/2.png", "https://ibb.co/delete/2"));
+        List<ImageDto> created = imageService.addImages(event.getId(), List.of(photo(), photo()));
+
+        imageService.removeImage(event.getId(), created.get(0).id());
+
+        assertThat(imageRepository.findById(created.get(1).id()).orElseThrow().isPreview()).isTrue();
+    }
+
+    @Test
+    void findGalleryForEvent_shouldReturnPreviewFirst() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        when(imgbbClient.upload(any())).thenReturn(
+                new ImgbbClient.UploadedImage("https://i.ibb.co/1.png", "https://ibb.co/delete/1"),
+                new ImgbbClient.UploadedImage("https://i.ibb.co/2.png", "https://ibb.co/delete/2"),
+                new ImgbbClient.UploadedImage("https://i.ibb.co/3.png", "https://ibb.co/delete/3"));
+        List<ImageDto> created = imageService.addImages(event.getId(), List.of(photo(), photo(), photo()));
+        Long thirdId = created.get(2).id();
+        imageService.changePreview(event.getId(), thirdId);
+
+        List<ImageDto> gallery = imageService.findGalleryForEvent(event.getId());
+
+        assertThat(gallery).extracting(ImageDto::id)
+                .containsExactly(thirdId, created.get(0).id(), created.get(1).id());
+        assertThat(gallery.get(0).isPreview()).isTrue();
+    }
+
+    private MockMultipartFile photo() {
+        return new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+    }
+    
     private User persistOrganizer(String email) {
         User user = new User();
         user.setLastName("Doe");
