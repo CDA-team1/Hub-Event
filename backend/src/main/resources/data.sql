@@ -376,20 +376,20 @@ VALUES (34, 'Grande soirée quiz pop culture',
 -- avec le thème de chacun (ex. photo de concert sur l'évènement concert).
 -- Chaque évènement a une image de prévisualisation (is_preview = TRUE) : celle affichée sur sa carte.
 INSERT INTO images (id, event_id, url, delete_url, is_preview)
-VALUES (1, 1, 'https://i.ibb.co/HWxNh5F/event-football.png',
-        'https://ibb.co/rCcbdD7/18adba1b13d0a9b74de88917b0e777ff', TRUE);
+VALUES (1, 1, 'https://i.ibb.co/qMVP6r11/event-football.webp',
+        'https://ibb.co/tMFWRJCC/19bc3f3f7e3ad54be2a12e4ca068c3e5', TRUE);
 
 INSERT INTO images (id, event_id, url, delete_url, is_preview)
-VALUES (2, 2, 'https://i.ibb.co/5wRdw5H/event-museum.png',
-        'https://ibb.co/MQCbQR0/443d9e269bbc6491c9a61e602b0f12c1', TRUE);
+VALUES (2, 2, 'https://i.ibb.co/Q3DXfRZv/event-museum.webp',
+        'https://ibb.co/9kZGNLJH/8fba30329be5b426345eb9d58d9b5d4c', TRUE);
 
 INSERT INTO images (id, event_id, url, delete_url, is_preview)
-VALUES (3, 3, 'https://i.ibb.co/6cHZ1tWx/event-music.png',
-        'https://ibb.co/wZSLwQzX/6853fd3e825aaedd7fa618e28b5d99c5', TRUE);
+VALUES (3, 3, 'https://i.ibb.co/nqyvgH7t/event-music.webp',
+        'https://ibb.co/8nwpKWrt/e2e8ae06afd85017e2e2d17cf2282dc3', TRUE);
 
 INSERT INTO images (id, event_id, url, delete_url, is_preview)
-VALUES (4, 4, 'https://i.ibb.co/Tx9JYxvh/event-boardgame.png',
-        'https://ibb.co/ksNz5sHc/0f52ae3cb5a4ca51181143efa706eb4f', TRUE);
+VALUES (4, 4, 'https://i.ibb.co/350pp0nM/event-boardgame.webp',
+        'https://ibb.co/CpnbbnfM/22a4003119d5be178cccad2ccbc2e5e1', TRUE);
 
 -- Photos des 30 évènements supplémentaires (EVT-13) : hébergées sur imgbb, une photo de preview par évènement.
 INSERT INTO images (id, event_id, url, delete_url, is_preview)
