@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { EventStatus } from '../../../core/events/event.model';
+import { EventStatus } from '../../../domain/event.model';
 import { EventStatusColor } from '../../directives/event-status-color';
 import { EventStatusLabelPipe } from '../../pipes/event-status-label-pipe';
 

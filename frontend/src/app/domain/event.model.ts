@@ -1,4 +1,5 @@
-export type Category = 'CULTURE' | 'LEISURE' | 'SPORT';
+import { Category } from './category';
+
 export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
 
 export interface EventCardDto {

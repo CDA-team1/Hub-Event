@@ -1,6 +1,6 @@
 import { Component, input, output } from '@angular/core';
+import { Category } from '../../../domain/category';
 import { RouterLink } from '@angular/router';
-import { Category } from '../../../core/events/event.model';
 import { CategoryBadge } from '../category-badge/category-badge';
 
 export interface CardData {

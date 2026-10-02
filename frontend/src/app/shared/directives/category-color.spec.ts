@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Category } from '../../core/events/event.model';
+import { Category } from '../../domain/category';
 import { CategoryColor } from './category-color';
 
 @Component({

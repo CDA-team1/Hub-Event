@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { EventStatus } from '../../core/events/event.model';
+import { EventStatus } from '../../domain/event.model';
 
 const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
   DRAFT: 'Brouillon',

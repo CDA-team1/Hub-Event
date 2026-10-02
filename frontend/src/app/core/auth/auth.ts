@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Service, computed, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { CreateUserRequest } from '../../domain/create-user-request';
 import { Role } from '../../domain/role';
 import { API_URL } from '../http/api-url';
 import { SKIP_AUTH_REDIRECT } from '../http/skip-auth-redirect';
@@ -63,6 +64,10 @@ export class Auth {
 
   logout(): void {
     this.session.set(null);
+  }
+
+  async signup(request: CreateUserRequest): Promise<void> {
+    await firstValueFrom(this.http.post<void>(`${this.apiUrl}/auth/signup`, request));
   }
 }
 
