@@ -1,0 +1,19 @@
+@if (comments().length > 0) {
+  <ul class="comments">
+    @for (comment of comments(); track comment.id) {
+      <li class="comment">
+        <p class="comment__meta">
+          <strong class="comment__author">{{ comment.authorDisplayName }}</strong>
+          <time class="comment__date" [attr.datetime]="comment.createdAt">
+            {{ comment.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+          </time>
+        </p>
+        <p class="comment__content">{{ comment.content }}</p>
+      </li>
+    }
+  </ul>
+} @else {
+  <app-empty-state>
+    <p>Aucun commentaire pour le moment.</p>
+  </app-empty-state>
+}

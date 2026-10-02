@@ -45,6 +45,13 @@ public class Image {
     private String deleteUrl;
 
     /**
+     * Indique si cette image est l'image de prévisualisation (preview) de l'événement, celle
+     * affichée sur sa carte. Une seule image par événement a ce statut (EVT-13).
+     */
+    @Column(name = "is_preview", nullable = false)
+    private boolean isPreview;
+
+    /**
      * Constructeur vide requis par JPA.
      */
     public Image() {
@@ -124,5 +131,23 @@ public class Image {
      */
     public void setDeleteUrl(String deleteUrl) {
         this.deleteUrl = deleteUrl;
+    }
+
+    /**
+     * Indique si cette image est la preview de son événement.
+     *
+     * @return {@code true} si c'est l'image de prévisualisation
+     */
+    public boolean isPreview() {
+        return isPreview;
+    }
+
+    /**
+     * Définit si cette image est la preview de son événement.
+     *
+     * @param isPreview {@code true} pour en faire l'image de prévisualisation
+     */
+    public void setPreview(boolean isPreview) {
+        this.isPreview = isPreview;
     }
 }

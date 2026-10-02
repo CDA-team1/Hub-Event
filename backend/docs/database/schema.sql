@@ -129,6 +129,7 @@ CREATE TABLE images (
                         event_id BIGINT NOT NULL,
                         url VARCHAR(255) NOT NULL,
                         delete_url VARCHAR(255) NOT NULL,
+                        is_preview BIT NOT NULL DEFAULT FALSE,
 
                         PRIMARY KEY (id),
 
