@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth-guard';
 
 export const routes: Routes = [
   {
@@ -40,6 +41,13 @@ export const routes: Routes = [
       import('./features/account/activate-account-page/activate-account-page').then(
         (m) => m.ActivateAccountPage,
       ),
+  },
+  {
+    path: 'mon-calendrier',
+    title: 'Mon calendrier',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/calendar/calendar-page/calendar-page').then((m) => m.CalendarPage),
   },
   {
     path: '**',

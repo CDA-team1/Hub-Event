@@ -14,27 +14,28 @@ import { EventApi } from '../../../core/events/event-api';
 })
 export class EventsHomePage {
   private readonly eventApi = inject(EventApi);
+  private readonly publicEvents = this.eventApi.publicEvents();
 
-  protected readonly isLoading = this.eventApi.publicEvents.isLoading;
-  protected readonly error = this.eventApi.publicEvents.error;
+  protected readonly isLoading = this.publicEvents.isLoading;
+  protected readonly error = this.publicEvents.error;
 
   protected readonly cultureEvents = computed(() =>
-    this.eventApi.publicEvents.hasValue() ? this.eventApi.publicEvents.value().cultureEvents : [],
+    this.publicEvents.hasValue() ? this.publicEvents.value().cultureEvents : [],
   );
 
   protected readonly sportEvents = computed(() =>
-    this.eventApi.publicEvents.hasValue() ? this.eventApi.publicEvents.value().sportEvents : [],
+    this.publicEvents.hasValue() ? this.publicEvents.value().sportEvents : [],
   );
 
   protected readonly leisureEvents = computed(() =>
-    this.eventApi.publicEvents.hasValue() ? this.eventApi.publicEvents.value().leisureEvents : [],
+    this.publicEvents.hasValue() ? this.publicEvents.value().leisureEvents : [],
   );
 
   protected readonly pastEvents = computed(() =>
-    this.eventApi.publicEvents.hasValue() ? this.eventApi.publicEvents.value().pastEvents : [],
+    this.publicEvents.hasValue() ? this.publicEvents.value().pastEvents : [],
   );
 
   reload(): void {
-    this.eventApi.publicEvents.reload();
+    this.publicEvents.reload();
   }
 }

@@ -1,0 +1,20 @@
+<div class="date-range">
+  <label>
+    Du
+    <input
+      type="date"
+      [value]="from()"
+      [max]="to()"
+      (change)="onFromChanged($any($event.target).value)"
+    />
+  </label>
+  <label>
+    Au
+    <input
+      type="date"
+      [value]="to()"
+      [min]="from()"
+      (change)="onToChanged($any($event.target).value)"
+    />
+  </label>
+</div>
