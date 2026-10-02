@@ -26,4 +26,20 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
      * @return la liste des images appartenant à l'un de ces événements
      */
     List<Image> findByEvent_IdIn(List<Long> eventIds);
+
+    /**
+     * Recherche les images de prévisualisation (preview) de plusieurs événements à la fois.
+     *
+     * @param eventIds identifiants des événements concernés
+     * @return les images preview appartenant à l'un de ces événements
+     */
+    List<Image> findByEvent_IdInAndIsPreviewTrue(List<Long> eventIds);
+
+    /**
+     * Indique si un événement possède déjà une image de prévisualisation.
+     *
+     * @param eventId identifiant de l'événement
+     * @return {@code true} si une image de cet événement est marquée preview
+     */
+    boolean existsByEvent_IdAndIsPreviewTrue(Long eventId);
 }

@@ -344,6 +344,33 @@ public interface EventControllerDoc {
       @Parameter(description = "Identifiant de l'image") Long imageId
   );
 
+    @Operation(
+            summary = "Définit l'image de prévisualisation (preview) d'un événement",
+            description = "Réservé à l'organisateur propriétaire de l'événement. L'ancienne preview est "
+                    + "désactivée automatiquement (EVT-13)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Preview modifiée",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Utilisateur non autorisé à modifier cette galerie",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Événement ou image introuvable",
+                    content = @Content
+            )
+    })
+    void changePreview(
+            @Parameter(description = "Identifiant de l'événement") Long eventId,
+            @Parameter(description = "Identifiant de l'image à définir comme preview") Long imageId
+    );
+
   @Operation(
       summary = "Retourne les commentaires d'un événement",
       description = "Accessible sans authentification, trié du plus ancien au plus récent (CU12)."

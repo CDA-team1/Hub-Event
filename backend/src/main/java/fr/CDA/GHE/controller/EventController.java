@@ -225,6 +225,14 @@ public class EventController implements EventControllerDoc {
     imageService.removeImage(eventId, imageId);
   }
 
+  @Override
+  @Secured("ROLE_ORGANIZER")
+  @PutMapping("/{eventId}/images/{imageId}/preview")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void changePreview(@PathVariable Long eventId, @PathVariable Long imageId) {
+    imageService.changePreview(eventId, imageId);
+  }
+
   // Public : consultation des commentaires d'un événement
   @Override
   @GetMapping("/{id}/comments")
