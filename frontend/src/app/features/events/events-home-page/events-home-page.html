@@ -6,7 +6,7 @@
     <button actions type="button" (click)="reload()">Réessayer</button>
   </app-error-state>
 } @else {
-  <section>
+  <section class="section-culture">
     <h2>Culture</h2>
     @if (cultureEvents().length > 0) {
       <app-carousel [items]="cultureEvents()">
@@ -21,7 +21,7 @@
     }
   </section>
 
-  <section>
+  <section class="section-sport">
     <h2>Sport</h2>
     @if (sportEvents().length > 0) {
       <app-carousel [items]="sportEvents()">
@@ -36,7 +36,7 @@
     }
   </section>
 
-  <section>
+  <section class="section-leisure">
     <h2>Loisirs</h2>
     @if (leisureEvents().length > 0) {
       <app-carousel [items]="leisureEvents()">

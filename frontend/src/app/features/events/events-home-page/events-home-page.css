@@ -22,3 +22,24 @@ section h2 {
   flex-wrap: wrap;
   gap: 1rem;
 }
+
+/* Test visuel : dégradé gris -> couleur de catégorie -> gris, centré sur le carrousel. */
+.section-culture,
+.section-sport,
+.section-leisure {
+  padding-block: 2rem;
+  margin-inline: -2rem;
+  padding-inline: 2rem;
+}
+
+.section-culture {
+  background: linear-gradient(to bottom, transparent, rgb(40 146 195 / 25%) 50%, transparent);
+}
+
+.section-sport {
+  background: linear-gradient(to bottom, transparent, rgb(210 105 74 / 25%) 50%, transparent);
+}
+
+.section-leisure {
+  background: linear-gradient(to bottom, transparent, rgb(46 156 134 / 25%) 50%, transparent);
+}
