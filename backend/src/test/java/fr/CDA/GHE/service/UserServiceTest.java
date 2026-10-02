@@ -35,6 +35,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.endsWith;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -273,7 +276,15 @@ class UserServiceTest {
 
         assertThat(dto.status()).isEqualTo(AccountStatus.INACTIVE);
         assertThat(dto.role()).isEqualTo(Role.MEMBER);
-        assertThat(userRepository.findById(dto.id()).orElseThrow().getActivationToken()).isNotBlank();
+
+        User created = userRepository.findById(dto.id()).orElseThrow();
+        assertThat(created.getActivationToken()).isNotBlank();
+
+        verify(emailService).sendAdminCreatedAccountEmail(
+                eq("john.doe@test.com"),
+                anyString(),
+                endsWith("/confirmation-compte?token=" + created.getActivationToken())
+        );
     }
 
     @Test

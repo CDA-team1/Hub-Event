@@ -1,0 +1,85 @@
+<form class="confirm-account-form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="confirm-account-form__field">
+    <label for="temporaryPassword">Mot de passe temporaire</label>
+
+    <input
+      id="temporaryPassword"
+      type="password"
+      formControlName="temporaryPassword"
+      autocomplete="current-password"
+    />
+
+    @if (
+      form.controls.temporaryPassword.touched &&
+      form.controls.temporaryPassword.hasError('required')
+    ) {
+      <p class="confirm-account-form__error">Le mot de passe temporaire est obligatoire.</p>
+    }
+  </div>
+
+  <div class="confirm-account-form__field">
+    <label for="newPassword">Nouveau mot de passe</label>
+
+    <input
+      id="newPassword"
+      type="password"
+      formControlName="newPassword"
+      autocomplete="new-password"
+    />
+
+    @if (form.controls.newPassword.touched && form.controls.newPassword.hasError('required')) {
+      <p class="confirm-account-form__error">Le nouveau mot de passe est obligatoire.</p>
+    }
+
+    @if (form.controls.newPassword.touched && form.controls.newPassword.hasError('minlength')) {
+      <p class="confirm-account-form__error">
+        Le mot de passe doit contenir au moins 12 caractères.
+      </p>
+    }
+
+    @if (form.controls.newPassword.touched && form.controls.newPassword.hasError('pattern')) {
+      <p class="confirm-account-form__error">
+        Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractère
+        spécial.
+      </p>
+    }
+  </div>
+
+  <div class="confirm-account-form__field">
+    <label for="confirmPassword">Confirmation</label>
+
+    <input
+      id="confirmPassword"
+      type="password"
+      formControlName="confirmPassword"
+      autocomplete="new-password"
+    />
+
+    @if (
+      form.controls.confirmPassword.touched && form.controls.confirmPassword.hasError('required')
+    ) {
+      <p class="confirm-account-form__error">La confirmation est obligatoire.</p>
+    }
+
+    @if (form.controls.confirmPassword.touched && form.hasError('passwordsMismatch')) {
+      <p class="confirm-account-form__error">Les mots de passe ne correspondent pas.</p>
+    }
+  </div>
+
+  <div class="confirm-account-form__info">
+    Le nouveau mot de passe doit contenir au moins 12 caractères, avec une majuscule, une minuscule,
+    un chiffre et un caractère spécial.
+  </div>
+
+  <div class="confirm-account-form__legal">
+    <button type="button">Consulter la RGPD</button>
+    <button type="button">Consulter les CGU</button>
+  </div>
+
+  <label class="confirm-account-form__terms">
+    <input type="checkbox" />
+    J'accepte les CGU & RGPD
+  </label>
+
+  <button class="confirm-account-form__submit" type="submit">Valider</button>
+</form>

@@ -303,7 +303,7 @@ public class UserService {
         log.info("CREATION compte (admin) : id={} email={} role={}",
                 created.getId(), created.getEmail(), created.getRole());
 
-        String confirmationLink = baseUrl + "/auth/confirm-account-creation?token=" + created.getActivationToken();
+        String confirmationLink = frontendUrl + "/confirmation-compte?token=" + created.getActivationToken();
         emailService.sendAdminCreatedAccountEmail(created.getEmail(), temporaryPassword, confirmationLink);
 
         return userMapper.toDto(created);

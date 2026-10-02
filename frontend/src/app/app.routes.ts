@@ -42,6 +42,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'confirmation-compte',
+    title: 'Confirmation du compte',
+    loadComponent: () =>
+      import('./features/account/confirm-account-creation-page/confirm-account-creation-page').then(
+        (m) => m.ConfirmAccountCreationPage,
+      ),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>
