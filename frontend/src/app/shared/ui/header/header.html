@@ -6,6 +6,9 @@
       >Accueil</a
     >
     <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
+    @if (isConnected()) {
+      <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
+    }
   </nav>
 
   @if (isConnected()) {

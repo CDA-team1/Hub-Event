@@ -35,9 +35,11 @@ export class EventApi {
   private readonly apiUrl = inject(API_URL);
   private readonly http = inject(HttpClient);
 
-  readonly publicEvents = httpResource<EventListDto>(() => `${this.apiUrl}/events`, {
-    defaultValue: { cultureEvents: [], leisureEvents: [], sportEvents: [], pastEvents: [] },
-  });
+  publicEvents() {
+    return httpResource<EventListDto>(() => `${this.apiUrl}/events`, {
+      defaultValue: {cultureEvents: [], leisureEvents: [], sportEvents: [], pastEvents: []},
+    });
+  }
 
   eventDetail(id: Signal<number>) {
     return httpResource<EventDetailResponse>(() =>
@@ -102,6 +104,12 @@ export class EventApi {
   async getPdf(id: number): Promise<Blob> {
     return firstValueFrom(
       this.http.get(`${this.apiUrl}/events/${id}/pdf`, { responseType: 'blob' }),
+    );
+  }
+
+  async unregister(eventId: number): Promise<void> {
+    await firstValueFrom(
+      this.http.delete<void>(`${this.apiUrl}/events/${eventId}/registrations/me`),
     );
   }
 }

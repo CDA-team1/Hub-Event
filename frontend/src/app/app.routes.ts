@@ -43,6 +43,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mon-calendrier',
+    title: 'Mon calendrier',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/calendar/calendar-page/calendar-page').then((m) => m.CalendarPage),
+  },
+  {
     path: 'confirmation-compte',
     title: 'Confirmation du compte',
     loadComponent: () =>

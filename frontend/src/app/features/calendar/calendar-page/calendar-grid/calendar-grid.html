@@ -1,0 +1,22 @@
+<div class="grid" role="grid">
+  <div class="weekday" role="row">
+    @for (label of weekdayLabels; track label) {
+      <span class="weekday-cell" role="columnheader">{{ label }}</span>
+    }
+  </div>
+
+  @for (week of weeks(); track week[0].date) {
+    <div class="week" role="row">
+      @for (day of week; track day.date) {
+        <span
+          class="day"
+          role="gridcell"
+          [class.day--padding]="!day.inRange"
+          [class.day--highlighted]="highlightedDates().has(day.date)"
+        >
+          {{ day.dayOfMonth }}
+        </span>
+      }
+    </div>
+  }
+</div>
