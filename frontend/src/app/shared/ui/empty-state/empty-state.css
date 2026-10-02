@@ -1,0 +1,16 @@
+:host {
+  display: block;
+  padding: 2rem 1rem;
+  border: 2px dashed #e5e7eb;
+  border-radius: 0.75rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.actions:empty {
+  display: none;
+}
+
+.actions {
+  margin-top: 1rem;
+}
