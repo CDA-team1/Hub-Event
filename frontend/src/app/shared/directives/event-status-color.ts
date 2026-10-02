@@ -1,5 +1,5 @@
 import { Directive, computed, input } from '@angular/core';
-import { EventStatus } from '../../core/events/event.model';
+import { EventStatus } from '../../domain/event.model';
 
 const EVENT_STATUS_COLORS: Record<EventStatus, { text: string; background: string }> = {
   DRAFT: { text: '#6b7280', background: 'rgb(107 114 128 / 12%)' },

@@ -1,5 +1,5 @@
 import { Directive, computed, input } from '@angular/core';
-import { Category } from '../../core/events/event.model';
+import { Category } from '../../domain/category';
 
 const CATEGORY_COLORS: Record<Category, { text: string; background: string }> = {
   CULTURE: { text: '#2892c3', background: 'rgb(40 146 195 / 12%)' },

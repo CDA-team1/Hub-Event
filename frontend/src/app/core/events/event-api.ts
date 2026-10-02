@@ -10,7 +10,7 @@ import {
   EventSearchCriteria,
   ImageDto,
   UpdateEventRequest
-} from './event.model';
+} from '../../domain/event.model';
 import {firstValueFrom} from 'rxjs';
 import {API_URL} from '../http/api-url';
 

@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EventStatus } from '../../core/events/event.model';
+import { EventStatus } from '../../domain/event.model';
 import { EventStatusColor } from './event-status-color';
 
 @Component({

@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { Category } from '../../../core/events/event.model';
+import { Category } from '../../../domain/category';
 import { CategoryBadge } from '../category-badge/category-badge';
 
 export interface CardData {

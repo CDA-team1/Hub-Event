@@ -17,7 +17,7 @@ export const routes: Routes = [
     path: 'inscription',
     title: 'Créer un compte',
     loadComponent: () =>
-      import('./features/account/signup-page/signup-page').then((m) => m.SignupPage),
+      import('./features/auth/signup-page/signup-page').then((m) => m.SignupPage),
   },
   {
     path: 'connexion',

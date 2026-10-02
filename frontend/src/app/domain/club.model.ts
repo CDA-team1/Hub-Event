@@ -1,9 +1,9 @@
-export type ClubCategory = 'SPORT' | 'CULTURE' | 'LEISURE';
+import { Category } from './category';
 
-export interface ClubCard {
+export interface ClubCardDto {
   id: number;
   name: string;
-  category: ClubCategory;
+  category: Category;
   postalAddress: string;
   email: string;
   phone: string;

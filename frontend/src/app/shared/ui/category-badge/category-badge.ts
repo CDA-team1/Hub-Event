@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { Category } from '../../../core/events/event.model';
+import { Category } from '../../../domain/category';
 import { CategoryColor } from '../../directives/category-color';
 import { CategoryLabelPipe } from '../../pipes/category-label-pipe';
 

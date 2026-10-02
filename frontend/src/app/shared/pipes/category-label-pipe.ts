@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { Category } from '../../core/events/event.model';
+import { Category } from '../../domain/category';
 
 const CATEGORY_LABELS: Record<Category, string> = {
   CULTURE: 'Culture',

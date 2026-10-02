@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 
-import { EventCardDto } from '../../../core/events/event.model';
+import { EventCardDto } from '../../../domain/event.model';
 import { Card, CardData } from '../card/card';
 
 @Component({
