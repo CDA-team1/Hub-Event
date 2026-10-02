@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth-guard';
 
 export const routes: Routes = [
   {
@@ -48,6 +49,13 @@ export const routes: Routes = [
       import('./features/account/confirm-account-creation-page/confirm-account-creation-page').then(
         (m) => m.ConfirmAccountCreationPage,
       ),
+  },
+  {
+    path: 'mon-compte',
+    title: 'Modifier mon compte',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/account/my-account-page/my-account-page').then((m) => m.MyAccountPage),
   },
   {
     path: '**',

@@ -2,12 +2,14 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.dto.UserProfileDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.UserService;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * SEC-02 — Autorisations des routes du profil de l'utilisateur connecté (CU13).
@@ -24,6 +26,12 @@ public class UserProfileController implements UserProfileControllerDoc {
 
     public UserProfileController(UserService userService) {
         this.userService = userService;
+    }
+
+    @Override
+    @GetMapping
+    public UserProfileDto getOwnAccount() throws FunctionalException {
+        return userService.getOwnAccount();
     }
 
     @Override

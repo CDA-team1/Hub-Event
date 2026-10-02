@@ -1,0 +1,93 @@
+<form class="account-form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="account-form__row">
+    <div class="account-form__field">
+      <label for="lastName">Nom</label>
+      <input id="lastName" type="text" formControlName="lastName" />
+
+      @if (form.controls.lastName.touched && form.controls.lastName.hasError('required')) {
+        <p class="account-form__error">Le nom est obligatoire.</p>
+      }
+    </div>
+
+    <div class="account-form__field">
+      <label for="firstName">Prénom</label>
+      <input id="firstName" type="text" formControlName="firstName" />
+
+      @if (form.controls.firstName.touched && form.controls.firstName.hasError('required')) {
+        <p class="account-form__error">Le prénom est obligatoire.</p>
+      }
+    </div>
+  </div>
+
+  <div class="account-form__field">
+    <label for="postalAddress">Adresse postale</label>
+    <input id="postalAddress" type="text" formControlName="postalAddress" />
+
+    @if (form.controls.postalAddress.touched && form.controls.postalAddress.hasError('required')) {
+      <p class="account-form__error">L'adresse postale est obligatoire.</p>
+    }
+  </div>
+
+  <div class="account-form__row">
+    <div class="account-form__field">
+      <label for="email">Email</label>
+      <input id="email" type="email" formControlName="email" />
+
+      @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+        <p class="account-form__error">L'email est obligatoire.</p>
+      }
+
+      @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+        <p class="account-form__error">Veuillez saisir une adresse email valide.</p>
+      }
+
+      @if (emailError()) {
+        <p class="account-form__error">{{ emailError() }}</p>
+      }
+    </div>
+
+    <div class="account-form__field">
+      <label for="phone">Téléphone</label>
+      <input id="phone" type="tel" formControlName="phone" />
+    </div>
+  </div>
+
+  <div class="account-form__field">
+    <label for="password">Mot de passe</label>
+    <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+
+    @if (form.controls.password.touched && form.controls.password.hasError('minlength')) {
+      <p class="account-form__error">Le mot de passe doit contenir au moins 12 caractères.</p>
+    }
+
+    @if (form.controls.password.touched && form.controls.password.hasError('pattern')) {
+      <p class="account-form__error">
+        Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractère
+        spécial.
+      </p>
+    }
+  </div>
+
+  <div class="account-form__field">
+    <label>Clubs affiliés (non modifiable ici)</label>
+
+    <div class="account-form__clubs">
+      @if (profile().clubs.length === 0) {
+        <span>Aucun club affilié</span>
+      } @else {
+        @for (club of profile().clubs; track club.id) {
+          <span>{{ club.name }}</span>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="account-form__actions">
+    <button type="submit">Valider</button>
+    <button type="button" (click)="cancel()">Annuler</button>
+  </div>
+
+  <p class="account-form__info">
+    Tout changement de mot de passe nécessite une confirmation par email avant d'être appliqué.
+  </p>
+</form>
