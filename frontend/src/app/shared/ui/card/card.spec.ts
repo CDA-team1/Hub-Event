@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Card, CardData } from './card';
 
 describe('Card', () => {
   async function render(data: CardData) {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(Card);
     fixture.componentRef.setInput('data', data);
     await fixture.whenStable();

@@ -2,6 +2,7 @@ package fr.CDA.GHE.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * DTO représentant le détail d'un événement consultable.
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
  * @param affiliatedPrice    tarif pour les membres affiliés
  * @param nonAffiliatedPrice tarif pour les membres non affiliés
  * @param maxSeats           nombre maximal de places de l'événement
+ * @param gallery            galerie complète des images de l'événement (EVT-12)
  */
 public record EventDetailResponse(
     String title,
@@ -23,14 +25,12 @@ public record EventDetailResponse(
     LocalDateTime endDateTime,
     BigDecimal affiliatedPrice,
     BigDecimal nonAffiliatedPrice,
-    Integer maxSeats
+    Integer maxSeats,
+    List<ImageDto> gallery
 ) {
 
   // TODO EVT-03 : ajouter remainingSeats et waitingCount — les inscriptions (REG-01) sont
   // déjà intégrées côté données (RegistrationRepository), il reste à les exposer ici.
-
-  // TODO EVT-03 : ajouter gallery — la gestion des images est déjà implémentée
-  // (ImageRepository/ImageService), il reste à l'exposer ici.
 
   // TODO EVT-03 : ajouter comments — la gestion des commentaires est déjà implémentée
   // (CommentRepository/CommentService), il reste à l'exposer ici.

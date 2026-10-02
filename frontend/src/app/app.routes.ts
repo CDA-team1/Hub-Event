@@ -7,6 +7,15 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/events/events-home-page/events-home-page').then((m) => m.EventsHomePage),
   },
+
+  {
+    path: 'evenements/:id',
+    title: "Détail de l'événement",
+    loadComponent: () =>
+      import('./features/events/event-detail-page/event-detail-page').then(
+        (m) => m.EventDetailPage,
+      ),
+  },
   {
     path: 'clubs',
     title: 'Clubs',

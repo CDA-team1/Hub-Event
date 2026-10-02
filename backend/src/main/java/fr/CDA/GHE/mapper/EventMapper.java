@@ -3,8 +3,11 @@ package fr.CDA.GHE.mapper;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.entity.Event;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Mapper chargé de convertir les entités {@link Event}
@@ -18,9 +21,10 @@ public class EventMapper {
    * Convertit un événement en DTO de carte.
    *
    * @param event événement à convertir
+   * @param imageUrl URL de l'image de couverture, {@code null} si aucune image (EVT-12)
    * @return DTO correspondant à l'événement
    */
-  public EventCardDto toCardDto(Event event) {
+  public EventCardDto toCardDto(Event event, String imageUrl) {
     return new EventCardDto(
         event.getId(),
         event.getTitle(),
@@ -29,7 +33,8 @@ public class EventMapper {
         event.getEndDateTime(),
         event.getAffiliatedPrice(),
         event.getNonAffiliatedPrice(),
-        event.getCategory()
+        event.getCategory(),
+        imageUrl
     );
   }
 
@@ -37,9 +42,10 @@ public class EventMapper {
    * Convertit un événement en DTO de détail.
    *
    * @param event événement à convertir
+   * @param gallery galerie complète des images de l'événement (EVT-12)
    * @return DTO contenant les informations détaillées de l'événement
    */
-  public EventDetailResponse toDetailResponse(Event event) {
+  public EventDetailResponse toDetailResponse(Event event, List<ImageDto> gallery) {
     return new EventDetailResponse(
         event.getTitle(),
         event.getDescription(),
@@ -48,7 +54,8 @@ public class EventMapper {
         event.getEndDateTime(),
         event.getAffiliatedPrice(),
         event.getNonAffiliatedPrice(),
-        event.getMaxSeats()
+        event.getMaxSeats(),
+        gallery
     );
   }
 

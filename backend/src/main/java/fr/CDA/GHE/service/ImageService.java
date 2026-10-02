@@ -18,6 +18,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import java.util.List;
 
@@ -130,6 +133,36 @@ public class ImageService {
         for (Image image : images) {
             imgbbClient.delete(image.getDeleteUrl());
         }
+    }
+
+    /**
+     * Retourne l'image de couverture de plusieurs événements à la fois (celle avec l'id le
+     * plus petit, donc la première ajoutée à la galerie), pour l'affichage en liste (cartes).
+     * <p>
+     * Les événements sans aucune image n'apparaissent pas dans la map retournée.
+     *
+     * @param eventIds identifiants des événements concernés
+     * @return une map associant chaque identifiant d'événement à l'URL de son image de couverture
+     */
+    public Map<Long, String> findCoverImageUrlsByEventIds(List<Long> eventIds) {
+        return imageRepository.findByEvent_IdIn(eventIds).stream()
+                .collect(Collectors.groupingBy(
+                        image -> image.getEvent().getId(),
+                        Collectors.collectingAndThen(
+                                Collectors.minBy(Comparator.comparing(Image::getId)),
+                                optionalImage -> optionalImage.map(Image::getUrl).orElse(null)
+                        )
+                ));
+    }
+
+    /**
+     * Retourne la galerie complète d'un événement, pour l'affichage sur sa page de détail.
+     *
+     * @param eventId identifiant de l'événement concerné
+     * @return la liste des images de la galerie, sous forme de DTO
+     */
+    public List<ImageDto> findGalleryForEvent(Long eventId) {
+        return imageMapper.toDtoList(imageRepository.findByEvent_Id(eventId));
     }
 
     private Event findEventOrThrow(Long eventId) {

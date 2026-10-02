@@ -46,7 +46,7 @@ class CalendarExcelServiceTest {
                 1L, "Tournoi de tennis", "Lyon",
                 LocalDateTime.of(2026, 10, 15, 14, 0),
                 LocalDateTime.of(2026, 10, 15, 18, 0),
-                BigDecimal.valueOf(5), BigDecimal.valueOf(10), Category.SPORT
+                BigDecimal.valueOf(5), BigDecimal.valueOf(10), Category.SPORT, null
         );
 
         LocalDate from = LocalDate.of(2026, 10, 1);

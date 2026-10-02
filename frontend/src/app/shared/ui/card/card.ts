@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { Category } from '../../../domain/category';
+import { RouterLink } from '@angular/router';
 import { CategoryBadge } from '../category-badge/category-badge';
 
 export interface CardData {
@@ -8,11 +9,12 @@ export interface CardData {
   category?: Category;
   information: string[];
   actionLabel?: string;
+  link?: string | any[];
 }
 
 @Component({
   selector: 'app-card',
-  imports: [CategoryBadge],
+  imports: [CategoryBadge, RouterLink],
   templateUrl: './card.html',
   styleUrl: './card.css',
 })
@@ -21,7 +23,8 @@ export class Card {
 
   readonly actionClicked = output<void>();
 
-  triggerAction(): void {
+  triggerAction(event: Event): void {
+    event.stopPropagation();
     this.actionClicked.emit();
   }
 }
