@@ -149,14 +149,20 @@ class EventControllerTest {
   void shouldReturnEventDetailWithoutAuthentication() throws Exception {
 
     EventDetailResponse eventDetail = new EventDetailResponse(
-        "Concert",
-        "Description de test",
-        "Montpellier",
-        LocalDateTime.of(2026, 11, 20, 20, 0),
-        null,
-        BigDecimal.valueOf(10),
-        BigDecimal.valueOf(15),
-        100,
+            "Concert",
+            "Description de test",
+            "Montpellier",
+            LocalDateTime.of(2026, 11, 20, 20, 0),
+            null,
+            BigDecimal.valueOf(10),
+            BigDecimal.valueOf(15),
+            100,
+            Category.CULTURE,
+            EventStatus.PUBLISHED,
+            40,
+            3,
+            false,
+            null,
             List.of()
     );
 
@@ -171,7 +177,13 @@ class EventControllerTest {
         .andExpect(jsonPath("$.location").value("Montpellier"))
         .andExpect(jsonPath("$.affiliatedPrice").value(10))
         .andExpect(jsonPath("$.nonAffiliatedPrice").value(15))
-        .andExpect(jsonPath("$.maxSeats").value(100));
+            .andExpect(jsonPath("$.maxSeats").value(100))
+            .andExpect(jsonPath("$.category").value("CULTURE"))
+            .andExpect(jsonPath("$.status").value("PUBLISHED"))
+            .andExpect(jsonPath("$.remainingSeats").value(40))
+            .andExpect(jsonPath("$.waitingCount").value(3))
+            .andExpect(jsonPath("$.owner").value(false))
+            .andExpect(jsonPath("$.myRegistration").doesNotExist());
 
     verify(eventService).getEventDetail(1L);
   }
