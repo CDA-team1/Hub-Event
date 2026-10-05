@@ -12,13 +12,14 @@ import org.springframework.web.bind.annotation.*;
 /**
  * SEC-02 — Autorisations des routes des clubs.
  * <p>
- * Seuls les rôles sont exprimés ici via {@code @Secured} (actif grâce à
- * {@code @EnableMethodSecurity(securedEnabled = true)} dans {@code SecurityConfig}) ; les
- * routes publiques (GET) n'ont pas d'annotation, elles sont en {@code permitAll} côté
- * {@code SecurityConfig}.
+ * Toute la gestion des clubs (CU24, CdC p.10 "Liste des clubs") est réservée à l'administrateur
+ * : aucune route de ce contrôleur n'est publique, {@code @Secured("ROLE_ADMIN")} s'applique à
+ * toutes (actif grâce à {@code @EnableMethodSecurity(securedEnabled = true)} dans
+ * {@code SecurityConfig}, qui ne place plus {@code /clubs} en {@code permitAll}).
  */
 @RestController
 @RequestMapping("/clubs")
+@Secured("ROLE_ADMIN")
 public class ClubController implements ClubControllerDoc {
 
     private final ClubService clubService;
@@ -27,14 +28,12 @@ public class ClubController implements ClubControllerDoc {
         this.clubService = clubService;
     }
 
-    // Public
     @Override
     @GetMapping
     public PageDto<ClubDto> getAll(Pageable pageable) {
         return clubService.extractAll(pageable);
     }
 
-    // Public
     @Override
     @GetMapping("/{id}")
     public ClubDto getById(@PathVariable Long id) {
@@ -42,7 +41,6 @@ public class ClubController implements ClubControllerDoc {
     }
 
     @Override
-    @Secured("ROLE_ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ClubDto create(@RequestBody ClubDto clubDto) throws FunctionalException {
@@ -50,14 +48,12 @@ public class ClubController implements ClubControllerDoc {
     }
 
     @Override
-    @Secured("ROLE_ADMIN")
     @PutMapping("/{id}")
     public ClubDto update(@PathVariable Long id, @RequestBody ClubDto clubDto) throws FunctionalException {
         return clubService.update(id, clubDto);
     }
 
     @Override
-    @Secured("ROLE_ADMIN")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) throws FunctionalException {

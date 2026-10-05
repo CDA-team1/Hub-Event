@@ -1,6 +1,8 @@
 package fr.CDA.GHE.repository;
 
 import fr.CDA.GHE.entity.Club;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -21,7 +23,8 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
   /**
    * Recherche les clubs dont la date de fin de validité n'est pas renseignée.
    *
-   * @return la liste des clubs actuellement affiliés
+   * @param pageable pagination demandée
+   * @return la page de clubs actuellement affiliés
    */
-  List<Club> findByValidityEndDateIsNull();
+  Page<Club> findByValidityEndDateIsNull(Pageable pageable);
 }

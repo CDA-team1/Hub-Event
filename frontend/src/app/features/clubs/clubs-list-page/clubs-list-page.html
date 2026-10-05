@@ -1,4 +1,31 @@
-<section>
-  <h1>Club affiliés</h1>
-  <p>Liste des clubs - contenu à venir</p>
-</section>
+<h1>Clubs affiliés</h1>
+
+@if (isLoading()) {
+  <app-loading-state>Chargement des clubs…</app-loading-state>
+} @else if (error()) {
+  <app-error-state>
+    <p>Impossible de charger les clubs.</p>
+    <button actions type="button" (click)="reload()">Réessayer</button>
+  </app-error-state>
+} @else if (content().length === 0) {
+  <app-empty-state>
+    <p>Aucun club affilié à afficher.</p>
+  </app-empty-state>
+} @else {
+  <app-data-table [columns]="columns" [rows]="content()">
+    <ng-template appColumn="name" let-club>{{ club.name }}</ng-template>
+    <ng-template appColumn="category" let-club>
+      <app-category-badge [category]="club.category" />
+    </ng-template>
+    <ng-template appColumn="address" let-club>{{ club.postalAddress }}</ng-template>
+    <ng-template appColumn="email" let-club>{{ club.email }}</ng-template>
+    <ng-template appColumn="phone" let-club>{{ club.phone }}</ng-template>
+  </app-data-table>
+
+  <app-pagination
+    [page]="page()"
+    [size]="pageSize"
+    [totalElements]="totalElements()"
+    (pageChanged)="onPageChanged($event)"
+  />
+}

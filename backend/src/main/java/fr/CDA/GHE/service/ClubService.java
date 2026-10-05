@@ -41,14 +41,16 @@ public class ClubService {
     }
 
     /**
-     * Retourne une page de clubs.
+     * Retourne une page de clubs actifs (non désaffiliés), pour la liste d'administration
+     * (CLUB-01, CdC p.10) : les clubs désaffiliés ({@code validityEndDate} renseignée) ne sont
+     * pas exposés ici.
      *
      * @param pageable pagination demandée
-     * @return la page de clubs correspondante
+     * @return la page de clubs actifs correspondante
      */
     @Transactional(readOnly = true)
     public PageDto<ClubDto> extractAll(Pageable pageable){
-        Page<Club> page = clubRepository.findAll(pageable);
+        Page<Club> page = clubRepository.findByValidityEndDateIsNull(pageable);
         return new PageDto<>(
                 clubMapper.toDtoList(page.getContent()),
                 page.getNumber(),
