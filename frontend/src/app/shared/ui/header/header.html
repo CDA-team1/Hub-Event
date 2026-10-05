@@ -4,30 +4,48 @@
     Hub évènementiel
   </a>
 
-  <nav class="header__nav" aria-label="Navigation principale">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-    >Accueil</a
-    >
-    @if (isConnected()) {
-      <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
-    }
-    @if (isAdmin()) {
-      <details class="admin-menu" #adminMenu>
-        <summary>Administration</summary>
-        <div class="admin-menu__items">
-          <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
-        </div>
-      </details>
-    }
-  </nav>
+  <button
+    type="button"
+    class="header__toggle"
+    aria-label="Menu"
+    aria-controls="header-menu"
+    [attr.aria-expanded]="menuOpen()"
+    (click)="toggleMenu()"
+  >
+    <span aria-hidden="true">{{ menuOpen() ? '✕' : '☰' }}</span>
+  </button>
 
-  <div class="header__session">
-    @if (isConnected()) {
-      <a routerLink="/mon-compte" routerLinkActive="active">Mon compte</a>
-      <button type="button" class="header__logout" (click)="logout()">Se déconnecter</button>
-    } @else {
-      <a routerLink="/connexion" routerLinkActive="active">Se connecter</a>
-      <a routerLink="/inscription" routerLinkActive="active">Créer un compte</a>
-    }
+  <div
+    id="header-menu"
+    class="header__menu"
+    [class.header__menu--open]="menuOpen()"
+    (click)="onMenuClick($event)"
+  >
+    <nav class="header__nav" aria-label="Navigation principale">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+      >Accueil</a
+      >
+      @if (isConnected()) {
+        <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
+      }
+      @if (isAdmin()) {
+        <details class="admin-menu" #adminMenu>
+          <summary>Administration</summary>
+          <div class="admin-menu__items">
+            <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
+          </div>
+        </details>
+      }
+    </nav>
+
+    <div class="header__session">
+      @if (isConnected()) {
+        <a routerLink="/mon-compte" routerLinkActive="active">Mon compte</a>
+        <button type="button" class="header__logout" (click)="logout()">Se déconnecter</button>
+      } @else {
+        <a routerLink="/connexion" routerLinkActive="active">Se connecter</a>
+        <a routerLink="/inscription" routerLinkActive="active">Créer un compte</a>
+      }
+    </div>
   </div>
 </header>
