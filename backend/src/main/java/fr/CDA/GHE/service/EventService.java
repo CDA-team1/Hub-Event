@@ -7,6 +7,7 @@ import fr.CDA.GHE.dto.EventSearchCriteria;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
+import fr.CDA.GHE.dto.MyRegistrationDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
@@ -247,11 +248,6 @@ public class EventService {
     @Transactional(readOnly = true)
     public EventDetailResponse getEventDetail(Long id) {
 
-        // TODO EVT-03 : compléter EventDetailResponse (places restantes, liste d'attente,
-        // commentaires) — les briques de données existent déjà (RegistrationRepository,
-        // CommentRepository), il ne reste qu'à les interroger et les exposer ici ;
-        // pas besoin d'attendre une relation inverse sur Event (voir Event.java).
-
         Event event = eventRepository.findById(id)
                 .orElseThrow(() ->
                         new NotFoundException("Événement introuvable")
@@ -261,9 +257,68 @@ public class EventService {
             throw new NotFoundException("Événement introuvable");
         }
 
+        long registeredCount = registrationRepository.countByEventAndStatus(
+                event,
+                RegistrationStatus.REGISTERED
+        );
+        long remainingSeats = Math.max(0, event.getMaxSeats() - registeredCount);
+        long waitingCount = registrationRepository.countByEventAndStatus(
+                event,
+                RegistrationStatus.WAITING_LIST
+        );
+
+        User currentUser = currentUserOrNull();
+        boolean owner = currentUser != null
+                && currentUser.getId().equals(event.getOrganizer().getId());
+        MyRegistrationDto myRegistration = currentUser == null
+                ? null
+                : findMyRegistration(currentUser, event);
+
         List<ImageDto> gallery = imageService.findGalleryForEvent(id);
 
-        return eventMapper.toDetailResponse(event, gallery);
+        return eventMapper.toDetailResponse(
+                event, remainingSeats, waitingCount, owner, myRegistration, gallery
+        );
+    }
+
+    /**
+     * Retrouve l'inscription de l'utilisateur à l'événement, avec sa position
+     * s'il est en liste d'attente.
+     *
+     * @param user  utilisateur connecté
+     * @param event événement consulté
+     * @return l'inscription de l'utilisateur, {@code null} s'il n'est pas inscrit
+     */
+    private MyRegistrationDto findMyRegistration(User user, Event event) {
+        return registrationRepository.findByUserAndEvent(user, event)
+                .map(registration -> new MyRegistrationDto(
+                        registration.getStatus(),
+                        waitingPosition(registration, event)
+                ))
+                .orElse(null);
+    }
+
+    /**
+     * Calcule la position d'une inscription en liste d'attente : le nombre de personnes
+     * en attente inscrites avant elle, plus un.
+     *
+     * @param registration inscription concernée
+     * @param event        événement consulté
+     * @return la position, {@code null} si l'inscription n'est pas en liste d'attente
+     */
+    private Integer waitingPosition(Registration registration, Event event) {
+
+        if (registration.getStatus() != RegistrationStatus.WAITING_LIST) {
+            return null;
+        }
+
+        long ahead = registrationRepository.countByEventAndStatusAndRegistrationDateBefore(
+                event,
+                RegistrationStatus.WAITING_LIST,
+                registration.getRegistrationDate()
+        );
+
+        return (int) ahead + 1;
     }
 
     /**
@@ -484,15 +539,31 @@ public class EventService {
             return false;
         }
 
+        User authenticatedUser = currentUserOrNull();
+
+        if (authenticatedUser == null) {
+            return false;
+        }
+
+        return authenticatedUser.getId().equals(event.getOrganizer().getId());
+    }
+
+    /**
+     * Retourne l'utilisateur authentifié de la requête en cours.
+     *
+     * @return l'utilisateur connecté, {@code null} si la requête est anonyme
+     */
+    private static User currentUserOrNull() {
+
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null
                 || !(authentication.getPrincipal() instanceof User authenticatedUser)) {
-            return false;
+            return null;
         }
 
-        return authenticatedUser.getId().equals(event.getOrganizer().getId());
+        return authenticatedUser;
     }
 
     /**

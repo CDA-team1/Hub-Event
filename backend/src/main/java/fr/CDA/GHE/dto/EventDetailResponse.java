@@ -1,5 +1,8 @@
 package fr.CDA.GHE.dto;
 
+import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.entity.enums.EventStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,23 +18,30 @@ import java.util.List;
  * @param affiliatedPrice    tarif pour les membres affiliés
  * @param nonAffiliatedPrice tarif pour les membres non affiliés
  * @param maxSeats           nombre maximal de places de l'événement
+ * @param category           catégorie de l'événement
+ * @param status             statut de l'événement
+ * @param remainingSeats     nombre de places encore disponibles, jamais négatif
+ * @param waitingCount       nombre de personnes en liste d'attente
+ * @param owner              {@code true} si l'utilisateur connecté est l'organisateur de l'événement
+ * @param myRegistration     inscription de l'utilisateur connecté, {@code null} s'il est anonyme
+ *                           ou non inscrit
  * @param gallery            galerie complète des images de l'événement (EVT-12)
  */
 public record EventDetailResponse(
-    String title,
-    String description,
-    String location,
-    LocalDateTime startDateTime,
-    LocalDateTime endDateTime,
-    BigDecimal affiliatedPrice,
-    BigDecimal nonAffiliatedPrice,
-    Integer maxSeats,
-    List<ImageDto> gallery
+        String title,
+        String description,
+        String location,
+        LocalDateTime startDateTime,
+        LocalDateTime endDateTime,
+        BigDecimal affiliatedPrice,
+        BigDecimal nonAffiliatedPrice,
+        Integer maxSeats,
+        Category category,
+        EventStatus status,
+        long remainingSeats,
+        long waitingCount,
+        boolean owner,
+        MyRegistrationDto myRegistration,
+        List<ImageDto> gallery
 ) {
-
-  // TODO EVT-03 : ajouter remainingSeats et waitingCount — les inscriptions (REG-01) sont
-  // déjà intégrées côté données (RegistrationRepository), il reste à les exposer ici.
-
-  // TODO EVT-03 : ajouter comments — la gestion des commentaires est déjà implémentée
-  // (CommentRepository/CommentService), il reste à l'exposer ici.
 }

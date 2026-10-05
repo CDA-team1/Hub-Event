@@ -71,6 +71,17 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
   Optional<Registration> findFirstByEventAndStatusOrderByRegistrationDateAsc(Event event, RegistrationStatus status);
 
   /**
+   * Compte les inscriptions d'un statut donné effectuées avant une date.
+   * Sert à calculer la position en liste d'attente : nombre d'inscrits devant soi + 1.
+   *
+   * @param event  l'évènement concerné
+   * @param status le statut recherché (typiquement {@code WAITING_LIST})
+   * @param date   la date d'inscription de référence (exclue)
+   * @return le nombre d'inscriptions plus anciennes
+   */
+  long countByEventAndStatusAndRegistrationDateBefore(Event event, RegistrationStatus status, LocalDateTime date);
+
+  /**
    * Recherche les inscriptions confirmées d'un utilisateur dont l'événement chevauche
    * la période demandée (CAL-01).
    *
