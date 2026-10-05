@@ -1,0 +1,75 @@
+<form class="user-form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="user-form__row">
+    <div class="user-form__field">
+      <label for="lastName">Nom</label>
+      <input id="lastName" type="text" formControlName="lastName" />
+
+      @if (form.controls.lastName.touched && form.controls.lastName.hasError('required')) {
+        <p class="user-form__error">Le nom est obligatoire.</p>
+      }
+    </div>
+
+    <div class="user-form__field">
+      <label for="firstName">Prénom</label>
+      <input id="firstName" type="text" formControlName="firstName" />
+
+      @if (form.controls.firstName.touched && form.controls.firstName.hasError('required')) {
+        <p class="user-form__error">Le prénom est obligatoire.</p>
+      }
+    </div>
+  </div>
+
+  <div class="user-form__field">
+    <label for="postalAddress">Adresse postale</label>
+    <input id="postalAddress" type="text" formControlName="postalAddress" />
+
+    @if (form.controls.postalAddress.touched && form.controls.postalAddress.hasError('required')) {
+      <p class="user-form__error">L'adresse postale est obligatoire.</p>
+    }
+  </div>
+
+  <div class="user-form__row">
+    <div class="user-form__field">
+      <label for="email">Email</label>
+      <input id="email" type="email" formControlName="email" />
+
+      @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+        <p class="user-form__error">L'email est obligatoire.</p>
+      }
+
+      @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+        <p class="user-form__error">Veuillez saisir une adresse email valide.</p>
+      }
+
+      @if (emailError()) {
+        <p class="user-form__error">{{ emailError() }}</p>
+      }
+    </div>
+
+    <div class="user-form__field">
+      <label for="phone">Téléphone</label>
+      <input id="phone" type="tel" formControlName="phone" />
+
+      @if (form.controls.phone.touched && form.controls.phone.hasError('required')) {
+        <p class="user-form__error">Le téléphone est obligatoire.</p>
+      }
+    </div>
+  </div>
+
+  @if (showClubPicker()) {
+    <app-club-affiliation-picker
+      [clubs]="clubs()"
+      [selected]="selectedClubIds()"
+      (selectionChanged)="updateClubSelection($event)"
+    />
+
+    @if (clubRequired() && clubSelectionTouched() && selectedClubIds().length === 0) {
+      <p class="user-form__error">Un organisateur doit être affilié à au moins un club.</p>
+    }
+  }
+
+  <div class="user-form__actions">
+    <button type="submit">Valider</button>
+    <button type="button" (click)="cancel()">Annuler</button>
+  </div>
+</form>

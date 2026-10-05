@@ -5,6 +5,8 @@ import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.dto.AdminUserDto;
+import fr.CDA.GHE.dto.ClubSummaryDto;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -100,14 +102,28 @@ class UserControllerTest {
     }
 
     @Test
-    void getById_shouldReturn200_whenAdmin() throws Exception {
-        when(userService.extractById(1L)).thenReturn(sampleUser());
+void getById_shouldReturn200WithClubs_whenAdmin() throws Exception {
+    AdminUserDto adminUser = new AdminUserDto(
+            1L,
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "john.doe@test.com",
+            null,
+            AccountStatus.ACTIVE,
+            Role.MEMBER,
+            List.of(new ClubSummaryDto(10L, "Club de Test"))
+    );
 
-        mockMvc.perform(get("/admin/users/1")
-                        .with(user("admin@test.fr").roles("ADMIN")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("john.doe@test.com"));
-    }
+    when(userService.extractById(1L)).thenReturn(adminUser);
+
+    mockMvc.perform(get("/admin/users/1")
+                    .with(user("admin@test.fr").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("john.doe@test.com"))
+            .andExpect(jsonPath("$.clubs[0].id").value(10))
+            .andExpect(jsonPath("$.clubs[0].name").value("Club de Test"));
+     }
 
     @Test
     void getById_shouldReturn404_whenNotFound() throws Exception {

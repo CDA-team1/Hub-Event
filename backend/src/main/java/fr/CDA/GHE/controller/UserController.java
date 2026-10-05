@@ -6,6 +6,7 @@ import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.dto.AdminUserDto;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.UserService;
@@ -48,9 +49,9 @@ public class UserController implements UserControllerDoc {
     @Override
     @Secured("ROLE_ADMIN")
     @GetMapping("/{id}")
-    public UserDto getById(@PathVariable Long id) {
-        return userService.extractById(id);
-    }
+    public AdminUserDto getById(@PathVariable Long id) {
+    return userService.extractById(id);
+}
 
     @Override
     @Secured("ROLE_ADMIN")
