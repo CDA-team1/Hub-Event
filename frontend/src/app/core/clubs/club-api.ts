@@ -53,6 +53,11 @@ export class ClubApi {
     return firstValueFrom(this.http.put<ClubDto>(`${this.apiUrl}/clubs/${id}`, request));
   }
 
+  /** Met fin à l'affiliation du club (soft-delete back : `validityEndDate`). */
+  async delete(id: number): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiUrl}/clubs/${id}`));
+  }
+
   getClubs(page: number, size: number): Observable<PageDto<ClubDto>> {
     const params = new HttpParams().set('page', page).set('size', size);
 

@@ -14,6 +14,10 @@
     <p>Aucun club affilié à afficher.</p>
   </app-empty-state>
 } @else {
+  @if (deleteError()) {
+    <p class="error" role="alert">{{ deleteError() }}</p>
+  }
+
   <app-data-table [columns]="columns" [rows]="content()">
     <ng-template appColumn="name" let-club>{{ club.name }}</ng-template>
     <ng-template appColumn="category" let-club>
@@ -23,12 +27,20 @@
     <ng-template appColumn="email" let-club>{{ club.email }}</ng-template>
     <ng-template appColumn="phone" let-club>{{ club.phone }}</ng-template>
     <ng-template appColumn="actions" let-club>
-      <app-action-button
-        icon="✏️"
-        label="Modifier"
-        level="primary"
-        [routerLink]="['/clubs', club.id, 'modifier']"
-      />
+      <div class="actions">
+        <app-action-button
+          icon="✏️"
+          label="Modifier"
+          level="primary"
+          [routerLink]="['/clubs', club.id, 'modifier']"
+        />
+        <app-action-button
+          icon="🗑️"
+          label="Supprimer"
+          level="danger"
+          (triggered)="deleteClub(club)"
+        />
+      </div>
     </ng-template>
   </app-data-table>
 
