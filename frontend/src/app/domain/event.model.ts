@@ -9,6 +9,14 @@ export interface MyRegistrationDto {
   waitingPosition: number | null;
 }
 
+export interface RegistrationDto {
+  id: number;
+  eventId: number;
+  userEmail: string;
+  status: RegistrationStatus;
+  registrationDate: string;
+}
+
 export interface EventCardDto {
   id: number;
   title: string;
