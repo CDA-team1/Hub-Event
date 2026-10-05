@@ -1,5 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ClubApi } from '../../../core/clubs/club-api';
+import { ActionButton } from '../../../shared/ui/action-button/action-button';
 import { CategoryBadge } from '../../../shared/ui/category-badge/category-badge';
 import { Column } from '../../../shared/ui/data-table/column';
 import { DataTable, DataTableColumn } from '../../../shared/ui/data-table/data-table';
@@ -11,7 +13,17 @@ import { Pagination } from '../../../shared/ui/pagination/pagination';
 const PAGE_SIZE = 20;
 
 @Component({
-  imports: [CategoryBadge, Column, DataTable, EmptyState, ErrorState, LoadingState, Pagination],
+  imports: [
+    ActionButton,
+    CategoryBadge,
+    Column,
+    DataTable,
+    EmptyState,
+    ErrorState,
+    LoadingState,
+    Pagination,
+    RouterLink,
+  ],
   selector: 'app-clubs-list-page',
   styleUrl: './clubs-list-page.css',
   templateUrl: './clubs-list-page.html',
@@ -28,6 +40,7 @@ export class ClubsListPage {
     { key: 'address', header: 'Adresse' },
     { key: 'email', header: 'Email' },
     { key: 'phone', header: 'Téléphone' },
+    { key: 'actions', header: 'Actions' },
   ];
 
   private readonly clubs = this.clubApi.list(computed(() => ({ page: this.page(), size: this.pageSize })));

@@ -68,8 +68,18 @@
     </ng-template>
     <ng-template appColumn="actions" let-event>
       <div class="actions">
-        <a [routerLink]="['/evenements', event.id]">Voir détails</a>
-        <button type="button" (click)="unregister(event.id, event.title)">Se désinscrire</button>
+        <app-action-button
+          icon="👁️"
+          label="Voir détails"
+          level="neutral"
+          [routerLink]="['/evenements', event.id]"
+        />
+        <app-action-button
+          icon="❌"
+          label="Se désinscrire"
+          level="danger"
+          (triggered)="unregister(event.id, event.title)"
+        />
       </div>
     </ng-template>
   </app-data-table>

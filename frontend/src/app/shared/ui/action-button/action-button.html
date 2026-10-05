@@ -1,0 +1,7 @@
+@if (routerLink()) {
+  <a [routerLink]="routerLink()" [attr.aria-label]="label()" [title]="label()">{{ icon() }}</a>
+} @else {
+  <button type="button" [attr.aria-label]="label()" [title]="label()" (click)="triggered.emit()">
+    {{ icon() }}
+  </button>
+}

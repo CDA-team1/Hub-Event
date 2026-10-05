@@ -1,6 +1,7 @@
-import { httpResource } from '@angular/common/http';
+import { HttpClient, httpResource } from '@angular/common/http';
 import { Service, Signal, inject } from '@angular/core';
-import { ClubDto } from '../../domain/club.model';
+import { firstValueFrom } from 'rxjs';
+import { ClubDto, ClubFormRequest } from '../../domain/club.model';
 import { PageDto } from '../../domain/page.model';
 import { API_URL } from '../http/api-url';
 
@@ -12,6 +13,7 @@ export interface ClubListParams {
 @Service()
 export class ClubApi {
   private readonly apiUrl = inject(API_URL);
+  private readonly http = inject(HttpClient);
 
   /** Clubs actifs, paginés (le back exclut déjà les clubs désaffiliés). */
   list(params: Signal<ClubListParams>) {
@@ -32,5 +34,17 @@ export class ClubApi {
         },
       },
     );
+  }
+
+  get(id: Signal<number>) {
+    return httpResource<ClubDto>(() => `${this.apiUrl}/clubs/${id()}`);
+  }
+
+  async create(request: ClubFormRequest): Promise<ClubDto> {
+    return firstValueFrom(this.http.post<ClubDto>(`${this.apiUrl}/clubs`, request));
+  }
+
+  async update(id: number, request: ClubFormRequest): Promise<ClubDto> {
+    return firstValueFrom(this.http.put<ClubDto>(`${this.apiUrl}/clubs/${id}`, request));
   }
 }

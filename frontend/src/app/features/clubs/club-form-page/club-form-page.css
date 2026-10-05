@@ -1,0 +1,22 @@
+:host {
+  display: block;
+  padding: 1.5rem 2rem;
+}
+
+h1 {
+  margin: 0 0 1.5rem;
+}
+
+.error {
+  margin: 0 0 1rem;
+  color: #d33f3f;
+}
+
+.note {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.875rem;
+}
