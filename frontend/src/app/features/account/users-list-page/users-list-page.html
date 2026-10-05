@@ -1,0 +1,59 @@
+<main class="users-list-page">
+  <section class="users-list-page__content">
+    <div class="users-list-page__header">
+      <div>
+        <h1>Gestion des comptes utilisateurs</h1>
+        <p>{{ totalElements() }} compte(s)</p>
+      </div>
+
+      <a class="users-list-page__create" routerLink="/admin/comptes/nouveau">
+        Créer un utilisateur
+      </a>
+    </div>
+
+    <div class="users-list-page__filters">
+      <label for="role-filter">Filtrer par rôle</label>
+
+      <select id="role-filter" [value]="selectedRole() ?? ''" (change)="changeRole($event)">
+        <option value="">Tous les rôles</option>
+        <option value="MEMBER">Membre</option>
+        <option value="ORGANIZER">Organisateur</option>
+        <option value="ADMIN">Administrateur</option>
+      </select>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state> Chargement des comptes... </app-loading-state>
+    } @else if (errorMessage()) {
+      <app-error-state>
+        {{ errorMessage() }}
+
+        <button actions type="button" (click)="reload()">Réessayer</button>
+      </app-error-state>
+    } @else if (users().length === 0) {
+      <app-empty-state> Aucun compte ne correspond à ce filtre. </app-empty-state>
+    } @else {
+      <div class="users-list-page__table-header" aria-hidden="true">
+        <span>Nom</span>
+        <span>Prénom</span>
+        <span>Email</span>
+        <span>Rôle</span>
+        <span>Statut</span>
+        <span>Actions</span>
+      </div>
+
+      <div class="users-list-page__list">
+        @for (user of users(); track user.id) {
+          <app-account-card [user]="user" />
+        }
+      </div>
+
+      <app-pagination
+        [page]="page()"
+        [size]="pageSize()"
+        [totalElements]="totalElements()"
+        (pageChanged)="changePage($event)"
+      />
+    }
+  </section>
+</main>

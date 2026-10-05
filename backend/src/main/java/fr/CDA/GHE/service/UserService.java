@@ -182,6 +182,7 @@ public class UserService {
                 clubs
         );
     }
+
     /**
      * Modifie le compte de l'utilisateur connecté (CU13, SFG §2.16).
      * <p>
@@ -277,18 +278,24 @@ public class UserService {
     }
 
     /**
-     * Retourne une page d'utilisateurs (CU25 — liste des comptes).
+    * Retourne une page d'utilisateurs, éventuellement filtrée par rôle
+     * (CU25 — liste des comptes).
      *
+     * @param role rôle à filtrer, ou {@code null} pour tous les rôles
      * @param pageable pagination demandée
-     * @return la page d'utilisateurs correspondante
+    * @return la page d'utilisateurs correspondante
      */
     @Transactional(readOnly = true)
-    public PageDto<UserDto> extractAll(Pageable pageable) {
-        Page<User> page = userRepository.findAll(pageable);
+    public PageDto<UserDto> extractAll(Role role, Pageable pageable) {
+    Page<User> page = role == null
+            ? userRepository.findAll(pageable)
+            : userRepository.findByRole(role, pageable);
+
         List<UserDto> content = userMapper.toDtoList(page.getContent());
-        return new PageDto<>(content, page.getNumber(), page.getSize(), page.getTotalElements(),
+
+            return new PageDto<>(content, page.getNumber(), page.getSize(), page.getTotalElements(),
                 page.getTotalPages(), page.isFirst(), page.isLast());
-    }
+}
 
     /**
      * Retourne un utilisateur par son identifiant.

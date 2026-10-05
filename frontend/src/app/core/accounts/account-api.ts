@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { PageDto } from '../../domain/page.model';
+import { Role } from '../../domain/role';
 import { AccountDto, UserProfileDto } from '../../domain/account.model';
 import { UpdateUserRequest } from '../../domain/update-user-request';
 import { ConfirmAccountCreationRequest } from '../../domain/confirm-account-creation-request';
@@ -35,5 +37,15 @@ export class AccountApi {
 
   updateOwnAccount(request: UpdateUserRequest): Observable<AccountDto> {
     return this.http.put<AccountDto>(`${this.apiUrl}/users/me`, request);
+  }
+
+  getUsers(role: Role | null, page: number): Observable<PageDto<AccountDto>> {
+    let params = new HttpParams().set('page', page);
+
+    if (role) {
+      params = params.set('role', role);
+    }
+
+    return this.http.get<PageDto<AccountDto>>(`${this.apiUrl}/admin/users`, { params });
   }
 }

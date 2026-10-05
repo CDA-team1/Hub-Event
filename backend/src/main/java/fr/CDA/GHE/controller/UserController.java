@@ -6,6 +6,7 @@ import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.UserService;
 import org.springframework.data.domain.Pageable;
@@ -37,8 +38,11 @@ public class UserController implements UserControllerDoc {
     @Override
     @Secured("ROLE_ADMIN")
     @GetMapping
-    public PageDto<UserDto> getAll(Pageable pageable) {
-        return userService.extractAll(pageable);
+    public PageDto<UserDto> getAll(
+            @RequestParam(required = false) Role role,
+            Pageable pageable
+    ) {
+        return userService.extractAll(role, pageable);
     }
 
     @Override
@@ -59,7 +63,8 @@ public class UserController implements UserControllerDoc {
     @Override
     @Secured("ROLE_ADMIN")
     @PutMapping("/{id}")
-    public UserDto update(@PathVariable Long id, @RequestBody AdminUserRequest request) throws FunctionalException {
+    public UserDto update(@PathVariable Long id, @RequestBody AdminUserRequest request)
+            throws FunctionalException {
         return userService.updateUserByAdmin(id, request);
     }
 
@@ -74,16 +79,20 @@ public class UserController implements UserControllerDoc {
     @Override
     @Secured("ROLE_ADMIN")
     @PutMapping("/{id}/clubs")
-    public List<ClubDto> updateAffiliations(@PathVariable Long id, @RequestBody ClubAffiliationRequest request)
-            throws FunctionalException {
+    public List<ClubDto> updateAffiliations(
+            @PathVariable Long id,
+            @RequestBody ClubAffiliationRequest request
+    ) throws FunctionalException {
         return userService.updateMemberAffiliations(id, request);
     }
 
     @Override
     @Secured("ROLE_ADMIN")
     @PostMapping("/{id}/suspension")
-    public void suspend(@PathVariable Long id, @RequestBody SuspendUserRequest request)
-            throws FunctionalException {
+    public void suspend(
+            @PathVariable Long id,
+            @RequestBody SuspendUserRequest request
+    ) throws FunctionalException {
         userService.suspendUser(id, request);
     }
 }

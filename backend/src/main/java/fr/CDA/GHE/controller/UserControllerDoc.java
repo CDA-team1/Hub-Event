@@ -6,6 +6,7 @@ import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,14 +26,21 @@ import java.util.List;
 @Tag(name = "Utilisateurs (admin)", description = "Gestion des comptes utilisateurs par un administrateur (CU25)")
 public interface UserControllerDoc {
 
-    @Operation(summary = "Retourne une page d'utilisateurs",
-            description = "Pagination via les paramètres page, size et sort (ex. ?page=0&size=20&sort=email,asc)")
+    @Operation(
+            summary = "Retourne une page d'utilisateurs",
+            description = "Filtre optionnel par rôle et pagination via les paramètres page, size et sort "
+                    + "(ex. ?role=MEMBER&page=0&size=20&sort=email,asc)"
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page d'utilisateurs au format JSON",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PageDto.class)))
     })
-    PageDto<UserDto> getAll(Pageable pageable);
+    PageDto<UserDto> getAll(
+            @Parameter(description = "Rôle optionnel utilisé pour filtrer les comptes")
+            Role role,
+            Pageable pageable
+    );
 
     @Operation(summary = "Retourne un utilisateur par son identifiant")
     @ApiResponses(value = {
@@ -68,8 +76,10 @@ public interface UserControllerDoc {
             @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
                     content = @Content)
     })
-    UserDto update(@Parameter(description = "Identifiant de l'utilisateur") Long id, AdminUserRequest request)
-            throws FunctionalException;
+    UserDto update(
+            @Parameter(description = "Identifiant de l'utilisateur") Long id,
+            AdminUserRequest request
+    ) throws FunctionalException;
 
     @Operation(summary = "Supprime un utilisateur",
             description = "Réservé à l'administrateur (CU25, SFG §2.28).")
@@ -93,8 +103,10 @@ public interface UserControllerDoc {
             @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
                     content = @Content)
     })
-    List<ClubDto> updateAffiliations(@Parameter(description = "Identifiant de l'utilisateur") Long id,
-                                      ClubAffiliationRequest request) throws FunctionalException;
+    List<ClubDto> updateAffiliations(
+            @Parameter(description = "Identifiant de l'utilisateur") Long id,
+            ClubAffiliationRequest request
+    ) throws FunctionalException;
 
     @Operation(summary = "Suspend un compte utilisateur",
             description = "Réservé à l'administrateur (SUSP-01). Une suspension sans date de fin est "
@@ -106,6 +118,8 @@ public interface UserControllerDoc {
             @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
                     content = @Content)
     })
-    void suspend(@Parameter(description = "Identifiant de l'utilisateur") Long id, SuspendUserRequest request)
-            throws FunctionalException;
+    void suspend(
+            @Parameter(description = "Identifiant de l'utilisateur") Long id,
+            SuspendUserRequest request
+    ) throws FunctionalException;
 }
