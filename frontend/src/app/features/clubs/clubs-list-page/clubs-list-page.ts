@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ClubApi } from '../../../core/clubs/club-api';
+import { Confirmation } from '../../../core/dialog/confirmation';
+import { ClubDto } from '../../../domain/club.model';
 import { ActionButton } from '../../../shared/ui/action-button/action-button';
 import { CategoryBadge } from '../../../shared/ui/category-badge/category-badge';
 import { Column } from '../../../shared/ui/data-table/column';
@@ -30,9 +32,11 @@ const PAGE_SIZE = 20;
 })
 export class ClubsListPage {
   private readonly clubApi = inject(ClubApi);
+  private readonly confirmation = inject(Confirmation);
 
   protected readonly page = signal(0);
   protected readonly pageSize = PAGE_SIZE;
+  protected readonly deleteError = signal('');
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'name', header: 'Nom' },
@@ -58,5 +62,24 @@ export class ClubsListPage {
 
   protected reload(): void {
     this.clubs.reload();
+  }
+
+  protected async deleteClub(club: ClubDto): Promise<void> {
+    this.deleteError.set('');
+    const confirmed = await this.confirmation.confirm(
+      `Supprimer le club « ${club.name} » ? Ses évènements à venir déjà publiés seront annulés, ` +
+        'et ses organisateurs sans autre club seront rétrogradés en membres.',
+      'Supprimer',
+      'Annuler',
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await this.clubApi.delete(club.id);
+      this.clubs.reload();
+    } catch {
+      this.deleteError.set('La suppression a échoué, réessayez.');
+    }
   }
 }

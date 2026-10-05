@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Confirmation } from '../../../core/dialog/confirmation';
 import { ClubDto } from '../../../domain/club.model';
 import { PageDto } from '../../../domain/page.model';
 import { ClubsListPage } from './clubs-list-page';
@@ -37,6 +38,10 @@ describe('ClubsListPage', () => {
   let http: HttpTestingController;
 
   const stable = () => TestBed.inject(ApplicationRef).whenStable();
+
+  // Un `await` supplémentaire (macrotâche) laisse le temps à la chaîne confirm() → delete() →
+  // reload() de se terminer avant whenStable() (voir calendar-page.spec.ts pour la même astuce).
+  const macrotask = () => new Promise((resolve) => setTimeout(resolve));
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -95,5 +100,61 @@ describe('ClubsListPage', () => {
     await stable();
 
     expect(element.textContent).toContain('Club Bravo');
+  });
+
+  it('supprime le club après confirmation et recharge la liste', async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(ClubsListPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/clubs')).flush(pageOf([makeClub(1, 'Club Alpha')]));
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('app-action-button button')!.click();
+    await stable();
+
+    http.expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/clubs/1')).flush(null);
+    await macrotask();
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/clubs')).flush(pageOf([]));
+    await stable();
+
+    expect(element.querySelector('app-empty-state')).not.toBeNull();
+  });
+
+  it('ne supprime pas si on annule la confirmation', async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+
+    const fixture = TestBed.createComponent(ClubsListPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/clubs')).flush(pageOf([makeClub(1, 'Club Alpha')]));
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('app-action-button button')!.click();
+    await stable();
+
+    expect(element.textContent).toContain('Club Alpha');
+  });
+
+  it('affiche une erreur si la suppression échoue', async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(ClubsListPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/clubs')).flush(pageOf([makeClub(1, 'Club Alpha')]));
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('app-action-button button')!.click();
+    await stable();
+
+    http
+      .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/clubs/1'))
+      .flush('Ce club est déjà supprimé.', { status: 400, statusText: 'Bad Request' });
+    await stable();
+
+    expect(element.textContent).toContain('La suppression a échoué, réessayez.');
   });
 });
