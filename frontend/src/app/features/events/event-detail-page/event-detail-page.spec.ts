@@ -33,8 +33,6 @@ const COMMENTS: CommentDto[] = [
   },
 ];
 
-const EMPTY_LIST = { cultureEvents: [], leisureEvents: [], sportEvents: [], pastEvents: [] };
-
 describe('EventDetailPage', () => {
   let http: HttpTestingController;
 
@@ -57,7 +55,6 @@ describe('EventDetailPage', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl(url, EventDetailPage);
     TestBed.tick();
-    http.expectOne('/api/events').flush(EMPTY_LIST);
     return harness.routeNativeElement as HTMLElement;
   }
 
