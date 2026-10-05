@@ -62,14 +62,6 @@ app-data-table {
   align-items: center;
 }
 
-.actions button {
-  padding: 0.3rem 0.7rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-
 .error {
   margin-top: 1rem;
   color: #d33f3f;

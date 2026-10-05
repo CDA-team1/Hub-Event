@@ -26,6 +26,20 @@ export const routes: Routes = [
       import('./features/clubs/clubs-list-page/clubs-list-page').then((m) => m.ClubsListPage),
   },
   {
+    path: 'clubs/nouveau',
+    title: 'Ajouter un club',
+    canActivate: [roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/clubs/club-form-page/club-form-page').then((m) => m.ClubFormPage),
+  },
+  {
+    path: 'clubs/:id/modifier',
+    title: 'Modifier un club',
+    canActivate: [roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/clubs/club-form-page/club-form-page').then((m) => m.ClubFormPage),
+  },
+  {
     path: 'inscription',
     title: 'Créer un compte',
     loadComponent: () =>
