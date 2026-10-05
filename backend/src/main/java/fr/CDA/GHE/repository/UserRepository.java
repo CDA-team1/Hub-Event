@@ -1,6 +1,9 @@
 package fr.CDA.GHE.repository;
 
 import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.enums.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -17,6 +20,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return un {@link Optional} contenant l'utilisateur s'il existe
      */
     Optional<User> findByEmail(String email);
+
+    /**
+    * Recherche une page d'utilisateurs filtrée par rôle.
+    *
+    * @param role rôle à rechercher
+    * @param pageable pagination demandée
+    * @return page des utilisateurs ayant ce rôle
+    */
+    Page<User> findByRole(Role role, Pageable pageable);
 
     /**
      * Vérifie si un utilisateur existe avec l'adresse email donnée.

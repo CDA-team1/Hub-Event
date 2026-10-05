@@ -1,0 +1,68 @@
+.account-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr 1.2fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.account-card__field {
+  min-width: 0;
+}
+
+.account-card__label {
+  display: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.account-card__email {
+  overflow-wrap: anywhere;
+}
+
+.account-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.account-card__actions a,
+.account-card__actions button {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+@media (max-width: 800px) {
+  .account-card {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem 1rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+  }
+
+  .account-card__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .account-card__label {
+    display: inline;
+  }
+
+  .account-card__email,
+  .account-card__actions {
+    grid-column: 1 / -1;
+  }
+
+  .account-card__actions {
+    flex-wrap: wrap;
+  }
+}

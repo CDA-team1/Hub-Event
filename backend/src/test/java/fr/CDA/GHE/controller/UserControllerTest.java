@@ -59,14 +59,38 @@ class UserControllerTest {
 
     @Test
     void getAll_shouldReturn200_whenAdmin() throws Exception {
-        when(userService.extractAll(any()))
-                .thenReturn(new PageDto<>(List.of(sampleUser()), 0, 20, 1, 1, true, true));
+        when(userService.extractAll(any(), any()))
+        .thenReturn(new PageDto<>(List.of(sampleUser()), 0, 20, 1, 1, true, true));
 
         mockMvc.perform(get("/admin/users")
                         .with(user("admin@test.fr").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].email").value("john.doe@test.com"));
     }
+
+    @Test
+    void getAll_shouldReturnFilteredUsers_whenRoleProvided() throws Exception {
+        UserDto admin = new UserDto(
+            2L,
+            "Admin",
+            "Alice",
+            "2 rue de Test",
+            "admin@test.com",
+            null,
+            AccountStatus.ACTIVE,
+            Role.ADMIN
+    );
+
+         when(userService.extractAll(eq(Role.ADMIN), any()))
+            .thenReturn(new PageDto<>(List.of(admin), 0, 20, 1, 1, true, true));
+
+        mockMvc.perform(get("/admin/users")
+                    .param("role", "ADMIN")
+                    .with(user("admin@test.fr").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].email").value("admin@test.com"))
+            .andExpect(jsonPath("$.content[0].role").value("ADMIN"));
+     }
 
     @Test
     void getAll_shouldReturn403_whenMember() throws Exception {

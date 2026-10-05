@@ -287,10 +287,26 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
         persistActiveMember("a@test.com");
         persistActiveMember("b@test.com");
 
-        PageDto<UserDto> page = userService.extractAll(PageRequest.of(0, 10));
+        PageDto<UserDto> page = userService.extractAll(null, PageRequest.of(0, 10));
 
         assertThat(page.totalElements()).isEqualTo(2);
         assertThat(page.content()).hasSize(2);
+    }
+
+    @Test
+    void extractAll_shouldFilterUsersByRole() {
+        persistActiveMember("member@test.com");
+
+        User admin = persistActiveMember("admin@test.com");
+        admin.setRole(Role.ADMIN);
+        userRepository.save(admin);
+
+        PageDto<UserDto> page = userService.extractAll(Role.ADMIN, PageRequest.of(0, 10));
+
+        assertThat(page.totalElements()).isEqualTo(1);
+        assertThat(page.content()).hasSize(1);
+        assertThat(page.content().get(0).email()).isEqualTo("admin@test.com");
+        assertThat(page.content().get(0).role()).isEqualTo(Role.ADMIN);
     }
 
     @Test
