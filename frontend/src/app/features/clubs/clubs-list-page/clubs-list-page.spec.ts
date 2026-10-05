@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ClubDto } from '../../../domain/club.model';
-import { PageDto } from '../../../domain/page';
+import { PageDto } from '../../../domain/page.model';
 import { ClubsListPage } from './clubs-list-page';
 
 function makeClub(id: number, name: string): ClubDto {

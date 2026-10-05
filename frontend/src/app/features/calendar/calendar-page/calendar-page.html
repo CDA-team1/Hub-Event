@@ -61,27 +61,18 @@
     <p class="error" role="alert">{{ unregisterError() }}</p>
   }
 
-  <table>
-    <thead>
-      <tr>
-        <th>Évènement</th>
-        <th>Date</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (event of pagedEvents(); track event.id) {
-        <tr>
-          <td>{{ event.title }}</td>
-          <td>{{ event.startDateTime | date: 'EEEE d MMMM à HH:mm' }}</td>
-          <td class="actions">
-            <a [routerLink]="['/evenements', event.id]">Voir détails</a>
-            <button type="button" (click)="unregister(event.id, event.title)">Se désinscrire</button>
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+  <app-data-table [columns]="columns" [rows]="pagedEvents()" [trackBy]="trackByEventId">
+    <ng-template appColumn="title" let-event>{{ event.title }}</ng-template>
+    <ng-template appColumn="date" let-event>
+      {{ event.startDateTime | date: 'EEEE d MMMM à HH:mm' }}
+    </ng-template>
+    <ng-template appColumn="actions" let-event>
+      <div class="actions">
+        <a [routerLink]="['/evenements', event.id]">Voir détails</a>
+        <button type="button" (click)="unregister(event.id, event.title)">Se désinscrire</button>
+      </div>
+    </ng-template>
+  </app-data-table>
 
   <app-pagination
     [page]="page()"

@@ -90,7 +90,7 @@ describe('CalendarPage', () => {
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
-    element.querySelector<HTMLButtonElement>('td.actions button:last-child')!.click();
+    element.querySelector<HTMLButtonElement>('.actions button:last-child')!.click();
     await stable();
 
     http.expectOne((req) => req.url.endsWith('/events/1/registrations/me')).flush(null);
@@ -114,7 +114,7 @@ describe('CalendarPage', () => {
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
-    element.querySelector<HTMLButtonElement>('td.actions button:last-child')!.click();
+    element.querySelector<HTMLButtonElement>('.actions button:last-child')!.click();
     await stable();
 
     expect(element.textContent).toContain('Concert');
