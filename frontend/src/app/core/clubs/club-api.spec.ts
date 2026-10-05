@@ -77,4 +77,14 @@ describe('ClubApi', () => {
       last: true,
     });
   });
+
+  it('supprime un club', async () => {
+    const promise = service.delete(1);
+
+    const request = httpTesting.expectOne('/api/clubs/1');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+
+    await expect(promise).resolves.toBeUndefined();
+  });
 });

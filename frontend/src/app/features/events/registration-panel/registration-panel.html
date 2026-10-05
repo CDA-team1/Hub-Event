@@ -1,0 +1,28 @@
+<section class="registration" aria-label="Inscription">
+  @if (event().myRegistration; as registration) {
+    <p class="registration__status">
+      @if (registration.status === 'REGISTERED') {
+        Vous êtes inscrit à cet événement.
+      } @else {
+        Vous êtes en liste d'attente (position {{ registration.waitingPosition }}).
+      }
+    </p>
+  } @else {
+    <button
+      type="button"
+      class="registration__button"
+      [disabled]="!isOpen() || pending()"
+      (click)="registerClicked.emit()"
+    >
+      S'inscrire
+    </button>
+
+    @if (!isOpen()) {
+      <p class="registration__hint">Les inscriptions ne sont pas ouvertes pour cet événement.</p>
+    }
+  }
+
+  @if (errorMessage()) {
+    <p class="registration__error" role="alert">{{ errorMessage() }}</p>
+  }
+</section>

@@ -1,6 +1,6 @@
 @if (isNotFound()) {
   <app-not-found-page />
-} @else if (detail.isLoading()) {
+} @else if (detail.isLoading() && !event()) {
   <app-loading-state>Chargement de l'événement…</app-loading-state>
 } @else if (detail.error()) {
   <app-error-state>
@@ -39,6 +39,19 @@
         <dd>{{ current.maxSeats }}</dd>
       </div>
     </dl>
+
+    @if (isConnected()) {
+      <app-registration-panel
+        [event]="current"
+        [pending]="registrationPending()"
+        [errorMessage]="registrationError()"
+        (registerClicked)="register()"
+      />
+    } @else {
+      <p class="event__login-hint">
+        <a routerLink="/connexion">Connectez-vous</a> pour vous inscrire à cet événement.
+      </p>
+    }
 
     <section class="event__section">
       <h2>Description</h2>
