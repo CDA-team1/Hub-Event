@@ -106,10 +106,4 @@ export class EventApi {
       this.http.get(`${this.apiUrl}/events/${id}/pdf`, { responseType: 'blob' }),
     );
   }
-
-  async unregister(eventId: number): Promise<void> {
-    await firstValueFrom(
-      this.http.delete<void>(`${this.apiUrl}/events/${eventId}/registrations/me`),
-    );
-  }
 }
