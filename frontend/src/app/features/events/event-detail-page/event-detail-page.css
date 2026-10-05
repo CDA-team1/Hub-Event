@@ -37,3 +37,8 @@
   line-height: 1.6;
   white-space: pre-line;
 }
+
+.event__login-hint {
+  margin: 1.5rem 0 0;
+  color: #64748b;
+}

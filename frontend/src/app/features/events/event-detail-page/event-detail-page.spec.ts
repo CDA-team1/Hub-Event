@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
+import { Auth } from '../../../core/auth/auth';
 import { CommentDto, EventDetailResponse } from '../../../domain/event.model';
 import { EventDetailPage } from './event-detail-page';
 
@@ -41,15 +42,19 @@ const COMMENTS: CommentDto[] = [
 
 describe('EventDetailPage', () => {
   let http: HttpTestingController;
+  let connected: boolean;
 
   const stable = () => TestBed.inject(ApplicationRef).whenStable();
+  const flushPromises = () => new Promise<void>((resolve) => setTimeout(resolve));
 
   beforeEach(() => {
+    connected = false;
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([{ path: 'evenements/:id', component: EventDetailPage }]),
+        { provide: Auth, useValue: { isAuthenticated: () => connected } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -62,6 +67,14 @@ describe('EventDetailPage', () => {
     await harness.navigateByUrl(url, EventDetailPage);
     TestBed.tick();
     return harness.routeNativeElement as HTMLElement;
+  }
+
+  async function openLoadedEvent(): Promise<HTMLElement> {
+    const element = await open('/evenements/5');
+    http.expectOne('/api/events/5').flush(DETAIL);
+    http.expectOne('/api/events/5/comments').flush([]);
+    await stable();
+    return element;
   }
 
   it('affiche un indicateur de chargement avant la réponse', async () => {
@@ -123,5 +136,73 @@ describe('EventDetailPage', () => {
 
     expect(element.querySelector('app-error-state')).toBeNull();
     expect(element.querySelector('h1')?.textContent).toBe('Soirée jeux au café ludique');
+  });
+
+  it('invite un visiteur à se connecter au lieu de proposer le bouton', async () => {
+    const element = await openLoadedEvent();
+
+    expect(element.querySelector('app-registration-panel')).toBeNull();
+    expect(element.querySelector('.event__login-hint a')?.getAttribute('href')).toBe('/connexion');
+  });
+
+  it("propose le bouton S'inscrire à un utilisateur connecté", async () => {
+    connected = true;
+
+    const element = await openLoadedEvent();
+
+    expect(element.querySelector('app-registration-panel .registration__button')).not.toBeNull();
+    expect(element.querySelector('.event__login-hint')).toBeNull();
+  });
+
+  it("inscrit l'utilisateur puis recharge le détail", async () => {
+    connected = true;
+    const element = await openLoadedEvent();
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    const request = http.expectOne('/api/events/5/registrations');
+    expect(request.request.method).toBe('POST');
+    request.flush(
+      {
+        id: 1,
+        eventId: 5,
+        userEmail: 'jean@example.com',
+        status: 'REGISTERED',
+        registrationDate: '2026-10-05T10:00:00',
+      },
+      { status: 201, statusText: 'Created' },
+    );
+    await flushPromises();
+    TestBed.tick();
+
+    http
+      .expectOne('/api/events/5')
+      .flush({ ...DETAIL, myRegistration: { status: 'REGISTERED', waitingPosition: null } });
+    await stable();
+
+    expect(element.querySelector('.registration__status')?.textContent).toContain(
+      'Vous êtes inscrit',
+    );
+    expect(element.querySelector('.registration__button')).toBeNull();
+    expect(element.querySelector('h1')?.textContent).toBe('Soirée jeux au café ludique');
+  });
+
+  it("affiche le message du back quand l'inscription est refusée", async () => {
+    connected = true;
+    const element = await openLoadedEvent();
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    http.expectOne('/api/events/5/registrations').flush('Vous êtes déjà inscrit à cet événement.', {
+      status: 400,
+      statusText: 'Bad Request',
+    });
+    await flushPromises();
+    TestBed.tick();
+    await stable();
+
+    expect(element.querySelector('.registration__error')?.textContent).toBe(
+      'Vous êtes déjà inscrit à cet événement.',
+    );
   });
 });
