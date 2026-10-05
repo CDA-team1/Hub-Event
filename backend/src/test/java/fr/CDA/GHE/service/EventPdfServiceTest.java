@@ -1,6 +1,8 @@
 package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.dto.EventDetailResponse;
+import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +58,12 @@ public class EventPdfServiceTest {
         BigDecimal.valueOf(10),
         BigDecimal.valueOf(15),
         100,
+            Category.SPORT,
+            EventStatus.PUBLISHED,
+            60,
+            0,
+            false,
+            null,
             List.of()
     );
 

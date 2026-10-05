@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -368,6 +371,177 @@ class EventServiceTest {
         NotFoundException.class,
         () -> eventService.getEventDetail(5L)
     );
+  }
+
+  /**
+   * Vérifie qu'un visiteur anonyme reçoit les compteurs de places
+   * mais aucune donnée personnelle.
+   */
+  @Test
+  void shouldReturnSeatCountersAndNoPersonalDataForAnonymousVisitor() {
+
+    Event event = createEvent(
+            "Concert",
+            Category.CULTURE,
+            EventStatus.PUBLISHED,
+            LocalDateTime.of(2026, 11, 20, 20, 0)
+    );
+
+    when(eventRepository.findById(10L))
+            .thenReturn(Optional.of(event));
+    when(registrationRepository.countByEventAndStatus(event, RegistrationStatus.REGISTERED))
+            .thenReturn(30L);
+    when(registrationRepository.countByEventAndStatus(event, RegistrationStatus.WAITING_LIST))
+            .thenReturn(4L);
+
+    EventDetailResponse result = eventService.getEventDetail(10L);
+
+    assertEquals(Category.CULTURE, result.category());
+    assertEquals(EventStatus.PUBLISHED, result.status());
+    assertEquals(70, result.remainingSeats());
+    assertEquals(4, result.waitingCount());
+    assertFalse(result.owner());
+    assertNull(result.myRegistration());
+  }
+
+  /**
+   * Vérifie que le nombre de places restantes ne devient jamais négatif
+   * lorsque l'événement est complet.
+   */
+  @Test
+  void shouldNotReturnNegativeRemainingSeatsWhenEventIsFull() {
+
+    Event event = createEvent(
+            "Tournoi complet",
+            Category.SPORT,
+            EventStatus.PUBLISHED,
+            LocalDateTime.of(2026, 11, 22, 10, 0)
+    );
+
+    when(eventRepository.findById(11L))
+            .thenReturn(Optional.of(event));
+    when(registrationRepository.countByEventAndStatus(event, RegistrationStatus.REGISTERED))
+            .thenReturn(120L);
+
+    EventDetailResponse result = eventService.getEventDetail(11L);
+
+    assertEquals(0, result.remainingSeats());
+  }
+
+  /**
+   * Vérifie qu'un utilisateur inscrit voit son statut, sans position d'attente.
+   */
+  @Test
+  void shouldReturnRegisteredStatusForRegisteredUser() {
+
+    User organizer = mock(User.class);
+    when(organizer.getId()).thenReturn(1L);
+
+    User user = mock(User.class);
+    when(user.getId()).thenReturn(2L);
+
+    Event event = createEvent(
+            "Atelier",
+            Category.LEISURE,
+            EventStatus.PUBLISHED,
+            LocalDateTime.of(2026, 11, 25, 14, 0)
+    );
+    event.setOrganizer(organizer);
+
+    Registration registration = new Registration(
+            user,
+            event,
+            RegistrationStatus.REGISTERED,
+            LocalDateTime.of(2026, 11, 1, 9, 0)
+    );
+
+    when(eventRepository.findById(12L))
+            .thenReturn(Optional.of(event));
+    when(registrationRepository.findByUserAndEvent(user, event))
+            .thenReturn(Optional.of(registration));
+
+    authenticateAs(user);
+
+    EventDetailResponse result = eventService.getEventDetail(12L);
+
+    assertFalse(result.owner());
+    assertEquals(RegistrationStatus.REGISTERED, result.myRegistration().status());
+    assertNull(result.myRegistration().waitingPosition());
+  }
+
+  /**
+   * Vérifie que la position en liste d'attente vaut le nombre de personnes
+   * en attente inscrites avant l'utilisateur, plus un.
+   */
+  @Test
+  void shouldReturnWaitingPositionForUserOnWaitingList() {
+
+    User organizer = mock(User.class);
+    when(organizer.getId()).thenReturn(1L);
+
+    User user = mock(User.class);
+    when(user.getId()).thenReturn(2L);
+
+    Event event = createEvent(
+            "Concert complet",
+            Category.CULTURE,
+            EventStatus.PUBLISHED,
+            LocalDateTime.of(2026, 12, 1, 20, 0)
+    );
+    event.setOrganizer(organizer);
+
+    LocalDateTime registrationDate = LocalDateTime.of(2026, 11, 2, 10, 30);
+    Registration registration = new Registration(
+            user,
+            event,
+            RegistrationStatus.WAITING_LIST,
+            registrationDate
+    );
+
+    when(eventRepository.findById(13L))
+            .thenReturn(Optional.of(event));
+    when(registrationRepository.findByUserAndEvent(user, event))
+            .thenReturn(Optional.of(registration));
+    when(registrationRepository.countByEventAndStatusAndRegistrationDateBefore(
+            event, RegistrationStatus.WAITING_LIST, registrationDate))
+            .thenReturn(2L);
+
+    authenticateAs(user);
+
+    EventDetailResponse result = eventService.getEventDetail(13L);
+
+    assertEquals(RegistrationStatus.WAITING_LIST, result.myRegistration().status());
+    assertEquals(3, result.myRegistration().waitingPosition());
+  }
+
+  /**
+   * Vérifie que l'organisateur de l'événement est identifié comme propriétaire.
+   */
+  @Test
+  void shouldFlagOrganizerAsOwnerOfItsEvent() {
+
+    User organizer = mock(User.class);
+    when(organizer.getId()).thenReturn(1L);
+
+    Event event = createEvent(
+            "Mon événement",
+            Category.SPORT,
+            EventStatus.PUBLISHED,
+            LocalDateTime.of(2026, 12, 3, 18, 0)
+    );
+    event.setOrganizer(organizer);
+
+    when(eventRepository.findById(14L))
+            .thenReturn(Optional.of(event));
+    when(registrationRepository.findByUserAndEvent(organizer, event))
+            .thenReturn(Optional.empty());
+
+    authenticateAs(organizer);
+
+    EventDetailResponse result = eventService.getEventDetail(14L);
+
+    assertTrue(result.owner());
+    assertNull(result.myRegistration());
   }
 
   /**
