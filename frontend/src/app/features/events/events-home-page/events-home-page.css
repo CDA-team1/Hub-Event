@@ -23,6 +23,16 @@ section h2 {
   gap: 1rem;
 }
 
+.past-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.past-events app-event-card {
+  height: auto;
+}
+
 /* Test visuel : dégradé gris -> couleur de catégorie -> gris, centré sur le carrousel. */
 .section-culture,
 .section-sport,
