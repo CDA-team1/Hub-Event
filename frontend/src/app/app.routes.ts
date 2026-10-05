@@ -88,6 +88,11 @@ export const routes: Routes = [
       import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
   },
   {
+    path: 'cgu',
+    title: 'Conditions Générales d’Utilisation',
+    loadComponent: () => import('./features/privacy/cgu-page/cgu-page').then((m) => m.CguPage),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>
