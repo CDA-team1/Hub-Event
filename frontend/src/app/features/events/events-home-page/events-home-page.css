@@ -43,3 +43,21 @@ section h2 {
 .section-leisure {
   background: linear-gradient(to bottom, transparent, rgb(46 156 134 / 25%) 50%, transparent);
 }
+
+@media (max-width: 640px) {
+  :host {
+    padding: 1rem;
+  }
+
+  .section-culture,
+  .section-sport,
+  .section-leisure {
+    padding-block: 1rem;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+  }
+
+  .past-events {
+    flex-direction: column;
+  }
+}
