@@ -2,6 +2,13 @@ import { Category } from './category';
 
 export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
 
+export type RegistrationStatus = 'REGISTERED' | 'WAITING_LIST';
+
+export interface MyRegistrationDto {
+  status: RegistrationStatus;
+  waitingPosition: number | null;
+}
+
 export interface EventCardDto {
   id: number;
   title: string;
@@ -30,6 +37,12 @@ export interface EventDetailResponse {
   affiliatedPrice: number;
   nonAffiliatedPrice: number;
   maxSeats: number;
+  category: Category;
+  status: EventStatus;
+  remainingSeats: number;
+  waitingCount: number;
+  owner: boolean;
+  myRegistration: MyRegistrationDto | null;
   gallery: ImageDto[];
 }
 

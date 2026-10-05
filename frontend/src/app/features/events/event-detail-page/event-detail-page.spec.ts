@@ -17,6 +17,12 @@ const DETAIL: EventDetailResponse = {
   affiliatedPrice: 3,
   nonAffiliatedPrice: 6,
   maxSeats: 24,
+  category: 'LEISURE',
+  status: 'PUBLISHED',
+  remainingSeats: 24,
+  waitingCount: 0,
+  owner: false,
+  myRegistration: null,
   gallery: [
     { id: 5, eventId: 5, url: 'https://i.ibb.co/a/preview.webp', isPreview: true },
     { id: 35, eventId: 5, url: 'https://i.ibb.co/b/second.webp', isPreview: false },
