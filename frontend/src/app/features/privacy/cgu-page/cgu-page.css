@@ -1,0 +1,18 @@
+.cgu-page {
+    width: min(100% - 2rem, 1226px);
+    margin: 2rem auto;
+}
+
+.cgu-page__content {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.cgu-page__content h1 {
+    margin: 0;
+}
+
+.cgu-page__document {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
