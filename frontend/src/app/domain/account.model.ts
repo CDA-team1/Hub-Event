@@ -21,3 +21,7 @@ export interface ClubSummaryDto {
 export interface UserProfileDto extends AccountDto {
   clubs: ClubSummaryDto[];
 }
+
+export interface AdminUserDto extends AccountDto {
+  clubs: ClubSummaryDto[];
+}

@@ -1,8 +1,31 @@
 import { TestBed } from '@angular/core/testing';
 import { Confirmation } from './confirmation';
 
+// jsdom n'implémente pas <dialog> (showModal/close) : on le simule ici, uniquement pour les
+// tests, avec le strict nécessaire (attribut "open" + événement "close" avec returnValue).
+function polyfillDialogIfMissing(): void {
+  if (typeof HTMLDialogElement.prototype.showModal === 'function') {
+    return;
+  }
+  HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement): void {
+    this.setAttribute('open', '');
+  };
+  HTMLDialogElement.prototype.close = function (
+    this: HTMLDialogElement,
+    returnValue?: string,
+  ): void {
+    if (returnValue !== undefined) {
+      this.returnValue = returnValue;
+    }
+    this.removeAttribute('open');
+    this.dispatchEvent(new Event('close'));
+  };
+}
+
 describe('Confirmation', () => {
   let confirmation: Confirmation;
+
+  beforeAll(() => polyfillDialogIfMissing());
 
   beforeEach(() => {
     TestBed.configureTestingModule({});

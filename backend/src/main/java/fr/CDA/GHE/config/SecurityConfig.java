@@ -63,7 +63,6 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/events/*/pdf").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/comments").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/search").permitAll()
-            .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/documents/*", "/documents/*/pdf").permitAll()
             .requestMatchers("/error").permitAll() // sinon écrase le code d'erreur d'origine
             .anyRequest().authenticated())

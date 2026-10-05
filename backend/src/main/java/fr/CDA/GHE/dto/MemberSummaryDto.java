@@ -3,7 +3,7 @@ package fr.CDA.GHE.dto;
 /**
  * Résumé d'un membre affilié à un club, exposé dans {@link ClubDto}.
  * Ne contient jamais d'informations sensibles (mot de passe, adresse postale, statut, etc.) :
- * {@code GET /clubs} est une route publique.
+ * {@link fr.CDA.GHE.controller.ClubController} n'en a pas besoin pour gérer les clubs.
  *
  * @param id        identifiant du membre
  * @param firstName prénom du membre

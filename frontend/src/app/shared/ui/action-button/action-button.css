@@ -1,0 +1,25 @@
+:host {
+  display: inline-block;
+}
+
+a,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--action-bg);
+  color: var(--action-color);
+  font-size: 1rem;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a:hover,
+button:hover {
+  filter: brightness(0.92);
+}

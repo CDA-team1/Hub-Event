@@ -1,0 +1,57 @@
+<main class="user-form-page">
+  <section class="user-form-page__content">
+    <h1>
+      @if (editing()) {
+        Modifier un compte utilisateur
+      } @else {
+        Créer un compte utilisateur
+      }
+    </h1>
+
+    @if (loading()) {
+      <app-loading-state> Chargement du formulaire... </app-loading-state>
+    } @else if (loadErrorMessage()) {
+      <app-error-state>
+        {{ loadErrorMessage() }}
+
+        @if (!invalidId()) {
+          <button actions type="button" (click)="reload()">Réessayer</button>
+        }
+      </app-error-state>
+    } @else {
+      @if (!editing()) {
+        <div class="user-form-page__role">
+          <label for="role">Type de compte</label>
+
+          <select id="role" [value]="selectedRole() ?? ''" (change)="changeRole($event)">
+            <option value="">Choisir un rôle</option>
+            <option value="MEMBER">Membre</option>
+            <option value="ORGANIZER">Organisateur</option>
+            <option value="ADMIN">Administrateur</option>
+          </select>
+        </div>
+      }
+
+      @if (saveErrorMessage()) {
+        <app-error-state>
+          {{ saveErrorMessage() }}
+        </app-error-state>
+      }
+
+      @if (selectedRole(); as role) {
+        <app-user-form
+          [role]="role"
+          [user]="user()"
+          [clubs]="clubs()"
+          [emailError]="emailError()"
+          (submitted)="save($event)"
+          (cancelled)="cancel()"
+        />
+      } @else {
+        <p class="user-form-page__hint">
+          Sélectionnez le type de compte à créer pour afficher le formulaire.
+        </p>
+      }
+    }
+  </section>
+</main>

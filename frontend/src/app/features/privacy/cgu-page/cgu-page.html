@@ -1,0 +1,19 @@
+<main class="cgu-page">
+  <section class="cgu-page__content" aria-labelledby="cgu-title">
+    <h1 id="cgu-title">Conditions Générales d’Utilisation</h1>
+
+    @if (loading()) {
+      <app-loading-state> Chargement des Conditions Générales d’Utilisation... </app-loading-state>
+    } @else if (errorMessage()) {
+      <app-error-state>
+        {{ errorMessage() }}
+
+        <button actions type="button" (click)="retry()">Réessayer</button>
+      </app-error-state>
+    } @else if (document(); as cgu) {
+      <div class="cgu-page__document">
+        {{ cgu.content }}
+      </div>
+    }
+  </section>
+</main>

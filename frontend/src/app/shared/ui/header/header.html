@@ -5,9 +5,16 @@
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
       >Accueil</a
     >
-    <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
     @if (isConnected()) {
       <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
+    }
+    @if (isAdmin()) {
+      <details class="admin-menu" #adminMenu>
+        <summary>Administration</summary>
+        <div class="admin-menu__items">
+          <a routerLink="/clubs" routerLinkActive="active">Clubs</a>
+        </div>
+      </details>
     }
   </nav>
 
