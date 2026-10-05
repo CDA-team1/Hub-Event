@@ -1,10 +1,10 @@
-import { ApplicationRef } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { UserProfileDto } from '../../../../domain/account.model';
 import { AccountForm } from './account-form';
 
 describe('AccountForm', () => {
+  let fixture: ComponentFixture<AccountForm>;
   let component: AccountForm;
   let element: HTMLElement;
 
@@ -20,12 +20,10 @@ describe('AccountForm', () => {
     clubs: [{ id: 1, name: 'Club de Test' }],
   };
 
-  const stable = async () => {
-    await TestBed.inject(ApplicationRef).whenStable();
-  };
+  const stable = () => fixture.detectChanges();
 
   beforeEach(async () => {
-    const fixture = TestBed.createComponent(AccountForm);
+    fixture = TestBed.createComponent(AccountForm);
 
     fixture.componentRef.setInput('profile', profile);
 
