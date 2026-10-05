@@ -7,6 +7,7 @@ import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.UserProfileDto;
+import fr.CDA.GHE.dto.AdminUserDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
@@ -310,12 +311,19 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
     }
 
     @Test
-    void extractById_shouldReturnUser_whenExists() {
+    void extractById_shouldReturnUserWithClubs_whenExists() {
+        Club club = persistClub("Club de Test");
         User user = persistActiveMember("john.doe@test.com");
 
-        UserDto dto = userService.extractById(user.getId());
+        club.getMembers().add(user);
+        clubRepository.save(club);
+
+        AdminUserDto dto = userService.extractById(user.getId());
 
         assertThat(dto.email()).isEqualTo("john.doe@test.com");
+        assertThat(dto.clubs()).hasSize(1);
+        assertThat(dto.clubs().get(0).id()).isEqualTo(club.getId());
+        assertThat(dto.clubs().get(0).name()).isEqualTo("Club de Test");
     }
 
     @Test
@@ -328,7 +336,7 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
     @Test
     void createUserByAdmin_shouldCreateInactiveAccount_withTemporaryPassword() throws FunctionalException {
         AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, Role.MEMBER, null);
+                "john.doe@test.com", "0600000000", Role.MEMBER, null);
 
         UserDto dto = userService.createUserByAdmin(request);
 
@@ -346,12 +354,29 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
     }
 
     @Test
+    void createUserByAdmin_shouldThrow_whenPhoneIsMissing() {
+        AdminUserRequest request = new AdminUserRequest(
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "john.doe@test.com",
+            null,
+            Role.MEMBER,
+            null
+        );
+
+        assertThatThrownBy(() -> userService.createUserByAdmin(request))
+            .isInstanceOf(FunctionalException.class)
+            .hasMessage("Veuillez renseigner tous les champs obligatoires.");
+    }
+
+    @Test
     void createUserByAdmin_shouldThrow_whenEmailAlreadyUsed() throws FunctionalException {
         userService.createUserByAdmin(new AdminUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, Role.MEMBER, null));
+                "john.doe@test.com", "0600000000", Role.MEMBER, null));
 
         AdminUserRequest duplicate = new AdminUserRequest("Autre", "Personne", "2 rue de Test",
-                "john.doe@test.com", null, Role.MEMBER, null);
+                "john.doe@test.com", "0600000000", Role.MEMBER, null);
 
         assertThatThrownBy(() -> userService.createUserByAdmin(duplicate)).isInstanceOf(FunctionalException.class);
     }
@@ -359,7 +384,7 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
     @Test
     void createUserByAdmin_shouldThrow_whenOrganizerHasNoClub() {
         AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, Role.ORGANIZER, null);
+                "john.doe@test.com", "0600000000", Role.ORGANIZER, null);
 
         assertThatThrownBy(() -> userService.createUserByAdmin(request)).isInstanceOf(FunctionalException.class);
     }
@@ -369,11 +394,30 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
         Club club = persistClub("Club de Test");
 
         AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, Role.ORGANIZER, List.of(club.getId()));
+                "john.doe@test.com", "0600000000", Role.ORGANIZER, List.of(club.getId()));
 
         UserDto dto = userService.createUserByAdmin(request);
 
         assertThat(clubRepository.findByMembers_Id(dto.id())).extracting(Club::getId).containsExactly(club.getId());
+    }
+
+    @Test
+    void createUserByAdmin_shouldNotAssignClubs_whenRoleIsAdmin() throws FunctionalException {
+        Club club = persistClub("Club de Test");
+
+        AdminUserRequest request = new AdminUserRequest(
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "john.doe@test.com",
+            "0600000000",
+            Role.ADMIN,
+            List.of(club.getId())
+        );
+
+        UserDto dto = userService.createUserByAdmin(request);
+
+        assertThat(clubRepository.findByMembers_Id(dto.id())).isEmpty();
     }
 
     // --- confirmAccountCreation (CU25/CPT-06) ---
@@ -449,11 +493,36 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
         User user = persistActiveMember("john.doe@test.com");
 
         AdminUserRequest request = new AdminUserRequest("Doe", "Jonathan", "Nouvelle adresse",
-                "john.doe@test.com", null, Role.MEMBER, null);
+                "john.doe@test.com", "0600000000", Role.MEMBER, null);
 
         UserDto dto = userService.updateUserByAdmin(user.getId(), request);
 
         assertThat(dto.firstName()).isEqualTo("Jonathan");
+    }
+
+    @Test
+    void updateUserByAdmin_shouldRemoveClubs_whenRoleBecomesAdmin() throws FunctionalException {
+        Club club = persistClub("Club de Test");
+        User user = persistActiveMember("john.doe@test.com");
+
+        club.getMembers().add(user);
+        clubRepository.save(club);
+
+        AdminUserRequest request = new AdminUserRequest(
+                "Doe",
+                "John",
+                "1 rue de Test",
+                "john.doe@test.com",
+                "0600000000",
+                Role.ADMIN,
+                List.of(club.getId())
+        );
+
+        userService.updateUserByAdmin(user.getId(), request);
+
+         assertThat(clubRepository.findByMembers_Id(user.getId())).isEmpty();
+         assertThat(userRepository.findById(user.getId()).orElseThrow().getRole())
+            .isEqualTo(Role.ADMIN);
     }
 
     @Test
@@ -462,7 +531,7 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
         User user = persistActiveMember("john.doe@test.com");
 
         AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
-                "taken@test.com", null, Role.MEMBER, null);
+                "taken@test.com", "0600000000", Role.MEMBER, null);
 
         assertThatThrownBy(() -> userService.updateUserByAdmin(user.getId(), request))
                 .isInstanceOf(FunctionalException.class);

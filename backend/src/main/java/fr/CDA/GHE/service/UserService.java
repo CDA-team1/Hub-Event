@@ -8,6 +8,7 @@ import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.dto.ClubSummaryDto;
 import fr.CDA.GHE.dto.UserProfileDto;
+import fr.CDA.GHE.dto.AdminUserDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
@@ -305,9 +306,26 @@ public class UserService {
      * @throws NotFoundException si aucun utilisateur ne correspond
      */
     @Transactional(readOnly = true)
-    public UserDto extractById(Long id) {
-        return userMapper.toDto(findUserOrThrow(id));
-    }
+    public AdminUserDto extractById(Long id) {
+    User user = findUserOrThrow(id);
+
+    List<ClubSummaryDto> clubs = clubRepository.findByMembers_Id(user.getId())
+            .stream()
+            .map(club -> new ClubSummaryDto(club.getId(), club.getName()))
+            .toList();
+
+    return new AdminUserDto(
+            user.getId(),
+            user.getLastName(),
+            user.getFirstName(),
+            user.getPostalAddress(),
+            user.getEmail(),
+            user.getPhone(),
+            user.getStatus(),
+            user.getRole(),
+            clubs
+    );
+}
 
     /**
      * Crée un compte (membre affilié, organisateur ou administrateur) — CU25, SFG §2.28.
@@ -345,8 +363,9 @@ public class UserService {
         user.setActivationToken(UUID.randomUUID().toString());
 
         User created = userRepository.save(user);
-        assignClubs(created, request.clubIds());
-
+        if (request.role() != Role.ADMIN) {
+            assignClubs(created, request.clubIds());
+        }
         log.info("CREATION compte (admin) : id={} email={} role={}",
                 created.getId(), created.getEmail(), created.getRole());
 
@@ -434,13 +453,15 @@ public class UserService {
         user.setPhone(request.phone());
         user.setRole(request.role());
 
-        syncClubs(user, request.clubIds());
+        syncClubs(
+            user,
+            request.role() == Role.ADMIN ? List.of() : request.clubIds()
+        );
+            log.info("MODIFICATION compte (admin) : id={} email={}", user.getId(), user.getEmail());
 
-        log.info("MODIFICATION compte (admin) : id={} email={}", user.getId(), user.getEmail());
-
-        // Entité gérée : le dirty checking JPA persiste les changements au commit.
-        return userMapper.toDto(user);
-    }
+            // Entité gérée : le dirty checking JPA persiste les changements au commit.
+            return userMapper.toDto(user);
+        }
 
     /**
      * Gère les affiliations club d'un membre ou d'un organisateur (CU26 SFG §2.29, CU27 SFG §2.30).
@@ -556,10 +577,10 @@ public class UserService {
      */
     private void validateAdminRequest(AdminUserRequest request) throws FunctionalException {
         if (isBlank(request.lastName()) || isBlank(request.firstName())
-                || isBlank(request.postalAddress()) || isBlank(request.email())
-                || request.role() == null) {
-            throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
-        }
+            || isBlank(request.postalAddress()) || isBlank(request.email())
+            || isBlank(request.phone()) || request.role() == null) {
+                throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
+}
 
         // Règle PO (dossier de conception) : un organisateur est forcément rattaché à un club.
         if (request.role() == Role.ORGANIZER && (request.clubIds() == null || request.clubIds().isEmpty())) {

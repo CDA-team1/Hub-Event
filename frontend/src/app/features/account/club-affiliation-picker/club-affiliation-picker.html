@@ -1,0 +1,22 @@
+<fieldset class="club-affiliation-picker">
+  <legend>Clubs affiliés</legend>
+
+  @if (clubs().length === 0) {
+    <p>Aucun club disponible.</p>
+  } @else {
+    <div class="club-affiliation-picker__list">
+      @for (club of clubs(); track club.id) {
+        <label class="club-affiliation-picker__item">
+          <input
+            #checkbox
+            type="checkbox"
+            [checked]="isSelected(club.id)"
+            (change)="toggleClub(club.id, checkbox.checked)"
+          />
+
+          <span>{{ club.name }}</span>
+        </label>
+      }
+    </div>
+  }
+</fieldset>
