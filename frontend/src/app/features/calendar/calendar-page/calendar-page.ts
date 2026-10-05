@@ -16,6 +16,9 @@ import {
   startOfWeek,
   toIsoDate,
 } from '../../../domain/calendar-rules';
+import { EventCardDto } from '../../../domain/event.model';
+import { Column } from '../../../shared/ui/data-table/column';
+import { DataTable, DataTableColumn } from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
@@ -41,6 +44,8 @@ function monthRange(date: Date): DateRange {
     DatePipe,
     RouterLink,
     CalendarGrid,
+    Column,
+    DataTable,
     DateRangePicker,
     EmptyState,
     ErrorState,
@@ -62,6 +67,14 @@ export class CalendarPage {
   protected readonly page = signal(0);
   protected readonly pageSize = PAGE_SIZE;
   protected readonly unregisterError = signal('');
+
+  protected readonly columns: DataTableColumn[] = [
+    { key: 'title', header: 'Évènement' },
+    { key: 'date', header: 'Date' },
+    { key: 'actions', header: 'Actions' },
+  ];
+
+  protected readonly trackByEventId = (event: EventCardDto) => event.id;
 
   protected readonly range = computed<DateRange>(() => {
     switch (this.mode()) {

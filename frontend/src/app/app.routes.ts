@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth-guard';
 import { roleGuard } from './core/auth/role-guard';
-import { adminGuard } from './core/auth/admin-guard';
 
 export const routes: Routes = [
   {
@@ -70,7 +69,7 @@ export const routes: Routes = [
   {
     path: 'admin/comptes',
     title: 'Gestion des comptes utilisateurs',
-    canActivate: [adminGuard],
+    canActivate: [roleGuard('ADMIN')],
     loadComponent: () =>
       import('./features/account/users-list-page/users-list-page').then((m) => m.UsersListPage),
   },

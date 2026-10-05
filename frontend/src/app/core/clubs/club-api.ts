@@ -1,7 +1,7 @@
 import { httpResource } from '@angular/common/http';
 import { Service, Signal, inject } from '@angular/core';
 import { ClubDto } from '../../domain/club.model';
-import { PageDto } from '../../domain/page';
+import { PageDto } from '../../domain/page.model';
 import { API_URL } from '../http/api-url';
 
 export interface ClubListParams {
