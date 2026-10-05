@@ -1,0 +1,20 @@
+<table>
+  <thead>
+    <tr>
+      @for (column of columns(); track column.key) {
+        <th>{{ column.header }}</th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (row of rows(); track trackBy()(row, $index)) {
+      <tr>
+        @for (column of columns(); track column.key) {
+          <td>
+            <ng-container *ngTemplateOutlet="templateFor(column.key); context: { $implicit: row }" />
+          </td>
+        }
+      </tr>
+    }
+  </tbody>
+</table>

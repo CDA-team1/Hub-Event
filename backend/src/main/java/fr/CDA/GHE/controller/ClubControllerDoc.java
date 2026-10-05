@@ -33,12 +33,15 @@ public interface ClubControllerDoc {
      * @param pageable paramètres de pagination (page, size, sort)
      * @return une page de {@link ClubDto}
      */
-    @Operation(summary = "Retourne une page de clubs",
-            description = "Pagination via les paramètres page, size et sort (ex. ?page=0&size=20&sort=name,asc)")
+    @Operation(summary = "Retourne une page de clubs actifs (non désaffiliés), réservé à l'administrateur",
+            description = "Pagination via les paramètres page, size et sort (ex. ?page=0&size=20&sort=name,asc). "
+                    + "Les clubs désaffiliés (validityEndDate renseignée) ne sont pas inclus.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page de clubs au format JSON",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageDto.class)))
+                            schema = @Schema(implementation = PageDto.class))),
+            @ApiResponse(responseCode = "403", description = "Rôle administrateur requis",
+                    content = @Content)
     })
     PageDto<ClubDto> getAll(Pageable pageable);
 
@@ -48,11 +51,13 @@ public interface ClubControllerDoc {
      * @param id identifiant du club
      * @return le {@link ClubDto} correspondant
      */
-    @Operation(summary = "Retourne un club par son identifiant")
+    @Operation(summary = "Retourne un club par son identifiant, réservé à l'administrateur")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Club trouvé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ClubDto.class))),
+            @ApiResponse(responseCode = "403", description = "Rôle administrateur requis",
+                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Aucun club pour cet identifiant",
                     content = @Content)
     })
