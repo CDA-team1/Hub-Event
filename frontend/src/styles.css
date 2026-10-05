@@ -1,1 +1,14 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-surface: #f8fafc;
+  --color-primary: #64748b;
+  --color-primary-dark: #475569;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text);
+}
