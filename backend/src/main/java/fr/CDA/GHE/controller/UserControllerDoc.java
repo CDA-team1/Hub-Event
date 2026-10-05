@@ -1,5 +1,6 @@
 package fr.CDA.GHE.controller;
 
+import fr.CDA.GHE.dto.AdminUserDto;
 import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
@@ -46,11 +47,11 @@ public interface UserControllerDoc {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Utilisateur trouvé",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UserDto.class))),
+                            schema = @Schema(implementation = AdminUserDto.class))),
             @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
                     content = @Content)
     })
-    UserDto getById(@Parameter(description = "Identifiant de l'utilisateur") Long id);
+    AdminUserDto getById(@Parameter(description = "Identifiant de l'utilisateur") Long id);
 
     @Operation(summary = "Crée un compte (membre affilié, organisateur ou administrateur)",
             description = "Réservé à l'administrateur (CU25, SFG §2.28). Distinct de l'inscription "

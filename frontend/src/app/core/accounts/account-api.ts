@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 
 import { PageDto } from '../../domain/page.model';
 import { Role } from '../../domain/role';
-import { AccountDto, UserProfileDto } from '../../domain/account.model';
+import { AccountDto, AdminUserDto, UserProfileDto } from '../../domain/account.model';
 import { UpdateUserRequest } from '../../domain/update-user-request';
 import { ConfirmAccountCreationRequest } from '../../domain/confirm-account-creation-request';
+import { AdminUserRequest } from '../../domain/admin-user-request';
 import { API_URL } from '../http/api-url';
 
 @Service()
@@ -47,5 +48,17 @@ export class AccountApi {
     }
 
     return this.http.get<PageDto<AccountDto>>(`${this.apiUrl}/admin/users`, { params });
+  }
+
+  getUserById(id: number): Observable<AdminUserDto> {
+    return this.http.get<AdminUserDto>(`${this.apiUrl}/admin/users/${id}`);
+  }
+
+  createUser(request: AdminUserRequest): Observable<AccountDto> {
+    return this.http.post<AccountDto>(`${this.apiUrl}/admin/users`, request);
+  }
+
+  updateUser(id: number, request: AdminUserRequest): Observable<AccountDto> {
+    return this.http.put<AccountDto>(`${this.apiUrl}/admin/users/${id}`, request);
   }
 }

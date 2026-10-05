@@ -74,6 +74,20 @@ export const routes: Routes = [
       import('./features/account/users-list-page/users-list-page').then((m) => m.UsersListPage),
   },
   {
+    path: 'admin/comptes/nouveau',
+    title: 'Créer un compte utilisateur',
+    canActivate: [roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
+  },
+  {
+    path: 'admin/comptes/:id',
+    title: 'Modifier un compte utilisateur',
+    canActivate: [roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>

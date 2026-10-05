@@ -1,5 +1,7 @@
-import { httpResource } from '@angular/common/http';
+import { HttpClient, HttpParams, httpResource } from '@angular/common/http';
 import { Service, Signal, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+
 import { ClubDto } from '../../domain/club.model';
 import { PageDto } from '../../domain/page.model';
 import { API_URL } from '../http/api-url';
@@ -11,6 +13,7 @@ export interface ClubListParams {
 
 @Service()
 export class ClubApi {
+  private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_URL);
 
   /** Clubs actifs, paginés (le back exclut déjà les clubs désaffiliés). */
@@ -18,7 +21,10 @@ export class ClubApi {
     return httpResource<PageDto<ClubDto>>(
       () => ({
         url: `${this.apiUrl}/clubs`,
-        params: { page: String(params().page), size: String(params().size) },
+        params: {
+          page: String(params().page),
+          size: String(params().size),
+        },
       }),
       {
         defaultValue: {
@@ -32,5 +38,11 @@ export class ClubApi {
         },
       },
     );
+  }
+
+  getClubs(page: number, size: number): Observable<PageDto<ClubDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+
+    return this.http.get<PageDto<ClubDto>>(`${this.apiUrl}/clubs`, { params });
   }
 }
