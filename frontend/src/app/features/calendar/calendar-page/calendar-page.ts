@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { CalendarApi, DateRange } from '../../../core/calendar/calendar-api';
 import { Confirmation } from '../../../core/dialog/confirmation';
-import { EventApi } from '../../../core/events/event-api';
+import { RegistrationApi } from '../../../core/registrations/registration-api';
 import {
   addDays,
   addMonths,
@@ -57,7 +57,7 @@ function monthRange(date: Date): DateRange {
 })
 export class CalendarPage {
   private readonly calendarApi = inject(CalendarApi);
-  private readonly eventApi = inject(EventApi);
+  private readonly registrationApi = inject(RegistrationApi);
   private readonly confirmation = inject(Confirmation);
 
   protected readonly mode = signal<ViewMode>('SEMAINE');
@@ -142,7 +142,7 @@ export class CalendarPage {
       return;
     }
     try {
-      await this.eventApi.unregister(eventId);
+      await this.registrationApi.unregister(eventId);
       this.page.set(0);
       this.calendar.reload();
     } catch {
