@@ -1,5 +1,7 @@
 <h1>Clubs affiliés</h1>
 
+<a class="add-club" routerLink="/clubs/nouveau">Ajouter un club</a>
+
 @if (isLoading()) {
   <app-loading-state>Chargement des clubs…</app-loading-state>
 } @else if (error()) {
@@ -20,6 +22,14 @@
     <ng-template appColumn="address" let-club>{{ club.postalAddress }}</ng-template>
     <ng-template appColumn="email" let-club>{{ club.email }}</ng-template>
     <ng-template appColumn="phone" let-club>{{ club.phone }}</ng-template>
+    <ng-template appColumn="actions" let-club>
+      <app-action-button
+        icon="✏️"
+        label="Modifier"
+        level="primary"
+        [routerLink]="['/clubs', club.id, 'modifier']"
+      />
+    </ng-template>
   </app-data-table>
 
   <app-pagination

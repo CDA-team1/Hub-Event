@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { CalendarApi, DateRange } from '../../../core/calendar/calendar-api';
 import { Confirmation } from '../../../core/dialog/confirmation';
 import { EventApi } from '../../../core/events/event-api';
@@ -17,6 +16,7 @@ import {
   toIsoDate,
 } from '../../../domain/calendar-rules';
 import { EventCardDto } from '../../../domain/event.model';
+import { ActionButton } from '../../../shared/ui/action-button/action-button';
 import { Column } from '../../../shared/ui/data-table/column';
 import { DataTable, DataTableColumn } from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
@@ -42,7 +42,7 @@ function monthRange(date: Date): DateRange {
   selector: 'app-calendar-page',
   imports: [
     DatePipe,
-    RouterLink,
+    ActionButton,
     CalendarGrid,
     Column,
     DataTable,

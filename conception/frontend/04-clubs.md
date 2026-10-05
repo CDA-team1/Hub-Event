@@ -9,11 +9,13 @@ Cas d'utilisation : CU24 (gérer les clubs).
 ## Arbre des composants
 
 ```
-ClubsListPage                     features/clubs · entrée : — (liste publique)
+ClubsListPage                     features/clubs (admin) · entrée : — (CdC p.10, réservé à l'administrateur)
 ├── Pagination                    shared/ui
-└── ClubCard × n                  shared/ui · entrée : club
+└── DataTable                     shared/ui · colonnes nom/catégorie/adresse/email/téléphone
 
 ClubFormPage                      features/clubs (admin) · entrée : id (optionnel)
 └── ClubForm                      features/clubs · sortie : submitted(ClubDto)
-    └── MembersPicker             features/clubs · entrées : members, selected · sortie : selectionChanged
 ```
+
+Pas de gestion des membres affiliés dans ce formulaire (CdC p.11, `ClubDto` back) : l'affiliation
+est une fonctionnalité séparée (CU26/27), pas le CRUD club.

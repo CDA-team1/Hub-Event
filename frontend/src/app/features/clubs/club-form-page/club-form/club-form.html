@@ -1,0 +1,65 @@
+<form (submit)="save($event)" novalidate>
+  <div class="row">
+    <div class="field">
+      <label for="name">Nom</label>
+      <input id="name" type="text" [formField]="clubForm.name" />
+      @if (clubForm.name().touched()) {
+        @for (error of clubForm.name().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="category">Catégorie</label>
+      <select id="category" [formField]="clubForm.category">
+        <option value="">— Choisir —</option>
+        @for (category of categories; track category) {
+          <option [value]="category">{{ category | categoryLabel }}</option>
+        }
+      </select>
+      @if (clubForm.category().touched()) {
+        @for (error of clubForm.category().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="postalAddress">Adresse postale</label>
+    <input id="postalAddress" type="text" [formField]="clubForm.postalAddress" />
+    @if (clubForm.postalAddress().touched()) {
+      @for (error of clubForm.postalAddress().errors(); track error.kind) {
+        <p class="error">{{ error.message }}</p>
+      }
+    }
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" [formField]="clubForm.email" />
+      @if (clubForm.email().touched()) {
+        @for (error of clubForm.email().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="phone">Téléphone</label>
+      <input id="phone" type="tel" [formField]="clubForm.phone" />
+      @if (clubForm.phone().touched()) {
+        @for (error of clubForm.phone().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="submit" [disabled]="clubForm().submitting()">Valider</button>
+    <button type="button" (click)="cancel()">Annuler</button>
+  </div>
+</form>
