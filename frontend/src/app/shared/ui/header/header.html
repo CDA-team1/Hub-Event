@@ -1,9 +1,12 @@
-<header>
-  <a routerLink="/" class="logo">Hub évènementiel</a>
+<header class="header">
+  <a routerLink="/" class="header__logo">
+    <span class="header__logo-mark" aria-hidden="true"></span>
+    Hub évènementiel
+  </a>
 
-  <nav>
+  <nav class="header__nav" aria-label="Navigation principale">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-      >Accueil</a
+    >Accueil</a
     >
     @if (isConnected()) {
       <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
@@ -18,14 +21,13 @@
     }
   </nav>
 
-  @if (isConnected()) {
-    <a routerLink="/mon-compte" routerLinkActive="active">Mon compte</a>
-
-    <span>
-      Connecté(e) -
-      <button type="button" (click)="logout()">Se déconnecter</button>
-    </span>
-  } @else {
-    <a routerLink="/connexion">Se connecter</a>
-  }
+  <div class="header__session">
+    @if (isConnected()) {
+      <a routerLink="/mon-compte" routerLinkActive="active">Mon compte</a>
+      <button type="button" class="header__logout" (click)="logout()">Se déconnecter</button>
+    } @else {
+      <a routerLink="/connexion" routerLinkActive="active">Se connecter</a>
+      <a routerLink="/inscription" routerLinkActive="active">Créer un compte</a>
+    }
+  </div>
 </header>

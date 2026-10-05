@@ -1,10 +1,82 @@
+:host {
+  display: block;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 2rem;
+  padding: 0.75rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.header__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.header__logo-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+  background: var(--color-primary);
+}
+
+.header__nav {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.5rem;
+}
+
+.header__session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.5rem;
+}
+
+.header__nav > a,
+.header__session > a,
+.header__logout,
+.admin-menu summary {
+  padding: 0.35rem 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.header__nav > a:hover,
+.header__session > a:hover,
+.header__logout:hover,
+.admin-menu summary:hover {
+  color: var(--color-text);
+}
+
+.header__nav > a.active,
+.header__session > a.active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
+}
+
 .admin-menu {
   position: relative;
   display: inline-block;
 }
 
 .admin-menu summary {
-  cursor: pointer;
   list-style: none;
 }
 
@@ -14,6 +86,7 @@
 
 .admin-menu__items {
   position: absolute;
+  z-index: 10;
   top: 100%;
   left: 0;
   display: flex;
@@ -21,7 +94,7 @@
   min-width: 8rem;
   margin-top: 0.25rem;
   padding: 0.25rem 0;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   background: #fff;
   box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
@@ -29,4 +102,25 @@
 
 .admin-menu__items a {
   padding: 0.4rem 0.75rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.admin-menu__items a:hover {
+  background: var(--color-surface);
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .header__nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .header__session {
+    margin-left: auto;
+  }
 }
