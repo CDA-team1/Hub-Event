@@ -111,6 +111,18 @@ class ClubServiceTest {
     }
 
     @Test
+    void extractAll_shouldExcludeDesaffiliatedClubs() {
+        persistClub("Club actif", Category.SPORT);
+        Club desaffilie = persistClub("Club désaffilié", Category.CULTURE);
+        desaffilie.endClubAffiliation(LocalDate.now());
+        clubRepository.save(desaffilie);
+
+        PageDto<ClubDto> page = clubService.extractAll(PageRequest.of(0, 10));
+
+        assertThat(page.content()).extracting(ClubDto::name).containsExactly("Club actif");
+    }
+
+    @Test
     void extractById_shouldThrow_whenClubNotFound() {
         assertThatThrownBy(() -> clubService.extractById(999L))
                 .isInstanceOf(NotFoundException.class);

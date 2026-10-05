@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+﻿import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -6,7 +6,7 @@ import { AccountApi } from '../../../core/accounts/account-api';
 import { ClubApi } from '../../../core/clubs/club-api';
 import { AdminUserDto } from '../../../domain/account.model';
 import { AdminUserRequest } from '../../../domain/admin-user-request';
-import { ClubCardDto } from '../../../domain/club.model';
+import { ClubDto } from '../../../domain/club.model';
 import { Role } from '../../../domain/role';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
@@ -31,7 +31,7 @@ export class UserFormPage {
   private readonly router = inject(Router);
 
   readonly user = signal<AdminUserDto | null>(null);
-  readonly clubs = signal<ClubCardDto[]>([]);
+  readonly clubs = signal<ClubDto[]>([]);
   readonly selectedRole = signal<Role | null>(null);
 
   readonly editing = signal(false);
@@ -135,7 +135,7 @@ export class UserFormPage {
     this.loadClubPage(0, []);
   }
 
-  private loadClubPage(page: number, accumulatedClubs: ClubCardDto[]): void {
+  private loadClubPage(page: number, accumulatedClubs: ClubDto[]): void {
     this.clubApi.getClubs(page, CLUB_PAGE_SIZE).subscribe({
       next: (result) => {
         const allClubs = [...accumulatedClubs, ...result.content];
@@ -184,3 +184,5 @@ export class UserFormPage {
     });
   }
 }
+
+

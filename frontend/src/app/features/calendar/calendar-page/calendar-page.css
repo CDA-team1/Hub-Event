@@ -51,33 +51,18 @@
   text-transform: capitalize;
 }
 
-table {
-  width: 100%;
+app-data-table {
+  display: block;
   margin-top: 1.5rem;
-  border-collapse: collapse;
 }
 
-th,
-td {
-  padding: 0.6rem 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-th {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #64748b;
-}
-
-td.actions {
+.actions {
   display: flex;
   gap: 0.75rem;
   align-items: center;
 }
 
-td.actions button {
+.actions button {
   padding: 0.3rem 0.7rem;
   border: 1px solid #e5e7eb;
   border-radius: 4px;

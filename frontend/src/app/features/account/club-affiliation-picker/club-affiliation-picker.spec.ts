@@ -1,13 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ClubCardDto } from '../../../domain/club.model';
+import { ClubDto } from '../../../domain/club.model';
 import { ClubAffiliationPicker } from './club-affiliation-picker';
 
 describe('ClubAffiliationPicker', () => {
   let fixture: ComponentFixture<ClubAffiliationPicker>;
   let component: ClubAffiliationPicker;
 
-  const clubs: ClubCardDto[] = [
+  const clubs: ClubDto[] = [
     {
       id: 1,
       name: 'Club Sport',
@@ -16,6 +16,7 @@ describe('ClubAffiliationPicker', () => {
       email: 'sport@test.com',
       phone: '0600000001',
       validityEndDate: null,
+      members: [],
     },
     {
       id: 2,
@@ -25,6 +26,7 @@ describe('ClubAffiliationPicker', () => {
       email: 'culture@test.com',
       phone: '0600000002',
       validityEndDate: null,
+      members: [],
     },
   ];
 

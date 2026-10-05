@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth-guard';
-import { adminGuard } from './core/auth/admin-guard';
+import { roleGuard } from './core/auth/role-guard';
 
 export const routes: Routes = [
   {
@@ -21,6 +21,7 @@ export const routes: Routes = [
   {
     path: 'clubs',
     title: 'Clubs',
+    canActivate: [roleGuard('ADMIN')],
     loadComponent: () =>
       import('./features/clubs/clubs-list-page/clubs-list-page').then((m) => m.ClubsListPage),
   },
@@ -68,21 +69,21 @@ export const routes: Routes = [
   {
     path: 'admin/comptes',
     title: 'Gestion des comptes utilisateurs',
-    canActivate: [adminGuard],
+    canActivate: [roleGuard('ADMIN')],
     loadComponent: () =>
       import('./features/account/users-list-page/users-list-page').then((m) => m.UsersListPage),
   },
   {
     path: 'admin/comptes/nouveau',
     title: 'Créer un compte utilisateur',
-    canActivate: [adminGuard],
+    canActivate: [roleGuard('ADMIN')],
     loadComponent: () =>
       import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
   },
   {
     path: 'admin/comptes/:id',
     title: 'Modifier un compte utilisateur',
-    canActivate: [adminGuard],
+    canActivate: [roleGuard('ADMIN')],
     loadComponent: () =>
       import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
   },

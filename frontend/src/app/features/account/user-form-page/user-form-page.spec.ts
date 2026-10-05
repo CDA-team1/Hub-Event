@@ -1,4 +1,4 @@
-import { ApplicationRef } from '@angular/core';
+﻿import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -7,12 +7,12 @@ import { AccountApi } from '../../../core/accounts/account-api';
 import { ClubApi } from '../../../core/clubs/club-api';
 import { AccountDto, AdminUserDto } from '../../../domain/account.model';
 import { AdminUserRequest } from '../../../domain/admin-user-request';
-import { ClubCardDto } from '../../../domain/club.model';
+import { ClubDto } from '../../../domain/club.model';
 import { PageDto } from '../../../domain/page.model';
 import { UserFormPage } from './user-form-page';
 
 describe('UserFormPage', () => {
-  const activeClub: ClubCardDto = {
+  const activeClub: ClubDto = {
     id: 1,
     name: 'Club Sport',
     category: 'SPORT',
@@ -20,9 +20,10 @@ describe('UserFormPage', () => {
     email: 'sport@test.com',
     phone: '0600000001',
     validityEndDate: null,
+    members: [],
   };
 
-  const endedClub: ClubCardDto = {
+  const endedClub: ClubDto = {
     id: 2,
     name: 'Ancien Club',
     category: 'CULTURE',
@@ -30,9 +31,10 @@ describe('UserFormPage', () => {
     email: 'culture@test.com',
     phone: '0600000002',
     validityEndDate: '2026-09-01',
+    members: [],
   };
 
-  const secondActiveClub: ClubCardDto = {
+  const secondActiveClub: ClubDto = {
     id: 3,
     name: 'Club Loisirs',
     category: 'LEISURE',
@@ -40,9 +42,10 @@ describe('UserFormPage', () => {
     email: 'loisirs@test.com',
     phone: '0600000003',
     validityEndDate: null,
+    members: [],
   };
 
-  const firstClubPage: PageDto<ClubCardDto> = {
+  const firstClubPage: PageDto<ClubDto> = {
     content: [activeClub, endedClub],
     page: 0,
     size: 20,
@@ -52,7 +55,7 @@ describe('UserFormPage', () => {
     last: false,
   };
 
-  const secondClubPage: PageDto<ClubCardDto> = {
+  const secondClubPage: PageDto<ClubDto> = {
     content: [secondActiveClub],
     page: 1,
     size: 20,

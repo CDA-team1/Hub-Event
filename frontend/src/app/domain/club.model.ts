@@ -1,6 +1,7 @@
 import { Category } from './category';
+import { MemberSummaryDto } from './member-summary';
 
-export interface ClubCardDto {
+export interface ClubDto {
   id: number;
   name: string;
   category: Category;
@@ -8,4 +9,5 @@ export interface ClubCardDto {
   email: string;
   phone: string;
   validityEndDate: string | null;
+  members: MemberSummaryDto[];
 }

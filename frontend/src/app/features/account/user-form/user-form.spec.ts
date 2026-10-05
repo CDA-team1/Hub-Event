@@ -1,14 +1,14 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AdminUserDto } from '../../../domain/account.model';
-import { ClubCardDto } from '../../../domain/club.model';
+import { ClubDto } from '../../../domain/club.model';
 import { UserForm } from './user-form';
 
 describe('UserForm', () => {
   let fixture: ComponentFixture<UserForm>;
   let component: UserForm;
 
-  const clubs: ClubCardDto[] = [
+  const clubs: ClubDto[] = [
     {
       id: 1,
       name: 'Club Sport',
@@ -17,6 +17,7 @@ describe('UserForm', () => {
       email: 'sport@test.com',
       phone: '0600000001',
       validityEndDate: null,
+      members: [],
     },
     {
       id: 2,
@@ -26,6 +27,7 @@ describe('UserForm', () => {
       email: 'culture@test.com',
       phone: '0600000002',
       validityEndDate: null,
+      members: [],
     },
   ];
 
@@ -153,3 +155,4 @@ describe('UserForm', () => {
     expect(component.selectedClubIds()).toEqual([2]);
   });
 });
+

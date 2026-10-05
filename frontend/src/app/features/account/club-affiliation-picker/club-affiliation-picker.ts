@@ -1,6 +1,6 @@
-import { Component, input, output } from '@angular/core';
+﻿import { Component, input, output } from '@angular/core';
 
-import { ClubCardDto } from '../../../domain/club.model';
+import { ClubDto } from '../../../domain/club.model';
 
 @Component({
   selector: 'app-club-affiliation-picker',
@@ -8,7 +8,7 @@ import { ClubCardDto } from '../../../domain/club.model';
   styleUrl: './club-affiliation-picker.css',
 })
 export class ClubAffiliationPicker {
-  readonly clubs = input.required<ClubCardDto[]>();
+  readonly clubs = input.required<ClubDto[]>();
   readonly selected = input<number[]>([]);
 
   readonly selectionChanged = output<number[]>();
@@ -27,3 +27,4 @@ export class ClubAffiliationPicker {
     this.selectionChanged.emit(nextSelection);
   }
 }
+

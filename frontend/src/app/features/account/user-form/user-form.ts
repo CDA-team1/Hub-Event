@@ -1,9 +1,9 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+﻿import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AdminUserDto } from '../../../domain/account.model';
 import { AdminUserRequest } from '../../../domain/admin-user-request';
-import { ClubCardDto } from '../../../domain/club.model';
+import { ClubDto } from '../../../domain/club.model';
 import { Role } from '../../../domain/role';
 import { ClubAffiliationPicker } from '../club-affiliation-picker/club-affiliation-picker';
 
@@ -16,7 +16,7 @@ import { ClubAffiliationPicker } from '../club-affiliation-picker/club-affiliati
 export class UserForm {
   readonly role = input.required<Role>();
   readonly user = input<AdminUserDto | null>(null);
-  readonly clubs = input.required<ClubCardDto[]>();
+  readonly clubs = input.required<ClubDto[]>();
   readonly emailError = input<string | null>(null);
 
   readonly submitted = output<AdminUserRequest>();
@@ -113,3 +113,4 @@ export class UserForm {
     this.cancelled.emit();
   }
 }
+
