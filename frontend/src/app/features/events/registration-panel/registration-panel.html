@@ -1,4 +1,5 @@
 <section class="registration" aria-label="Inscription">
+  <p class="registration__availability">Places restantes : {{ event().remainingSeats }}</p>
   @if (event().myRegistration; as registration) {
     <p class="registration__status">
       @if (registration.status === 'REGISTERED') {

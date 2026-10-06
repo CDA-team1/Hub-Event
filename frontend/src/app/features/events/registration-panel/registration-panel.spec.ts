@@ -138,6 +138,14 @@ describe('RegistrationPanel', () => {
     expect(button(element)?.disabled).toBe(true);
   });
 
+  it('affiche le nombre de places restantes', async () => {
+    const { element } = await render({ remainingSeats: 7 });
+
+    expect(element.querySelector('.registration__availability')?.textContent).toContain(
+      'Places restantes : 7',
+    );
+  });
+
   it("affiche le message d'erreur reçu", async () => {
     const { element } = await render(
       {},
