@@ -9,13 +9,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * SEC-02 — Autorisations des routes des clubs.
  * <p>
  * Toute la gestion des clubs (CU24, CdC p.10 "Liste des clubs") est réservée à l'administrateur
- * : aucune route de ce contrôleur n'est publique, {@code @Secured("ROLE_ADMIN")} s'applique à
- * toutes (actif grâce à {@code @EnableMethodSecurity(securedEnabled = true)} dans
- * {@code SecurityConfig}, qui ne place plus {@code /clubs} en {@code permitAll}).
+ * : {@code @Secured("ROLE_ADMIN")} s'applique à toutes les routes par défaut (actif grâce à
+ * {@code @EnableMethodSecurity(securedEnabled = true)} dans {@code SecurityConfig}, qui ne place
+ * plus {@code /clubs} en {@code permitAll}), à l'exception de {@code GET /clubs/mine} (EVT-06) :
+ * son {@code @Secured} de méthode prend le pas sur celui de la classe pour cette seule route,
+ * réservée à l'organisateur (choix du club à la création d'un événement).
+ * </p>
  */
 @RestController
 @RequestMapping("/clubs")
@@ -32,6 +37,13 @@ public class ClubController implements ClubControllerDoc {
     @GetMapping
     public PageDto<ClubDto> getAll(Pageable pageable) {
         return clubService.extractAll(pageable);
+    }
+
+    @Override
+    @Secured("ROLE_ORGANIZER")
+    @GetMapping("/mine")
+    public List<ClubDto> getMine() {
+        return clubService.extractMine();
     }
 
     @Override

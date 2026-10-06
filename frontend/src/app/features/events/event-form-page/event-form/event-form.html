@@ -1,0 +1,132 @@
+<form (submit)="save($event)" novalidate>
+  @if (locked()) {
+    <p class="locked-note">
+      Cet évènement est terminé : ses informations ne sont plus modifiables.
+    </p>
+  }
+
+  <div class="row">
+    <div class="field">
+      <label for="title">Titre</label>
+      <input id="title" type="text" [formField]="eventForm.title" />
+      @if (eventForm.title().touched()) {
+        @for (error of eventForm.title().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="category">Catégorie</label>
+      <select id="category" [formField]="eventForm.category">
+        <option value="">— Choisir —</option>
+        @for (category of categories; track category) {
+          <option [value]="category">{{ category | categoryLabel }}</option>
+        }
+      </select>
+      @if (eventForm.category().touched()) {
+        @for (error of eventForm.category().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+  </div>
+
+  @if (clubs(); as clubList) {
+    <div class="field">
+      <label for="clubId">Club organisateur</label>
+      <select id="clubId" [formField]="eventForm.clubId">
+        <option value="">— Choisir —</option>
+        @for (club of clubList; track club.id) {
+          <option [value]="club.id">{{ club.name }}</option>
+        }
+      </select>
+      @if (eventForm.clubId().touched()) {
+        @for (error of eventForm.clubId().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+  }
+
+  <div class="field">
+    <label for="description">Description</label>
+    <textarea id="description" rows="4" [formField]="eventForm.description"></textarea>
+    @if (eventForm.description().touched()) {
+      @for (error of eventForm.description().errors(); track error.kind) {
+        <p class="error">{{ error.message }}</p>
+      }
+    }
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="location">Lieu</label>
+      <input id="location" type="text" [formField]="eventForm.location" />
+      @if (eventForm.location().touched()) {
+        @for (error of eventForm.location().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="maxSeats">Places max</label>
+      <input id="maxSeats" type="number" [formField]="eventForm.maxSeats" />
+      @if (eventForm.maxSeats().touched()) {
+        @for (error of eventForm.maxSeats().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="startDateTime">Date/heure début</label>
+      <input id="startDateTime" type="datetime-local" [formField]="eventForm.startDateTime" />
+      @if (eventForm.startDateTime().touched()) {
+        @for (error of eventForm.startDateTime().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="endDateTime">Date/heure fin (facultatif)</label>
+      <input id="endDateTime" type="datetime-local" [formField]="eventForm.endDateTime" />
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="affiliatedPrice">Prix affilié</label>
+      <input id="affiliatedPrice" type="number" step="0.01" [formField]="eventForm.affiliatedPrice" />
+      @if (eventForm.affiliatedPrice().touched()) {
+        @for (error of eventForm.affiliatedPrice().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="nonAffiliatedPrice">Prix non affilié</label>
+      <input
+        id="nonAffiliatedPrice"
+        type="number"
+        step="0.01"
+        [formField]="eventForm.nonAffiliatedPrice"
+      />
+      @if (eventForm.nonAffiliatedPrice().touched()) {
+        @for (error of eventForm.nonAffiliatedPrice().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="submit" [disabled]="eventForm().submitting() || locked()">Valider</button>
+    <button type="button" (click)="cancel()">Annuler</button>
+  </div>
+</form>

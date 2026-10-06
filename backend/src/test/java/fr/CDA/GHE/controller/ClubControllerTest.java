@@ -69,4 +69,39 @@ class ClubControllerTest {
 
         verify(clubService, never()).extractAll(any());
     }
+
+    @Test
+    void getMine_shouldReturn200_whenCalledByOrganizer() throws Exception {
+        ClubDto club = new ClubDto(1L, "Club de boxe", Category.SPORT, "1 rue de Test",
+                "club@test.fr", "0600000000", null, List.of());
+        when(clubService.extractMine()).thenReturn(List.of(club));
+
+        mockMvc.perform(get("/clubs/mine").with(user("organizer@test.fr").roles("ORGANIZER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Club de boxe"));
+    }
+
+    @Test
+    void getMine_shouldReturn403_whenCalledByAdmin() throws Exception {
+        mockMvc.perform(get("/clubs/mine").with(user("admin@test.fr").roles("ADMIN")))
+                .andExpect(status().isForbidden());
+
+        verify(clubService, never()).extractMine();
+    }
+
+    @Test
+    void getMine_shouldReturn403_whenCalledByMember() throws Exception {
+        mockMvc.perform(get("/clubs/mine").with(user("member@test.fr").roles("MEMBER")))
+                .andExpect(status().isForbidden());
+
+        verify(clubService, never()).extractMine();
+    }
+
+    @Test
+    void getMine_shouldReturn401_whenNotAuthenticated() throws Exception {
+        mockMvc.perform(get("/clubs/mine"))
+                .andExpect(status().isUnauthorized());
+
+        verify(clubService, never()).extractMine();
+    }
 }
