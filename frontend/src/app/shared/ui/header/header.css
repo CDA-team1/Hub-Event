@@ -77,6 +77,7 @@
   color: var(--color-muted);
   text-decoration: none;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .header__nav > a:hover,
@@ -131,7 +132,7 @@
   background: var(--color-surface);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 960px) {
   .header {
     padding: 0.75rem 1rem;
   }
