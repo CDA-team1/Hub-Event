@@ -99,7 +99,7 @@ export interface CreateEventRequest {
   startDateTime: string;
   endDateTime: string | null;
   affiliatedPrice: number;
-  nomAffiliatedPrice: number;
+  nonAffiliatedPrice: number;
   maxSeats: number;
   category: Category;
   clubId: number;

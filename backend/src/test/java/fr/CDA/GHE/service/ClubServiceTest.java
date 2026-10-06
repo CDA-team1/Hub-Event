@@ -14,16 +14,20 @@ import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.EventRepository;
 import fr.CDA.GHE.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -51,6 +55,11 @@ class ClubServiceTest {
 
     @Autowired
     private EventRepository eventRepository;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     // --- create ---
 
@@ -120,6 +129,49 @@ class ClubServiceTest {
         PageDto<ClubDto> page = clubService.extractAll(PageRequest.of(0, 10));
 
         assertThat(page.content()).extracting(ClubDto::name).containsExactly("Club actif");
+    }
+
+    @Test
+    void extractMine_shouldReturnActiveClubsOfOrganizer() {
+        User organizer = persistUser("organizer@test.com", Role.ORGANIZER);
+        Club clubA = persistClub("Club A", Category.SPORT);
+        Club clubB = persistClub("Club B", Category.CULTURE);
+        clubA.addMember(organizer);
+        clubB.addMember(organizer);
+        clubRepository.save(clubA);
+        clubRepository.save(clubB);
+        authenticateAs(organizer);
+
+        List<ClubDto> result = clubService.extractMine();
+
+        assertThat(result).extracting(ClubDto::name).containsExactlyInAnyOrder("Club A", "Club B");
+    }
+
+    @Test
+    void extractMine_shouldExcludeDesaffiliatedClubs() {
+        User organizer = persistUser("organizer@test.com", Role.ORGANIZER);
+        Club active = persistClub("Club actif", Category.SPORT);
+        Club desaffilie = persistClub("Club désaffilié", Category.CULTURE);
+        active.addMember(organizer);
+        desaffilie.addMember(organizer);
+        desaffilie.endClubAffiliation(LocalDate.now());
+        clubRepository.save(active);
+        clubRepository.save(desaffilie);
+        authenticateAs(organizer);
+
+        List<ClubDto> result = clubService.extractMine();
+
+        assertThat(result).extracting(ClubDto::name).containsExactly("Club actif");
+    }
+
+    @Test
+    void extractMine_shouldReturnEmpty_whenOrganizerHasNoClub() {
+        User organizer = persistUser("organizer@test.com", Role.ORGANIZER);
+        authenticateAs(organizer);
+
+        List<ClubDto> result = clubService.extractMine();
+
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -290,6 +342,11 @@ class ClubServiceTest {
         Event reloadedEvent = eventRepository.findById(event.getId()).orElseThrow();
         assertThat(reloadedEvent.getStatus()).isEqualTo(EventStatus.DRAFT);
         assertThat(clubRepository.findById(club.getId())).isPresent();
+    }
+
+    private void authenticateAs(User user) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, List.of()));
     }
 
     private Club persistClub(String name, Category category) {

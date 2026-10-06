@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Confirmation } from '../../../core/dialog/confirmation';
 import { EventApi } from '../../../core/events/event-api';
 import { Category } from '../../../domain/category';
@@ -40,6 +41,7 @@ const SORT_COMPARATORS: Record<string, EventComparator> = {
     EventStatusBadge,
     LoadingState,
     Pagination,
+    RouterLink,
   ],
   templateUrl: './my-events-page.html',
   styleUrl: './my-events-page.css',

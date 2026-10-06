@@ -106,10 +106,10 @@ describe('MyEventsPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
 
-    // Publier, Supprimer : deux boutons. "Voir les inscriptions" reste un 3e lien, affiché
-    // pour tout évènement quel que soit son statut.
+    // Publier, Supprimer : deux boutons. Modifier et Voir les inscriptions restent deux liens,
+    // affichés pour tout évènement quel que soit son statut.
     expect(element.querySelectorAll('app-action-button button')).toHaveLength(2);
-    expect(element.querySelectorAll('app-action-button a')).toHaveLength(1);
+    expect(element.querySelectorAll('app-action-button a')).toHaveLength(2);
   });
 
   it('publie un évènement en brouillon et recharge la liste', async () => {
@@ -145,9 +145,9 @@ describe('MyEventsPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
 
-    // Terminer, Annuler : deux boutons. "Voir les inscriptions" reste le 3e lien.
+    // Terminer, Annuler : deux boutons. Modifier et Voir les inscriptions restent deux liens.
     expect(element.querySelectorAll('app-action-button button')).toHaveLength(2);
-    expect(element.querySelectorAll('app-action-button a')).toHaveLength(1);
+    expect(element.querySelectorAll('app-action-button a')).toHaveLength(2);
   });
 
   it('supprime un évènement après confirmation et recharge la liste', async () => {

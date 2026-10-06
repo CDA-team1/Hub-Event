@@ -11,6 +11,20 @@ export const routes: Routes = [
   },
 
   {
+    path: 'evenements/nouveau',
+    title: 'Créer un évènement',
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/event-form-page/event-form-page').then((m) => m.EventFormPage),
+  },
+  {
+    path: 'evenements/:id/modifier',
+    title: "Modifier l'évènement",
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/event-form-page/event-form-page').then((m) => m.EventFormPage),
+  },
+  {
     path: 'evenements/:id',
     title: "Détail de l'événement",
     loadComponent: () =>

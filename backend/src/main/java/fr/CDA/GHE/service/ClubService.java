@@ -12,6 +12,8 @@ import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.mapper.ClubMapper;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.EventRepository;
+import fr.CDA.GHE.repository.UserRepository;
+import fr.CDA.GHE.util.CurrentUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * Gère la création, la modification, la suppression et la consultation des clubs.
@@ -33,11 +36,14 @@ public class ClubService {
     private final ClubRepository clubRepository;
     private final ClubMapper clubMapper;
     private final EventRepository eventRepository;
+    private final UserRepository userRepository;
 
-    public ClubService(ClubRepository clubRepository, ClubMapper clubMapper, EventRepository eventRepository){
+    public ClubService(ClubRepository clubRepository, ClubMapper clubMapper, EventRepository eventRepository,
+                        UserRepository userRepository){
         this.clubRepository = clubRepository;
         this.clubMapper = clubMapper;
         this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -60,6 +66,24 @@ public class ClubService {
                 page.isFirst(),
                 page.isLast()
         );
+    }
+
+    /**
+     * Retourne les clubs actifs auxquels l'organisateur actuellement authentifié est affilié
+     * (EVT-06) : nécessaire pour choisir le club organisateur à la création d'un événement,
+     * seul moment où le front a besoin de cette liste (le club n'est plus modifiable ensuite).
+     *
+     * @return les clubs actifs de l'organisateur connecté
+     */
+    @Transactional(readOnly = true)
+    public List<ClubDto> extractMine() {
+        User organizer = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        return clubRepository.findByMembers_Id(organizer.getId()).stream()
+                .filter(club -> club.getValidityEndDate() == null)
+                .map(clubMapper::toDto)
+                .toList();
     }
 
     /**
