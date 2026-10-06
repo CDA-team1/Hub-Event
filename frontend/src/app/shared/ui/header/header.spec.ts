@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Header } from './header';
 
-function signIn(role: 'MEMBER' | 'ADMIN'): void {
+function signIn(role: 'MEMBER' | 'ADMIN' | 'ORGANIZER'): void {
   sessionStorage.setItem('hub-event.session.v1', JSON.stringify({ token: 'jwt-de-test', role }));
 }
 
@@ -42,6 +42,17 @@ describe('Header', () => {
     expect(element.querySelector('a[href="/clubs"]')).not.toBeNull();
   });
 
+  it("ne montre pas le lien Mes évènements à un membre", async () => {
+    signIn('MEMBER');
+    const element = await render();
+    expect(element.textContent).not.toContain('Mes évènements');
+  });
+
+  it("montre le lien Mes évènements à un organisateur", async () => {
+    signIn('ORGANIZER');
+    const element = await render();
+    expect(element.querySelector('a[href="/mes-evenements"]')).not.toBeNull();
+  });
   it('ouvre et ferme le menu mobile avec le bouton', async () => {
     const fixture = TestBed.createComponent(Header);
     await fixture.whenStable();
@@ -76,5 +87,10 @@ describe('Header', () => {
     await fixture.whenStable();
 
     expect(menu.classList.contains('header__menu--open')).toBe(false);
+  });
+
+  it('montre le lien Rechercher à tout le monde', async () => {
+    const element = await render();
+    expect(element.querySelector('a[href="/recherche"]')).not.toBeNull();
   });
 });

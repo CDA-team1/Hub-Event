@@ -12,6 +12,7 @@ export interface MyRegistrationDto {
 export interface RegistrationDto {
   id: number;
   eventId: number;
+  userId: number;
   userEmail: string;
   status: RegistrationStatus;
   registrationDate: string;
@@ -52,6 +53,17 @@ export interface EventDetailResponse {
   owner: boolean;
   myRegistration: MyRegistrationDto | null;
   gallery: ImageDto[];
+}
+
+export interface OrganizerEventDto {
+  id: number;
+  title: string;
+  category: Category;
+  startDateTime: string;
+  endDateTime: string | null;
+  status: EventStatus;
+  maxSeats: number;
+  registeredCount: number;
 }
 
 export interface EventDto {

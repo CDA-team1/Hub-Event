@@ -7,18 +7,23 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -41,7 +46,7 @@ class RegistrationControllerTest {
 
     @Test
     void register_shouldReturn201_whenMember() throws Exception {
-        RegistrationDto created = new RegistrationDto(1L, 100L, "member@test.fr",
+        RegistrationDto created = new RegistrationDto(1L, 100L, 10L, "member@test.fr",
                 RegistrationStatus.REGISTERED, LocalDateTime.of(2026, 9, 21, 10, 0));
         when(registrationService.register(100L)).thenReturn(created);
 
@@ -52,7 +57,7 @@ class RegistrationControllerTest {
 
     @Test
     void register_shouldReturn201_whenOrganizer() throws Exception {
-        RegistrationDto created = new RegistrationDto(1L, 100L, "organizer@test.fr",
+        RegistrationDto created = new RegistrationDto(1L, 100L, 10L, "organizer@test.fr",
                 RegistrationStatus.REGISTERED, LocalDateTime.of(2026, 9, 21, 10, 0));
         when(registrationService.register(100L)).thenReturn(created);
 
@@ -63,7 +68,7 @@ class RegistrationControllerTest {
 
     @Test
     void register_shouldReturn201_whenAdmin() throws Exception {
-        RegistrationDto created = new RegistrationDto(1L, 100L, "admin@test.fr",
+        RegistrationDto created = new RegistrationDto(1L, 100L, 10L, "admin@test.fr",
                 RegistrationStatus.REGISTERED, LocalDateTime.of(2026, 9, 21, 10, 0));
         when(registrationService.register(100L)).thenReturn(created);
 
@@ -78,5 +83,37 @@ class RegistrationControllerTest {
                 .andExpect(status().isUnauthorized());
 
         verify(registrationService, never()).register(any());
+    }
+
+    @Test
+    void getRegistrations_shouldReturn200_whenOrganizer() throws Exception {
+        RegistrationDto registration = new RegistrationDto(1L, 100L, 10L, "member@test.fr",
+                RegistrationStatus.REGISTERED, LocalDateTime.of(2026, 9, 21, 10, 0));
+        when(registrationService.getRegistrationsForEvent(100L)).thenReturn(List.of(registration));
+
+        mockMvc.perform(get("/events/100/registrations")
+                        .with(user("organizer@test.fr").roles("ORGANIZER")))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].userId").value(10))
+                .andExpect(jsonPath("$[0].userEmail").value("member@test.fr"));
+    }
+
+    @Test
+    void getRegistrations_shouldReturn403_whenMember() throws Exception {
+        mockMvc.perform(get("/events/100/registrations")
+                        .with(user("member@test.fr").roles("MEMBER")))
+                .andExpect(status().isForbidden());
+
+        verify(registrationService, never()).getRegistrationsForEvent(any());
+    }
+
+    @Test
+    void getRegistrations_shouldReturn401_whenNotAuthenticated() throws Exception {
+        mockMvc.perform(get("/events/100/registrations"))
+                .andExpect(status().isUnauthorized());
+
+        verify(registrationService, never()).getRegistrationsForEvent(any());
     }
 }

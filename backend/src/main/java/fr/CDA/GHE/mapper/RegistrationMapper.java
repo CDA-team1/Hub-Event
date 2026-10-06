@@ -20,6 +20,7 @@ public class RegistrationMapper {
         return new RegistrationDto(
                 registration.getId(),
                 registration.getEvent().getId(),
+                registration.getUser().getId(),
                 registration.getUser().getEmail(),
                 registration.getStatus(),
                 registration.getRegistrationDate()

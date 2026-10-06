@@ -34,6 +34,7 @@ describe('RegistrationApi', () => {
     const created: RegistrationDto = {
       id: 1,
       eventId: 5,
+      userId: 20,
       userEmail: 'jean@example.com',
       status: 'REGISTERED',
       registrationDate: '2026-10-05T10:00:00',
@@ -69,6 +70,17 @@ describe('RegistrationApi', () => {
 
     const request = httpTesting.expectOne('/api/events/5/registrations/me');
     expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it("désinscrit un membre à la demande de l'organisateur, avec le motif", async () => {
+    const result = service.cancelByOrganizer(5, 20, 'Comportement inapproprié');
+
+    const request = httpTesting.expectOne('/api/events/5/registrations/20');
+    expect(request.request.method).toBe('DELETE');
+    expect(request.request.body).toEqual({ reason: 'Comportement inapproprié' });
     request.flush(null);
 
     await expect(result).resolves.toBeUndefined();

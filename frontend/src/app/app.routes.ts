@@ -18,6 +18,15 @@ export const routes: Routes = [
         (m) => m.EventDetailPage,
       ),
   },
+
+  {
+    path: 'recherche',
+    title: 'Recherche',
+    loadComponent: () =>
+      import('./features/events/event-search-page/event-search-page').then(
+        (m) => m.EventSearchPage,
+      ),
+  },
   {
     path: 'clubs',
     title: 'Clubs',
@@ -64,6 +73,22 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/calendar/calendar-page/calendar-page').then((m) => m.CalendarPage),
+  },
+  {
+    path: 'mes-evenements',
+    title: 'Mes évènements',
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/my-events-page/my-events-page').then((m) => m.MyEventsPage),
+  },
+  {
+    path: 'mes-evenements/:id/inscriptions',
+    title: 'Inscriptions',
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/event-registrations-page/event-registrations-page').then(
+        (m) => m.EventRegistrationsPage,
+      ),
   },
   {
     path: 'confirmation-compte',

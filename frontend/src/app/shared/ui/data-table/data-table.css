@@ -16,3 +16,21 @@ th {
   letter-spacing: 0.04em;
   color: #64748b;
 }
+
+th button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sort-indicator {
+  font-size: 0.7rem;
+}

@@ -8,6 +8,7 @@ import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.MyRegistrationDto;
+import fr.CDA.GHE.dto.OrganizerEventDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
@@ -169,6 +170,28 @@ public class EventService {
                 sportEvents,
                 pastEvents
         );
+    }
+
+    /**
+     * Retourne tous les événements créés par l'organisateur actuellement authentifié, tous
+     * statuts confondus (EVT-05 — contrairement à {@link #getPublicEvents()}, réservé aux
+     * PUBLISHED/FINISHED), triés par date de début la plus récente en premier.
+     *
+     * @return les événements de l'organisateur, sous forme de cartes de gestion
+     */
+    @Transactional(readOnly = true)
+    public List<OrganizerEventDto> getMyEvents() {
+
+        User organizer = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        return eventRepository.findByOrganizer(organizer).stream()
+                .sorted(Comparator.comparing(Event::getStartDateTime).reversed())
+                .map(event -> eventMapper.toOrganizerDto(
+                        event,
+                        registrationRepository.countByEventAndStatus(event, RegistrationStatus.REGISTERED)
+                ))
+                .toList();
     }
 
     /**
