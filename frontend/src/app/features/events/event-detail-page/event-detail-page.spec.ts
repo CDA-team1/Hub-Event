@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Auth } from '../../../core/auth/auth';
+import { Confirmation } from '../../../core/dialog/confirmation';
 import { CommentDto, EventDetailResponse } from '../../../domain/event.model';
 import { EventDetailPage } from './event-detail-page';
 
@@ -183,7 +184,9 @@ describe('EventDetailPage', () => {
     expect(element.querySelector('.registration__status')?.textContent).toContain(
       'Vous êtes inscrit',
     );
-    expect(element.querySelector('.registration__button')).toBeNull();
+    expect(element.querySelector('.registration__button')?.textContent?.trim()).toBe(
+      'Se désinscrire',
+    );
     expect(element.querySelector('h1')?.textContent).toBe('Soirée jeux au café ludique');
   });
 
@@ -203,6 +206,220 @@ describe('EventDetailPage', () => {
 
     expect(element.querySelector('.registration__error')?.textContent).toBe(
       'Vous êtes déjà inscrit à cet événement.',
+    );
+  });
+  it("désinscrit l'utilisateur après confirmation puis recharge le détail", async () => {
+    connected = true;
+
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const element = await open('/evenements/5');
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: {
+        status: 'REGISTERED',
+        waitingPosition: null,
+      },
+    });
+    http.expectOne('/api/events/5/comments').flush([]);
+
+    await stable();
+
+    expect(element.querySelector('.registration__button')?.textContent?.trim()).toBe(
+      'Se désinscrire',
+    );
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    await flushPromises();
+    TestBed.tick();
+
+    const request = http.expectOne('/api/events/5/registrations/me');
+
+    expect(request.request.method).toBe('DELETE');
+
+    request.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+
+    await flushPromises();
+    TestBed.tick();
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: null,
+    });
+
+    await stable();
+
+    expect(element.querySelector('.registration__button')?.textContent?.trim()).toBe("S'inscrire");
+  });
+
+  it("ne désinscrit pas l'utilisateur si la confirmation est annulée", async () => {
+    connected = true;
+
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+
+    const element = await open('/evenements/5');
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: {
+        status: 'REGISTERED',
+        waitingPosition: null,
+      },
+    });
+    http.expectOne('/api/events/5/comments').flush([]);
+
+    await stable();
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    await flushPromises();
+    TestBed.tick();
+
+    expect(confirm).toHaveBeenCalledWith(
+      'Se désinscrire de « Soirée jeux au café ludique » ?',
+      'Se désinscrire',
+      'Annuler',
+    );
+
+    http.expectNone('/api/events/5/registrations/me');
+  });
+
+  it('affiche le message du back quand la désinscription est refusée', async () => {
+    connected = true;
+
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const element = await open('/evenements/5');
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: {
+        status: 'REGISTERED',
+        waitingPosition: null,
+      },
+    });
+    http.expectOne('/api/events/5/comments').flush([]);
+
+    await stable();
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    await flushPromises();
+    TestBed.tick();
+
+    http
+      .expectOne('/api/events/5/registrations/me')
+      .flush("Vous n'êtes pas inscrit à cet événement.", {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+    await flushPromises();
+    TestBed.tick();
+    await stable();
+
+    expect(element.querySelector('.registration__error')?.textContent).toBe(
+      "Vous n'êtes pas inscrit à cet événement.",
+    );
+  });
+  it("n'affiche pas le formulaire de commentaire à un visiteur", async () => {
+    const element = await openLoadedEvent();
+
+    expect(element.querySelector('app-comment-form')).toBeNull();
+  });
+
+  it('publie un commentaire puis recharge la liste', async () => {
+    connected = true;
+    const element = await openLoadedEvent();
+
+    const textarea = element.querySelector('app-comment-form textarea') as HTMLTextAreaElement;
+
+    textarea.value = 'Super événement !';
+    textarea.dispatchEvent(new Event('input'));
+    TestBed.tick();
+
+    element.querySelector<HTMLFormElement>('app-comment-form form')!.dispatchEvent(
+      new Event('submit', {
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    const request = http.expectOne('/api/comments');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      eventId: 5,
+      content: 'Super événement !',
+    });
+
+    request.flush(
+      {
+        id: 2,
+        eventId: 5,
+        authorDisplayName: 'Jean D.',
+        content: 'Super événement !',
+        createdAt: '2026-10-06T09:50:00',
+      },
+      { status: 201, statusText: 'Created' },
+    );
+
+    await flushPromises();
+    TestBed.tick();
+
+    http.expectOne('/api/events/5/comments').flush([
+      {
+        id: 2,
+        eventId: 5,
+        authorDisplayName: 'Jean D.',
+        content: 'Super événement !',
+        createdAt: '2026-10-06T09:50:00',
+      },
+    ]);
+
+    await stable();
+
+    expect((element.querySelector('app-comment-form textarea') as HTMLTextAreaElement).value).toBe(
+      '',
+    );
+    expect(element.textContent).toContain('Super événement !');
+  });
+
+  it('affiche le message du back quand le commentaire est refusé', async () => {
+    connected = true;
+    const element = await openLoadedEvent();
+
+    const textarea = element.querySelector('app-comment-form textarea') as HTMLTextAreaElement;
+
+    textarea.value = 'Mon commentaire';
+    textarea.dispatchEvent(new Event('input'));
+    TestBed.tick();
+
+    element.querySelector<HTMLFormElement>('app-comment-form form')!.dispatchEvent(
+      new Event('submit', {
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    http
+      .expectOne('/api/comments')
+      .flush('Votre compte doit être actif pour publier un commentaire.', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+    await flushPromises();
+    TestBed.tick();
+    await stable();
+
+    expect(element.querySelector('[role="alert"]')?.textContent).toContain(
+      'Votre compte doit être actif pour publier un commentaire.',
     );
   });
 });

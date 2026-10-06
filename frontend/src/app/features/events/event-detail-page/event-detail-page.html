@@ -46,6 +46,7 @@
         [pending]="registrationPending()"
         [errorMessage]="registrationError()"
         (registerClicked)="register()"
+        (unregisterClicked)="unregister()"
       />
     } @else {
       <p class="event__login-hint">
@@ -67,6 +68,15 @@
 
     <section class="event__section">
       <h2>Commentaires</h2>
+      @if (isConnected()) {
+        <app-comment-form (submitted)="addComment($event)" />
+        @if (commentSubmitting()) {
+          <p role="status">Publication du commentaire…</p>
+        }
+        @if (commentError()) {
+          <p role="alert">{{ commentError() }}</p>
+        }
+      }
       @if (comments.isLoading()) {
         <app-loading-state>Chargement des commentaires…</app-loading-state>
       } @else if (comments.error()) {

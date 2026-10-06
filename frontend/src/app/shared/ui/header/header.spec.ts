@@ -35,7 +35,7 @@ describe('Header', () => {
     expect(element.textContent).not.toContain('Administration');
   });
 
-  it("montre le menu Administration avec le lien Clubs à un admin", async () => {
+  it('montre le menu Administration avec le lien Clubs à un admin', async () => {
     signIn('ADMIN');
     const element = await render();
     expect(element.textContent).toContain('Administration');
@@ -52,5 +52,40 @@ describe('Header', () => {
     signIn('ORGANIZER');
     const element = await render();
     expect(element.querySelector('a[href="/mes-evenements"]')).not.toBeNull();
+  });
+  it('ouvre et ferme le menu mobile avec le bouton', async () => {
+    const fixture = TestBed.createComponent(Header);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const toggle = element.querySelector<HTMLButtonElement>('.header__toggle')!;
+    const menu = element.querySelector('.header__menu')!;
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(menu.classList.contains('header__menu--open')).toBe(false);
+
+    toggle.click();
+    await fixture.whenStable();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.classList.contains('header__menu--open')).toBe(true);
+
+    toggle.click();
+    await fixture.whenStable();
+
+    expect(menu.classList.contains('header__menu--open')).toBe(false);
+  });
+
+  it('referme le menu mobile quand on clique sur un lien', async () => {
+    const fixture = TestBed.createComponent(Header);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const menu = element.querySelector('.header__menu')!;
+
+    element.querySelector<HTMLButtonElement>('.header__toggle')!.click();
+    await fixture.whenStable();
+    element.querySelector<HTMLAnchorElement>('.header__nav a')!.click();
+    await fixture.whenStable();
+
+    expect(menu.classList.contains('header__menu--open')).toBe(false);
   });
 });

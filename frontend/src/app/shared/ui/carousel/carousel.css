@@ -1,7 +1,9 @@
+:host {
+  display: block;
+}
+
 .carousel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  position: relative;
 }
 
 .track {
@@ -22,16 +24,65 @@
 }
 
 .nav {
-  flex: 0 0 auto;
-  border: none;
-  background: transparent;
-  font-size: 1.75rem;
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font-size: 1.4rem;
   line-height: 1;
-  color: #94a3b8;
+  color: #475569;
   cursor: pointer;
-  padding: 0.5rem;
+  transform: translateY(-50%);
+}
+
+/* Sur grand écran, les flèches sont dans la marge latérale, à côté des cartes. */
+.prev {
+  left: -2.75rem;
+}
+
+.next {
+  right: -2.75rem;
 }
 
 .nav:hover:not(:disabled) {
-  color: #475569;
+  background: #fff;
+}
+
+.nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .slide {
+    display: flex;
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  /* Pas de place dans la marge : les flèches se placent de chaque côté de la carte centrée. */
+  .prev {
+    left: 0.5rem;
+  }
+
+  .next {
+    right: 0.5rem;
+  }
+}
+
+/* Grand écran : le carrousel épouse la largeur de ses cartes, pour que les flèches restent à côté d'elles. */
+@media (min-width: 641px) {
+  .carousel {
+    width: fit-content;
+    max-width: 100%;
+  }
 }
