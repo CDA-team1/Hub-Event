@@ -12,19 +12,8 @@ import {
   UpdateEventRequest
 } from '../../domain/event.model';
 import {firstValueFrom} from 'rxjs';
-import {API_URL} from '../http/api-url';
-
-function toSearchParams(criteria: EventSearchCriteria): Record<string, string> {
-  const params: Record<string, string> = {};
-  if (criteria.category) params['category'] = criteria.category;
-  if (criteria.minPrice !== undefined) params['minPrice'] = String(criteria.minPrice);
-  if (criteria.maxPrice !== undefined) params['maxPrice'] = String(criteria.maxPrice);
-  if (criteria.location) params['location'] = criteria.location;
-  if (criteria.startDate) params['startDate'] = criteria.startDate;
-  if (criteria.endDate) params['endDate'] = criteria.endDate;
-  if (criteria.keywords) params['keywords'] = criteria.keywords;
-  return params;
-}
+import { API_URL } from '../http/api-url';
+import { criteriaToParams } from '../../domain/event-search';
 
 export function isValidEventId(id: number): boolean {
   return Number.isInteger(id) && id > 0;
@@ -49,7 +38,7 @@ export class EventApi {
 
   search(criteria: Signal<EventSearchCriteria>) {
     return httpResource<EventCardDto[]>(
-      () => ({ url: `${this.apiUrl}/events/search`, params: toSearchParams(criteria()) }),
+      () => ({ url: `${this.apiUrl}/events/search`, params: criteriaToParams(criteria()) }),
       { defaultValue: [] },
     );
   }
