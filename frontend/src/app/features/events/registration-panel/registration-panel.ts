@@ -13,6 +13,7 @@ export class RegistrationPanel {
   readonly errorMessage = input('');
 
   readonly registerClicked = output<void>();
+  readonly unregisterClicked = output<void>();
 
   protected readonly isOpen = computed(() => this.event().status === 'PUBLISHED');
 }

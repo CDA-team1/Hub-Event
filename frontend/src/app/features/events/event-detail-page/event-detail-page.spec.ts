@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Auth } from '../../../core/auth/auth';
+import { Confirmation } from '../../../core/dialog/confirmation';
 import { CommentDto, EventDetailResponse } from '../../../domain/event.model';
 import { EventDetailPage } from './event-detail-page';
 
@@ -183,7 +184,9 @@ describe('EventDetailPage', () => {
     expect(element.querySelector('.registration__status')?.textContent).toContain(
       'Vous êtes inscrit',
     );
-    expect(element.querySelector('.registration__button')).toBeNull();
+    expect(element.querySelector('.registration__button')?.textContent?.trim()).toBe(
+      'Se désinscrire',
+    );
     expect(element.querySelector('h1')?.textContent).toBe('Soirée jeux au café ludique');
   });
 
@@ -203,6 +206,125 @@ describe('EventDetailPage', () => {
 
     expect(element.querySelector('.registration__error')?.textContent).toBe(
       'Vous êtes déjà inscrit à cet événement.',
+    );
+  });
+  it("désinscrit l'utilisateur après confirmation puis recharge le détail", async () => {
+    connected = true;
+
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const element = await open('/evenements/5');
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: {
+        status: 'REGISTERED',
+        waitingPosition: null,
+      },
+    });
+    http.expectOne('/api/events/5/comments').flush([]);
+
+    await stable();
+
+    expect(element.querySelector('.registration__button')?.textContent?.trim()).toBe(
+      'Se désinscrire',
+    );
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    await flushPromises();
+    TestBed.tick();
+
+    const request = http.expectOne('/api/events/5/registrations/me');
+
+    expect(request.request.method).toBe('DELETE');
+
+    request.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+
+    await flushPromises();
+    TestBed.tick();
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: null,
+    });
+
+    await stable();
+
+    expect(element.querySelector('.registration__button')?.textContent?.trim()).toBe("S'inscrire");
+  });
+
+  it("ne désinscrit pas l'utilisateur si la confirmation est annulée", async () => {
+    connected = true;
+
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+
+    const element = await open('/evenements/5');
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: {
+        status: 'REGISTERED',
+        waitingPosition: null,
+      },
+    });
+    http.expectOne('/api/events/5/comments').flush([]);
+
+    await stable();
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    await flushPromises();
+    TestBed.tick();
+
+    expect(confirm).toHaveBeenCalledWith(
+      'Se désinscrire de « Soirée jeux au café ludique » ?',
+      'Se désinscrire',
+      'Annuler',
+    );
+
+    http.expectNone('/api/events/5/registrations/me');
+  });
+
+  it('affiche le message du back quand la désinscription est refusée', async () => {
+    connected = true;
+
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const element = await open('/evenements/5');
+
+    http.expectOne('/api/events/5').flush({
+      ...DETAIL,
+      myRegistration: {
+        status: 'REGISTERED',
+        waitingPosition: null,
+      },
+    });
+    http.expectOne('/api/events/5/comments').flush([]);
+
+    await stable();
+
+    element.querySelector<HTMLButtonElement>('.registration__button')!.click();
+
+    await flushPromises();
+    TestBed.tick();
+
+    http
+      .expectOne('/api/events/5/registrations/me')
+      .flush("Vous n'êtes pas inscrit à cet événement.", {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+    await flushPromises();
+    TestBed.tick();
+    await stable();
+
+    expect(element.querySelector('.registration__error')?.textContent).toBe(
+      "Vous n'êtes pas inscrit à cet événement.",
     );
   });
   it("n'affiche pas le formulaire de commentaire à un visiteur", async () => {
