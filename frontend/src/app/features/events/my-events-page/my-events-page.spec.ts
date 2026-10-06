@@ -106,8 +106,10 @@ describe('MyEventsPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
 
-    // Publier, Supprimer, Voir les inscriptions (pas encore branchée) : trois boutons.
-    expect(element.querySelectorAll('app-action-button button')).toHaveLength(3);
+    // Publier, Supprimer : deux boutons. "Voir les inscriptions" reste un 3e lien, affiché
+    // pour tout évènement quel que soit son statut.
+    expect(element.querySelectorAll('app-action-button button')).toHaveLength(2);
+    expect(element.querySelectorAll('app-action-button a')).toHaveLength(1);
   });
 
   it('publie un évènement en brouillon et recharge la liste', async () => {
@@ -143,8 +145,9 @@ describe('MyEventsPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
 
-    // Terminer, Annuler, Voir les inscriptions (pas encore branchée) : trois boutons.
-    expect(element.querySelectorAll('app-action-button button')).toHaveLength(3);
+    // Terminer, Annuler : deux boutons. "Voir les inscriptions" reste le 3e lien.
+    expect(element.querySelectorAll('app-action-button button')).toHaveLength(2);
+    expect(element.querySelectorAll('app-action-button a')).toHaveLength(1);
   });
 
   it('supprime un évènement après confirmation et recharge la liste', async () => {

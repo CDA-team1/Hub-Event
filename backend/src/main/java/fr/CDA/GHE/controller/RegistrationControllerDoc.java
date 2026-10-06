@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+
 /**
  * Interface de documentation Swagger/OpenAPI du {@link RegistrationController}.
  * Voir {@link ClubControllerDoc} pour le détail du patron (séparation doc / mapping).
@@ -32,6 +34,21 @@ public interface RegistrationControllerDoc {
     })
     ResponseEntity<RegistrationDto> register(
             @Parameter(description = "Identifiant de l'évènement") Long eventId) throws FunctionalException;
+
+    @Operation(summary = "Liste les inscriptions à un évènement (organisateur)",
+            description = "Réservé à l'organisateur propriétaire de l'évènement (REG-04). "
+                    + "Retourne toutes les inscriptions (REGISTERED et WAITING_LIST), triées par date.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Inscriptions retournées avec succès",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RegistrationDto.class))),
+            @ApiResponse(responseCode = "401", description = "Authentification requise", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Vous n'êtes pas l'organisateur de cet évènement",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Évènement introuvable", content = @Content)
+    })
+    List<RegistrationDto> getRegistrations(
+            @Parameter(description = "Identifiant de l'évènement") Long eventId);
 
     @Operation(summary = "Se désinscrire d'un évènement",
             description = "Désinscrit l'utilisateur connecté de l'évènement donné. "

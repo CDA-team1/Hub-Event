@@ -12,6 +12,7 @@ export interface MyRegistrationDto {
 export interface RegistrationDto {
   id: number;
   eventId: number;
+  userId: number;
   userEmail: string;
   status: RegistrationStatus;
   registrationDate: string;
