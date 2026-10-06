@@ -54,6 +54,17 @@ export interface EventDetailResponse {
   gallery: ImageDto[];
 }
 
+export interface OrganizerEventDto {
+  id: number;
+  title: string;
+  category: Category;
+  startDateTime: string;
+  endDateTime: string | null;
+  status: EventStatus;
+  maxSeats: number;
+  registeredCount: number;
+}
+
 export interface EventDto {
   id: number;
   title: string;

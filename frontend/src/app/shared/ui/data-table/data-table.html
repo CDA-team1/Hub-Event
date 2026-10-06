@@ -2,7 +2,23 @@
   <thead>
     <tr>
       @for (column of columns(); track column.key) {
-        <th>{{ column.header }}</th>
+        @if (column.sortable) {
+          <th [attr.aria-sort]="ariaSort(column)">
+            <button type="button" (click)="onHeaderClick(column)">
+              {{ column.header }}
+              @switch (sortDirection(column)) {
+                @case ('asc') {
+                  <span class="sort-indicator">▲</span>
+                }
+                @case ('desc') {
+                  <span class="sort-indicator">▼</span>
+                }
+              }
+            </button>
+          </th>
+        } @else {
+          <th>{{ column.header }}</th>
+        }
       }
     </tr>
   </thead>

@@ -6,6 +6,7 @@ import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.ImageDto;
+import fr.CDA.GHE.dto.OrganizerEventDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import org.springframework.http.ResponseEntity;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -41,6 +42,29 @@ public interface EventControllerDoc {
               schema = @Schema(implementation = EventListDto.class)))
   })
   EventListDto getAll();
+
+  @Operation(
+      summary = "Retourne les événements de l'organisateur connecté (EVT-05)",
+      description = "Retourne tous les événements créés par l'organisateur connecté, tous "
+          + "statuts confondus (DRAFT, PUBLISHED, CANCELLED, FINISHED), triés par date de "
+          + "début la plus récente en premier.")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Événements de l'organisateur retournés avec succès",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = OrganizerEventDto.class))),
+      @ApiResponse(
+          responseCode = "401",
+          description = "Authentification requise",
+          content = @Content),
+      @ApiResponse(
+          responseCode = "403",
+          description = "Accès refusé : rôle ORGANIZER requis",
+          content = @Content)
+  })
+  List<OrganizerEventDto> getMine();
 
   @Operation(
       summary = "Retourne le détail d'un événement par son identifiant",

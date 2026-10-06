@@ -6,6 +6,7 @@ import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.ImageDto;
+import fr.CDA.GHE.dto.OrganizerEventDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.enums.EventStatus;
@@ -137,6 +138,67 @@ class EventControllerTest {
         .andExpect(jsonPath("$.pastEvents").isEmpty());
 
     verify(eventService).getPublicEvents();
+  }
+
+  /**
+   * Vérifie qu'un organisateur authentifié peut consulter ses propres événements (EVT-05).
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnMyEventsForOrganizer() throws Exception {
+
+    OrganizerEventDto draftEvent = new OrganizerEventDto(
+        1L,
+        "Brouillon",
+        Category.CULTURE,
+        LocalDateTime.of(2026, 12, 1, 10, 0),
+        null,
+        EventStatus.DRAFT,
+        50,
+        0L
+    );
+
+    when(eventService.getMyEvents()).thenReturn(List.of(draftEvent));
+
+    mockMvc.perform(get("/events/mine")
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].title").value("Brouillon"))
+        .andExpect(jsonPath("$[0].status").value("DRAFT"));
+
+    verify(eventService).getMyEvents();
+  }
+
+  /**
+   * Vérifie qu'un membre authentifié ne peut pas consulter la liste "mes événements".
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectMyEventsForMember() throws Exception {
+
+    mockMvc.perform(get("/events/mine")
+            .with(user("member@test.fr").roles("MEMBER")))
+        .andExpect(status().isForbidden());
+
+    verify(eventService, never()).getMyEvents();
+  }
+
+  /**
+   * Vérifie qu'un utilisateur non authentifié ne peut pas consulter "mes événements".
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldRejectMyEventsWithoutAuthentication() throws Exception {
+
+    mockMvc.perform(get("/events/mine"))
+        .andExpect(status().isUnauthorized());
+
+    verify(eventService, never()).getMyEvents();
   }
 
   /**
