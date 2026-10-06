@@ -1,6 +1,6 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { AccountApi } from '../../../core/accounts/account-api';
@@ -42,10 +42,6 @@ describe('MyAccountPage', () => {
     logout: ReturnType<typeof vi.fn>;
   };
 
-  let router: {
-    navigate: ReturnType<typeof vi.fn>;
-  };
-
   const stable = async () => {
     await TestBed.inject(ApplicationRef).whenStable();
   };
@@ -60,12 +56,9 @@ describe('MyAccountPage', () => {
       logout: vi.fn(),
     };
 
-    router = {
-      navigate: vi.fn().mockResolvedValue(true),
-    };
-
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         {
           provide: AccountApi,
           useValue: accountApi,
@@ -74,12 +67,12 @@ describe('MyAccountPage', () => {
           provide: Auth,
           useValue: auth,
         },
-        {
-          provide: Router,
-          useValue: router,
-        },
       ],
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   async function createPage() {
@@ -102,6 +95,15 @@ describe('MyAccountPage', () => {
 
     expect(element.textContent).toContain('Modifier mon compte');
     expect(element.textContent).toContain('Club de Test');
+  });
+
+  it("affiche un lien vers la demande d'anonymisation", async () => {
+    const { element } = await createPage();
+
+    const link = element.querySelector<HTMLAnchorElement>('a[href="/mon-compte/anonymisation"]');
+
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toContain("Demander l'anonymisation de mes données");
   });
 
   it('met à jour le compte sans changement de mot de passe', async () => {
@@ -163,6 +165,7 @@ describe('MyAccountPage', () => {
   });
 
   it('déconnecte après un changement d’email réussi', async () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const { component } = await createPage();
 
     component.update({
@@ -175,14 +178,16 @@ describe('MyAccountPage', () => {
     });
 
     expect(auth.logout).toHaveBeenCalledOnce();
-    expect(router.navigate).toHaveBeenCalledWith(['/connexion']);
+    expect(navigate).toHaveBeenCalledWith(['/connexion']);
   });
 
   it('revient à l’accueil lorsque l’utilisateur annule', async () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
     const { component } = await createPage();
 
     component.cancel();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(navigate).toHaveBeenCalledWith(['/']);
   });
 });

@@ -1,0 +1,90 @@
+.anonymization-page {
+  width: min(100% - 2rem, 1226px);
+  margin: 2rem auto;
+}
+
+.anonymization-page__content {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.anonymization-page__content h1 {
+  margin: 0;
+}
+
+.anonymization-page__explanation,
+.anonymization-page__warning {
+  padding: 1rem;
+  border-radius: 7px;
+  background: #f1f5f9;
+}
+
+.anonymization-page__explanation {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.anonymization-page__explanation p,
+.anonymization-page__warning p {
+  margin: 0;
+}
+
+.anonymization-page__warning ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.anonymization-page__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.anonymization-page__actions button {
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  cursor: pointer;
+}
+
+.anonymization-page__actions .anonymization-page__submit {
+  border-color: #64748b;
+  background: #64748b;
+  color: white;
+  font-weight: 600;
+}
+
+.anonymization-page__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.anonymization-page__error,
+.anonymization-page__success {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 7px;
+}
+
+.anonymization-page__error {
+  background: #fee2e2;
+}
+
+.anonymization-page__success {
+  background: #dcfce7;
+}
+
+@media (max-width: 700px) {
+  .anonymization-page {
+    margin: 1.25rem auto;
+  }
+
+  .anonymization-page__actions {
+    flex-direction: column;
+  }
+
+  .anonymization-page__actions button {
+    width: 100%;
+  }
+}

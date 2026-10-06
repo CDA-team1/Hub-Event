@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { AccountApi } from '../../../core/accounts/account-api';
 import { Auth } from '../../../core/auth/auth';
@@ -10,7 +10,7 @@ import { AccountForm } from './account-form/account-form';
 
 @Component({
   selector: 'app-my-account-page',
-  imports: [AccountForm],
+  imports: [AccountForm, RouterLink],
   templateUrl: './my-account-page.html',
   styleUrl: './my-account-page.css',
 })
