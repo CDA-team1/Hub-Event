@@ -18,6 +18,15 @@ export const routes: Routes = [
         (m) => m.EventDetailPage,
       ),
   },
+
+  {
+    path: 'recherche',
+    title: 'Recherche',
+    loadComponent: () =>
+      import('./features/events/event-search-page/event-search-page').then(
+        (m) => m.EventSearchPage,
+      ),
+  },
   {
     path: 'clubs',
     title: 'Clubs',
