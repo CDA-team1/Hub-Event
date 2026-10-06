@@ -1,10 +1,17 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, contentChildren, input } from '@angular/core';
+import { Component, contentChildren, input, output } from '@angular/core';
 import { Column } from './column';
 
 export interface DataTableColumn {
   readonly key: string;
   readonly header: string;
+  /** Rend l'en-tête cliquable ; le tri lui-même reste à la charge de l'appelant (voir `sort`). */
+  readonly sortable?: boolean;
+}
+
+export interface DataTableSort {
+  readonly key: string;
+  readonly direction: 'asc' | 'desc';
 }
 
 /**
@@ -17,6 +24,10 @@ export interface DataTableColumn {
  *   <ng-template appColumn="category" let-club><app-category-badge [category]="club.category" /></ng-template>
  * </app-data-table>
  * ```
+ * Tri (colonnes avec `sortable: true`) : le tableau affiche l'en-tête cliquable et la flèche
+ * du tri courant, mais ne trie jamais `rows` lui-même — il ne connaît pas la sémantique de `T`
+ * (ex. trier un statut par ordre alphabétique n'aurait pas de sens). C'est l'appelant qui
+ * possède l'état du tri et réordonne ses données en réponse à `(sortChanged)`.
  */
 @Component({
   selector: 'app-data-table',
@@ -28,10 +39,33 @@ export class DataTable<T> {
   readonly columns = input.required<DataTableColumn[]>();
   readonly rows = input.required<readonly T[]>();
   readonly trackBy = input<(row: T, index: number) => unknown>((_row, index) => index);
+  readonly sort = input<DataTableSort | null>(null);
+
+  readonly sortChanged = output<string>();
 
   private readonly cellTemplates = contentChildren(Column);
 
   protected templateFor(key: string) {
     return this.cellTemplates().find((column) => column.appColumn() === key)?.templateRef;
+  }
+
+  protected onHeaderClick(column: DataTableColumn): void {
+    this.sortChanged.emit(column.key);
+  }
+
+  protected sortDirection(column: DataTableColumn): 'asc' | 'desc' | null {
+    const sort = this.sort();
+    return sort?.key === column.key ? sort.direction : null;
+  }
+
+  protected ariaSort(column: DataTableColumn): 'ascending' | 'descending' | 'none' {
+    switch (this.sortDirection(column)) {
+      case 'asc':
+        return 'ascending';
+      case 'desc':
+        return 'descending';
+      default:
+        return 'none';
+    }
   }
 }

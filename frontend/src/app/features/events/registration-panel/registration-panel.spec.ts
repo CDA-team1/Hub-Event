@@ -28,11 +28,17 @@ describe('RegistrationPanel', () => {
   ) {
     const fixture = TestBed.createComponent(RegistrationPanel);
     fixture.componentRef.setInput('event', { ...EVENT, ...event });
+
     for (const [name, value] of Object.entries(inputs)) {
       fixture.componentRef.setInput(name, value);
     }
+
     await fixture.whenStable();
-    return { fixture, element: fixture.nativeElement as HTMLElement };
+
+    return {
+      fixture,
+      element: fixture.nativeElement as HTMLElement,
+    };
   }
 
   const button = (element: HTMLElement) =>
@@ -49,6 +55,7 @@ describe('RegistrationPanel', () => {
   it('émet registerClicked au clic sur le bouton', async () => {
     const { fixture, element } = await render();
     const emitted: void[] = [];
+
     fixture.componentInstance.registerClicked.subscribe(() => emitted.push(undefined));
 
     button(element)!.click();
@@ -74,26 +81,61 @@ describe('RegistrationPanel', () => {
     expect(button(element)?.disabled).toBe(true);
   });
 
-  it('affiche le statut inscrit à la place du bouton', async () => {
-    const myRegistration: MyRegistrationDto = { status: 'REGISTERED', waitingPosition: null };
+  it('affiche le statut inscrit avec le bouton Se désinscrire', async () => {
+    const myRegistration: MyRegistrationDto = {
+      status: 'REGISTERED',
+      waitingPosition: null,
+    };
 
     const { element } = await render({ myRegistration });
 
-    expect(button(element)).toBeNull();
     expect(element.querySelector('.registration__status')?.textContent).toContain(
       'Vous êtes inscrit',
     );
+    expect(button(element)?.textContent?.trim()).toBe('Se désinscrire');
   });
 
-  it("affiche la position en liste d'attente", async () => {
-    const myRegistration: MyRegistrationDto = { status: 'WAITING_LIST', waitingPosition: 3 };
+  it("affiche la position en liste d'attente avec le bouton Se désinscrire", async () => {
+    const myRegistration: MyRegistrationDto = {
+      status: 'WAITING_LIST',
+      waitingPosition: 3,
+    };
 
     const { element } = await render({ myRegistration });
 
-    expect(button(element)).toBeNull();
     const status = element.querySelector('.registration__status')?.textContent;
+
     expect(status).toContain("liste d'attente");
     expect(status).toContain('position 3');
+    expect(button(element)?.textContent?.trim()).toBe('Se désinscrire');
+  });
+
+  it('émet unregisterClicked au clic sur Se désinscrire', async () => {
+    const myRegistration: MyRegistrationDto = {
+      status: 'REGISTERED',
+      waitingPosition: null,
+    };
+
+    const { fixture, element } = await render({ myRegistration });
+    const emitted: void[] = [];
+
+    fixture.componentInstance.unregisterClicked.subscribe(() => emitted.push(undefined));
+
+    button(element)!.click();
+
+    expect(emitted).toHaveLength(1);
+  });
+
+  it('bloque le bouton Se désinscrire pendant une action en cours', async () => {
+    const myRegistration: MyRegistrationDto = {
+      status: 'REGISTERED',
+      waitingPosition: null,
+    };
+
+    const { element } = await render({ myRegistration }, { pending: true });
+
+    expect(button(element)?.textContent?.trim()).toBe('Se désinscrire');
+    expect(button(element)?.disabled).toBe(true);
   });
 
   it("affiche le message d'erreur reçu", async () => {
@@ -103,6 +145,7 @@ describe('RegistrationPanel', () => {
     );
 
     const error = element.querySelector('.registration__error');
+
     expect(error?.textContent).toBe('Vous êtes déjà inscrit à cet événement.');
     expect(error?.getAttribute('role')).toBe('alert');
   });

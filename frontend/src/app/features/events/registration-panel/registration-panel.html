@@ -7,6 +7,15 @@
         Vous êtes en liste d'attente (position {{ registration.waitingPosition }}).
       }
     </p>
+
+    <button
+      type="button"
+      class="registration__button"
+      [disabled]="pending()"
+      (click)="unregisterClicked.emit()"
+    >
+      Se désinscrire
+    </button>
   } @else {
     <button
       type="button"

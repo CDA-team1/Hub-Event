@@ -5,6 +5,7 @@ import fr.CDA.GHE.dto.EventCardDto;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.dto.ImageDto;
 import fr.CDA.GHE.dto.MyRegistrationDto;
+import fr.CDA.GHE.dto.OrganizerEventDto;
 import fr.CDA.GHE.entity.Event;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +37,26 @@ public class EventMapper {
         event.getNonAffiliatedPrice(),
         event.getCategory(),
         imageUrl
+    );
+  }
+
+  /**
+   * Convertit un événement en DTO de la page "Mes événements" de l'organisateur (EVT-05).
+   *
+   * @param event           événement à convertir
+   * @param registeredCount nombre de places occupées (inscriptions REGISTERED)
+   * @return DTO correspondant à l'événement, tous statuts confondus
+   */
+  public OrganizerEventDto toOrganizerDto(Event event, long registeredCount) {
+    return new OrganizerEventDto(
+        event.getId(),
+        event.getTitle(),
+        event.getCategory(),
+        event.getStartDateTime(),
+        event.getEndDateTime(),
+        event.getStatus(),
+        event.getMaxSeats(),
+        registeredCount
     );
   }
 

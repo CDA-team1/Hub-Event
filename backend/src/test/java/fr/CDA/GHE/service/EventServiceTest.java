@@ -5,6 +5,7 @@ import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDto;
+import fr.CDA.GHE.dto.OrganizerEventDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
@@ -982,6 +983,43 @@ class EventServiceTest {
     assertEquals(EventStatus.DRAFT, result.status());
 
     verify(eventRepository).save(any(Event.class));
+  }
+
+  /**
+   * Vérifie que "mes événements" retourne tous les statuts de l'organisateur connecté
+   * (y compris DRAFT et CANCELLED), triés par date de début la plus récente en premier, avec
+   * le nombre de places occupées.
+   */
+  @Test
+  void shouldReturnAllStatusesForMyEvents() {
+
+    User organizer = mock(User.class);
+    when(organizer.getUsername()).thenReturn("organizer@test.fr");
+    authenticateAs(organizer);
+
+    Event draft = createEvent(
+        "Brouillon", Category.CULTURE, EventStatus.DRAFT, LocalDateTime.of(2026, 12, 1, 10, 0)
+    );
+    Event published = createEvent(
+        "Publié", Category.SPORT, EventStatus.PUBLISHED, LocalDateTime.of(2026, 11, 1, 10, 0)
+    );
+
+    when(userRepository.findByEmail("organizer@test.fr")).thenReturn(Optional.of(organizer));
+    when(eventRepository.findByOrganizer(organizer)).thenReturn(List.of(draft, published));
+    when(registrationRepository.countByEventAndStatus(published, RegistrationStatus.REGISTERED))
+        .thenReturn(3L);
+    when(registrationRepository.countByEventAndStatus(draft, RegistrationStatus.REGISTERED))
+        .thenReturn(0L);
+
+    List<OrganizerEventDto> result = eventService.getMyEvents();
+
+    assertEquals(2, result.size());
+    assertEquals("Brouillon", result.get(0).title());
+    assertEquals(EventStatus.DRAFT, result.get(0).status());
+    assertEquals(0L, result.get(0).registeredCount());
+    assertEquals("Publié", result.get(1).title());
+    assertEquals(EventStatus.PUBLISHED, result.get(1).status());
+    assertEquals(3L, result.get(1).registeredCount());
   }
 
   /**
