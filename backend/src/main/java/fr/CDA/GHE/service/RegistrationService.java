@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -187,6 +188,34 @@ public class RegistrationService {
         if (freesASeat){
             promoteFirstWaitingListRegistration(event);
         }
+    }
+
+    /**
+     * Retourne les inscriptions à un évènement, à l'usage de son organisateur (REG-04).
+     * <p>
+     * Seul l'organisateur propriétaire de l'évènement peut consulter cette liste.
+     * </p>
+     *
+     * @param eventId identifiant de l'évènement concerné
+     * @return les inscriptions à cet évènement, triées par date d'inscription
+     */
+    @Transactional(readOnly = true)
+    public List<RegistrationDto> getRegistrationsForEvent(Long eventId) {
+
+        User currentUser = userRepository.findByEmail(CurrentUser.email())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+        if (!event.getOrganizer().getId().equals(currentUser.getId())) {
+            throw new ForbiddenException("Vous n'êtes pas autorisé à consulter les inscriptions de cet événement.");
+        }
+
+        return registrationRepository.findByEvent(event).stream()
+                .sorted(Comparator.comparing(Registration::getRegistrationDate))
+                .map(registrationMapper::toDto)
+                .toList();
     }
 
     private void promoteFirstWaitingListRegistration(Event event) {

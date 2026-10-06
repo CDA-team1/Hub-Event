@@ -73,6 +73,15 @@ export const routes: Routes = [
       import('./features/events/my-events-page/my-events-page').then((m) => m.MyEventsPage),
   },
   {
+    path: 'mes-evenements/:id/inscriptions',
+    title: 'Inscriptions',
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/event-registrations-page/event-registrations-page').then(
+        (m) => m.EventRegistrationsPage,
+      ),
+  },
+  {
     path: 'confirmation-compte',
     title: 'Confirmation du compte',
     loadComponent: () =>

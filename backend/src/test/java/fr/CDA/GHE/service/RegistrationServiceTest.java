@@ -8,6 +8,7 @@ import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.entity.enums.Role;
+import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.EventRepository;
@@ -112,6 +113,35 @@ class RegistrationServiceTest {
         assertThatThrownBy(() -> registrationService.register(event.getId()))
                 .isInstanceOf(FunctionalException.class);
         assertThat(registrationRepository.findByUser(member)).isEmpty();
+    }
+
+    @Test
+    void getRegistrationsForEvent_shouldReturnRegistrations_whenOrganizerIsOwner() throws FunctionalException {
+        User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        Event event = persistPublishedEvent(organizer);
+
+        authenticateAs(member);
+        registrationService.register(event.getId());
+
+        authenticateAs(organizer);
+        List<RegistrationDto> result = registrationService.getRegistrationsForEvent(event.getId());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).userEmail()).isEqualTo("member@test.com");
+        assertThat(result.get(0).userId()).isEqualTo(member.getId());
+    }
+
+    @Test
+    void getRegistrationsForEvent_shouldThrow_whenCurrentUserIsNotOwner() {
+        User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
+        User otherOrganizer = persistActiveUser("other@test.com", "Martin", "Lea");
+        Event event = persistPublishedEvent(organizer);
+
+        authenticateAs(otherOrganizer);
+
+        assertThatThrownBy(() -> registrationService.getRegistrationsForEvent(event.getId()))
+                .isInstanceOf(ForbiddenException.class);
     }
 
     private User persistActiveUser(String email, String lastName, String firstName) {

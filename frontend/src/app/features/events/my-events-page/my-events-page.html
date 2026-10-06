@@ -58,8 +58,12 @@
             />
           }
         }
-        <!-- Pas encore branchée : vue des inscriptions à venir sur une branche séparée. -->
-        <app-action-button icon="👥" label="Voir les inscriptions" level="neutral" />
+        <app-action-button
+          icon="👥"
+          label="Voir les inscriptions"
+          level="neutral"
+          [routerLink]="['/mes-evenements', event.id, 'inscriptions']"
+        />
       </div>
     </ng-template>
   </app-data-table>
