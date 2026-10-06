@@ -1,11 +1,23 @@
 :host {
   display: block;
+  padding: 0 2rem;
   background-color: #f6f1e9;
-  padding: 1.5rem 2rem;
 }
 
+app-loading-state,
+app-error-state {
+  margin-block: 1.5rem;
+}
+
+/* Les flèches du carrousel se placent à la hauteur de l'image de la carte (16/9, 260 px de large). */
+app-carousel {
+  --carousel-nav-top: 4.5rem;
+}
+
+/* Sections jointives, sur toute la largeur de l'écran : chacune porte son propre fondu. */
 section {
-  margin-bottom: 2rem;
+  margin-inline: -2rem;
+  padding: 2rem;
 }
 
 section h2 {
@@ -23,51 +35,35 @@ section h2 {
   gap: 1rem;
 }
 
-.past-events {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
 .past-events app-event-card {
   height: auto;
 }
 
-/* Test visuel : dégradé gris -> couleur de catégorie -> gris, centré sur le carrousel. */
-.section-culture,
-.section-sport,
-.section-leisure {
-  padding-block: 2rem;
-  margin-inline: -2rem;
-  padding-inline: 2rem;
-}
-
+/* Beige aux bords, couleur de la catégorie au centre de la section. */
 .section-culture {
-  background: linear-gradient(to bottom, transparent, rgb(40 146 195 / 25%) 50%, transparent);
+  background: linear-gradient(to bottom, transparent, rgb(40 146 195 / 40%) 50%, transparent);
 }
 
 .section-sport {
-  background: linear-gradient(to bottom, transparent, rgb(210 105 74 / 25%) 50%, transparent);
+  background: linear-gradient(to bottom, transparent, rgb(210 105 74 / 35%) 50%, transparent);
 }
 
 .section-leisure {
-  background: linear-gradient(to bottom, transparent, rgb(46 156 134 / 25%) 50%, transparent);
+  background: linear-gradient(to bottom, transparent, rgb(46 156 134 / 35%) 50%, transparent);
 }
 
 @media (max-width: 640px) {
   :host {
-    padding: 1rem;
+    padding: 0 1rem;
   }
 
-  .section-culture,
-  .section-sport,
-  .section-leisure {
-    padding-block: 1rem;
+  section {
     margin-inline: -1rem;
-    padding-inline: 1rem;
+    padding: 1rem;
   }
 
   .past-events {
     flex-direction: column;
+    align-items: center;
   }
 }
