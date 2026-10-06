@@ -205,4 +205,99 @@ describe('EventDetailPage', () => {
       'Vous êtes déjà inscrit à cet événement.',
     );
   });
+  it("n'affiche pas le formulaire de commentaire à un visiteur", async () => {
+    const element = await openLoadedEvent();
+
+    expect(element.querySelector('app-comment-form')).toBeNull();
+  });
+
+  it('publie un commentaire puis recharge la liste', async () => {
+    connected = true;
+    const element = await openLoadedEvent();
+
+    const textarea = element.querySelector('app-comment-form textarea') as HTMLTextAreaElement;
+
+    textarea.value = 'Super événement !';
+    textarea.dispatchEvent(new Event('input'));
+    TestBed.tick();
+
+    element.querySelector<HTMLFormElement>('app-comment-form form')!.dispatchEvent(
+      new Event('submit', {
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    const request = http.expectOne('/api/comments');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      eventId: 5,
+      content: 'Super événement !',
+    });
+
+    request.flush(
+      {
+        id: 2,
+        eventId: 5,
+        authorDisplayName: 'Jean D.',
+        content: 'Super événement !',
+        createdAt: '2026-10-06T09:50:00',
+      },
+      { status: 201, statusText: 'Created' },
+    );
+
+    await flushPromises();
+    TestBed.tick();
+
+    http.expectOne('/api/events/5/comments').flush([
+      {
+        id: 2,
+        eventId: 5,
+        authorDisplayName: 'Jean D.',
+        content: 'Super événement !',
+        createdAt: '2026-10-06T09:50:00',
+      },
+    ]);
+
+    await stable();
+
+    expect((element.querySelector('app-comment-form textarea') as HTMLTextAreaElement).value).toBe(
+      '',
+    );
+    expect(element.textContent).toContain('Super événement !');
+  });
+
+  it('affiche le message du back quand le commentaire est refusé', async () => {
+    connected = true;
+    const element = await openLoadedEvent();
+
+    const textarea = element.querySelector('app-comment-form textarea') as HTMLTextAreaElement;
+
+    textarea.value = 'Mon commentaire';
+    textarea.dispatchEvent(new Event('input'));
+    TestBed.tick();
+
+    element.querySelector<HTMLFormElement>('app-comment-form form')!.dispatchEvent(
+      new Event('submit', {
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    http
+      .expectOne('/api/comments')
+      .flush('Votre compte doit être actif pour publier un commentaire.', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+    await flushPromises();
+    TestBed.tick();
+    await stable();
+
+    expect(element.querySelector('[role="alert"]')?.textContent).toContain(
+      'Votre compte doit être actif pour publier un commentaire.',
+    );
+  });
 });

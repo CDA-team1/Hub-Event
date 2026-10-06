@@ -1,0 +1,25 @@
+<form class="comment-form" (submit)="onSubmit($event)" novalidate>
+  <label for="comment-content">Ajouter un commentaire</label>
+
+  <textarea
+    id="comment-content"
+    rows="4"
+    placeholder="Votre commentaire"
+    [formField]="commentForm.content"
+  ></textarea>
+
+  @if (commentForm.content().touched()) {
+    @for (error of commentForm.content().errors(); track error.kind) {
+      <p class="comment-form__error" role="alert">{{ error.message }}</p>
+    }
+  }
+
+  @if (blankError()) {
+    <p class="comment-form__error" role="alert">Veuillez saisir un commentaire.</p>
+  }
+
+  <div class="comment-form__actions">
+    <button type="submit">Valider</button>
+    <button type="button" (click)="cancel()">Annuler</button>
+  </div>
+</form>
