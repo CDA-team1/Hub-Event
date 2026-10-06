@@ -99,6 +99,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mon-compte/anonymisation',
+    title: "Demande d'anonymisation",
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/privacy/anonymization-request-page/anonymization-request-page').then(
+        (m) => m.AnonymizationRequestPage,
+      ),
+  },
+  {
     path: 'mon-compte',
     title: 'Modifier mon compte',
     canActivate: [authGuard],

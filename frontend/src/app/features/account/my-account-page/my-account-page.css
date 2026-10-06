@@ -34,8 +34,30 @@
   background: #dcfce7;
 }
 
+.my-account-page__anonymization {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.my-account-page__anonymization:hover {
+  background: #f1f5f9;
+}
+
 @media (max-width: 700px) {
   .my-account-page {
     padding: 1.25rem 1rem;
+  }
+
+  .my-account-page__anonymization {
+    box-sizing: border-box;
+    width: 100%;
+    justify-content: center;
   }
 }

@@ -25,6 +25,10 @@
           (cancelled)="cancel()"
         />
 
+        <a class="my-account-page__anonymization" routerLink="/mon-compte/anonymisation">
+          Demander l'anonymisation de mes données
+        </a>
+
         @if (saving()) {
           <p class="my-account-page__saving" role="status">Enregistrement en cours...</p>
         }
