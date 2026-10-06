@@ -19,6 +19,7 @@ export class Header {
 
   protected readonly isConnected = this.auth.isAuthenticated;
   protected readonly isAdmin = computed(() => this.auth.role() === 'ADMIN');
+  protected readonly isOrganizer = computed(() => this.auth.role() === 'ORGANIZER');
 
   protected async logout(): Promise<void> {
     this.auth.logout();

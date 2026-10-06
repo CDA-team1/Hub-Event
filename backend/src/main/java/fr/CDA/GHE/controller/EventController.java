@@ -8,6 +8,7 @@ import fr.CDA.GHE.dto.EventListDto;
 import fr.CDA.GHE.dto.EventSearchCriteria;
 import fr.CDA.GHE.dto.CreateEventRequest;
 import fr.CDA.GHE.dto.ImageDto;
+import fr.CDA.GHE.dto.OrganizerEventDto;
 import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -31,7 +32,8 @@ import java.util.List;
 /**
  * SEC-02 — Autorisations des routes évènements (voir {@link ClubController} pour les règles générales).
  * <p>
- * Les GET sont <strong>publics</strong> (liste des publiés, détail, recherche). La recherche
+ * Les GET sont <strong>publics</strong> (liste des publiés, détail, recherche), à l'exception de
+ * {@code GET /events/mine} (EVT-05, réservé à l'organisateur, tous statuts confondus). La recherche
  * ({@code GET /events/search}) est un endpoint distinct, non présent dans {@link EventControllerDoc}
  * (CU2, sans documentation Swagger dédiée).
  * <p>
@@ -82,6 +84,13 @@ public class EventController implements EventControllerDoc {
   @GetMapping
   public EventListDto getAll() {
     return eventService.getPublicEvents();
+  }
+
+  @Override
+  @Secured("ROLE_ORGANIZER")
+  @GetMapping("/mine")
+  public List<OrganizerEventDto> getMine() {
+    return eventService.getMyEvents();
   }
 
   /**

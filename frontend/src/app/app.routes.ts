@@ -66,6 +66,13 @@ export const routes: Routes = [
       import('./features/calendar/calendar-page/calendar-page').then((m) => m.CalendarPage),
   },
   {
+    path: 'mes-evenements',
+    title: 'Mes évènements',
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/my-events-page/my-events-page').then((m) => m.MyEventsPage),
+  },
+  {
     path: 'confirmation-compte',
     title: 'Confirmation du compte',
     loadComponent: () =>

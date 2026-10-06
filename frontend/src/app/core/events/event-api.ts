@@ -9,6 +9,7 @@ import {
   EventListDto,
   EventSearchCriteria,
   ImageDto,
+  OrganizerEventDto,
   UpdateEventRequest
 } from '../../domain/event.model';
 import {firstValueFrom} from 'rxjs';
@@ -38,6 +39,13 @@ export class EventApi {
   publicEvents() {
     return httpResource<EventListDto>(() => `${this.apiUrl}/events`, {
       defaultValue: {cultureEvents: [], leisureEvents: [], sportEvents: [], pastEvents: []},
+    });
+  }
+
+  /** Les évènements créés par l'organisateur connecté, tous statuts confondus (EVT-05). */
+  mine() {
+    return httpResource<OrganizerEventDto[]>(() => `${this.apiUrl}/events/mine`, {
+      defaultValue: [],
     });
   }
 

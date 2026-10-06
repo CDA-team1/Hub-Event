@@ -8,6 +8,9 @@
     @if (isConnected()) {
       <a routerLink="/mon-calendrier" routerLinkActive="active">Mon calendrier</a>
     }
+    @if (isOrganizer()) {
+      <a routerLink="/mes-evenements" routerLinkActive="active">Mes évènements</a>
+    }
     @if (isAdmin()) {
       <details class="admin-menu" #adminMenu>
         <summary>Administration</summary>

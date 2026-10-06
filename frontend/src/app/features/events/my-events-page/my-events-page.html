@@ -1,0 +1,73 @@
+<h1>Mes évènements</h1>
+
+@if (isLoading()) {
+  <app-loading-state>Chargement de vos évènements…</app-loading-state>
+} @else if (error()) {
+  <app-error-state>
+    <p>Impossible de charger vos évènements.</p>
+    <button actions type="button" (click)="reload()">Réessayer</button>
+  </app-error-state>
+} @else if (content().length === 0) {
+  <app-empty-state>
+    <p>Vous n'avez créé aucun évènement.</p>
+  </app-empty-state>
+} @else {
+  @if (actionError()) {
+    <p class="error" role="alert">{{ actionError() }}</p>
+  }
+
+  <app-data-table
+    [columns]="columns"
+    [rows]="pagedEvents()"
+    [trackBy]="trackByEventId"
+    [sort]="sort()"
+    (sortChanged)="onSortChanged($event)"
+  >
+    <ng-template appColumn="title" let-event>{{ event.title }}</ng-template>
+    <ng-template appColumn="category" let-event>
+      <app-category-badge [category]="event.category" />
+    </ng-template>
+    <ng-template appColumn="dates" let-event>
+      {{ event.startDateTime | date: 'd MMM y HH:mm' }}
+    </ng-template>
+    <ng-template appColumn="status" let-event>
+      <app-event-status-badge [status]="event.status" />
+    </ng-template>
+    <ng-template appColumn="seats" let-event>{{ event.registeredCount }} / {{ event.maxSeats }}</ng-template>
+    <ng-template appColumn="actions" let-event>
+      <div class="actions">
+        @if (event.status === 'DRAFT') {
+          <app-action-button icon="✅" label="Publier" level="success" (triggered)="publish(event)" />
+          <app-action-button
+            icon="🗑️"
+            label="Supprimer"
+            level="danger"
+            (triggered)="deleteEvent(event)"
+          />
+        }
+        @if (event.status === 'PUBLISHED') {
+          <app-action-button icon="🏁" label="Terminer" level="neutral" (triggered)="finish(event)" />
+          @if (event.registeredCount > 0) {
+            <app-action-button icon="❌" label="Annuler" level="danger" (triggered)="cancel(event)" />
+          } @else {
+            <app-action-button
+              icon="🗑️"
+              label="Supprimer"
+              level="danger"
+              (triggered)="deleteEvent(event)"
+            />
+          }
+        }
+        <!-- Pas encore branchée : vue des inscriptions à venir sur une branche séparée. -->
+        <app-action-button icon="👥" label="Voir les inscriptions" level="neutral" />
+      </div>
+    </ng-template>
+  </app-data-table>
+
+  <app-pagination
+    [page]="page()"
+    [size]="pageSize"
+    [totalElements]="totalElements()"
+    (pageChanged)="onPageChanged($event)"
+  />
+}
