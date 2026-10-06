@@ -85,6 +85,6 @@ describe('ClubApi', () => {
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
 
-    await expect(promise).resolves.toBeUndefined();
+    await expect(promise).resolves.toBeNull();
   });
 });

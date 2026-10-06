@@ -153,6 +153,7 @@ describe('ClubsListPage', () => {
     http
       .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/clubs/1'))
       .flush('Ce club est déjà supprimé.', { status: 400, statusText: 'Bad Request' });
+    await macrotask();
     await stable();
 
     expect(element.textContent).toContain('La suppression a échoué, réessayez.');
