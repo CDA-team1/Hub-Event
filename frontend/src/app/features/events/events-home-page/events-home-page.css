@@ -9,15 +9,10 @@ app-error-state {
   margin-block: 1.5rem;
 }
 
-/* Les flèches du carrousel se placent à la hauteur de l'image de la carte (16/9, 260 px de large). */
-app-carousel {
-  --carousel-nav-top: 4.5rem;
-}
-
 /* Sections jointives, sur toute la largeur de l'écran : chacune porte son propre fondu. */
 section {
   margin-inline: -2rem;
-  padding: 2rem;
+  padding: 2rem 3.5rem;
 }
 
 section h2 {
