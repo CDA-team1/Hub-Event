@@ -40,6 +40,20 @@
       </div>
     </dl>
 
+    <div class="event__pdf">
+      <button
+        type="button"
+        class="event__pdf-button"
+        [disabled]="pdfDownloading()"
+        (click)="downloadPdf()"
+      >
+        {{ pdfDownloading() ? 'Téléchargement…' : 'Télécharger la fiche PDF' }}
+      </button>
+      @if (pdfError()) {
+        <p class="event__pdf-error" role="alert">{{ pdfError() }}</p>
+      }
+    </div>
+
     @if (isConnected()) {
       <app-registration-panel
         [event]="current"

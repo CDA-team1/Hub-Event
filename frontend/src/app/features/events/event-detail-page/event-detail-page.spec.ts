@@ -327,6 +327,52 @@ describe('EventDetailPage', () => {
       "Vous n'êtes pas inscrit à cet événement.",
     );
   });
+
+  it('télécharge la fiche PDF au clic sur le bouton', async () => {
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:fiche');
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    try {
+      const element = await openLoadedEvent();
+
+      element.querySelector<HTMLButtonElement>('.event__pdf-button')!.click();
+
+      const request = http.expectOne('/api/events/5/pdf');
+      expect(request.request.method).toBe('GET');
+      expect(request.request.responseType).toBe('blob');
+      request.flush(new Blob(['pdf'], { type: 'application/pdf' }));
+      await flushPromises();
+
+      expect(click).toHaveBeenCalledTimes(1);
+      const link = click.mock.contexts[0] as HTMLAnchorElement;
+      expect(link.download).toBe('evenement-5.pdf');
+    } finally {
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('affiche un message quand le téléchargement du PDF échoue', async () => {
+    const element = await openLoadedEvent();
+
+    element.querySelector<HTMLButtonElement>('.event__pdf-button')!.click();
+
+    http
+      .expectOne('/api/events/5/pdf')
+      .flush(new Blob(['erreur']), { status: 500, statusText: 'Server Error' });
+    await flushPromises();
+    TestBed.tick();
+    await stable();
+
+    expect(element.querySelector('.event__pdf-error')?.textContent).toContain(
+      'Le téléchargement de la fiche PDF a échoué',
+    );
+  });
+
   it("n'affiche pas le formulaire de commentaire à un visiteur", async () => {
     const element = await openLoadedEvent();
 

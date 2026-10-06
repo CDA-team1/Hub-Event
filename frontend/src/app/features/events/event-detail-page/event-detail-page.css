@@ -42,3 +42,27 @@
   margin: 1.5rem 0 0;
   color: #64748b;
 }
+
+.event__pdf {
+  margin: 1.5rem 0 0;
+}
+
+.event__pdf-button {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.event__pdf-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.event__pdf-error {
+  margin: 0.5rem 0 0;
+  color: #d33f3f;
+}
