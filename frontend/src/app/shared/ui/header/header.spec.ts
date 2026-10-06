@@ -88,4 +88,9 @@ describe('Header', () => {
 
     expect(menu.classList.contains('header__menu--open')).toBe(false);
   });
+
+  it('montre le lien Rechercher à tout le monde', async () => {
+    const element = await render();
+    expect(element.querySelector('a[href="/recherche"]')).not.toBeNull();
+  });
 });
