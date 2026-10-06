@@ -45,6 +45,11 @@ export class ClubApi {
     return httpResource<ClubDto>(() => `${this.apiUrl}/clubs/${id()}`);
   }
 
+  /** Clubs actifs de l'organisateur connecté (EVT-06 : choix du club à la création d'un évènement). */
+  mine() {
+    return httpResource<ClubDto[]>(() => `${this.apiUrl}/clubs/mine`, { defaultValue: [] });
+  }
+
   async create(request: ClubFormRequest): Promise<ClubDto> {
     return firstValueFrom(this.http.post<ClubDto>(`${this.apiUrl}/clubs`, request));
   }

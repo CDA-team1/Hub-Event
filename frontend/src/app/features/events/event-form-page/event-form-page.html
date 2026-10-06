@@ -1,0 +1,25 @@
+<h1>{{ isEditMode ? "Modifier l'évènement" : 'Créer un évènement' }}</h1>
+
+@if (isLoading()) {
+  <app-loading-state>Chargement…</app-loading-state>
+} @else if (error()) {
+  <app-error-state>
+    <p>Impossible de charger les données nécessaires.</p>
+  </app-error-state>
+} @else if (ready()) {
+  @if (submitError()) {
+    <p class="error" role="alert">{{ submitError() }}</p>
+  }
+
+  @if (!isEditMode && availableClubs()?.length === 0) {
+    <p class="error">Vous devez être affilié à un club pour créer un évènement.</p>
+  } @else {
+    <app-event-form
+      [initialValue]="initialValue()"
+      [clubs]="availableClubs()"
+      [locked]="locked()"
+      (submitted)="onSubmitted($event)"
+      (cancelled)="onCancelled()"
+    />
+  }
+}

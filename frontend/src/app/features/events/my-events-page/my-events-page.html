@@ -1,5 +1,7 @@
 <h1>Mes évènements</h1>
 
+<a class="add-event" routerLink="/evenements/nouveau">Créer un évènement</a>
+
 @if (isLoading()) {
   <app-loading-state>Chargement de vos évènements…</app-loading-state>
 } @else if (error()) {
@@ -36,6 +38,12 @@
     <ng-template appColumn="seats" let-event>{{ event.registeredCount }} / {{ event.maxSeats }}</ng-template>
     <ng-template appColumn="actions" let-event>
       <div class="actions">
+        <app-action-button
+          icon="✏️"
+          label="Modifier"
+          level="primary"
+          [routerLink]="['/evenements', event.id, 'modifier']"
+        />
         @if (event.status === 'DRAFT') {
           <app-action-button icon="✅" label="Publier" level="success" (triggered)="publish(event)" />
           <app-action-button

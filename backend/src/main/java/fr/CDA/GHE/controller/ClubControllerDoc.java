@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 /**
  * Interface de documentation Swagger/OpenAPI du {@link ClubController}.
  * <p>
@@ -44,6 +46,23 @@ public interface ClubControllerDoc {
                     content = @Content)
     })
     PageDto<ClubDto> getAll(Pageable pageable);
+
+    /**
+     * Retourne les clubs actifs de l'organisateur connecté.
+     *
+     * @return les {@link ClubDto} des clubs actifs de l'organisateur
+     */
+    @Operation(summary = "Retourne les clubs actifs de l'organisateur connecté, réservé à l'organisateur",
+            description = "Utilisé pour choisir le club organisateur à la création d'un événement (EVT-06) : "
+                    + "les clubs désaffiliés (validityEndDate renseignée) ne sont pas inclus.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clubs actifs de l'organisateur",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ClubDto.class))),
+            @ApiResponse(responseCode = "401", description = "Authentification requise", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Rôle organisateur requis", content = @Content)
+    })
+    List<ClubDto> getMine();
 
     /**
      * Retourne un club par son identifiant.
