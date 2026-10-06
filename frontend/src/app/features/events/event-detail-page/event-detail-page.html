@@ -46,6 +46,7 @@
         [pending]="registrationPending()"
         [errorMessage]="registrationError()"
         (registerClicked)="register()"
+        (unregisterClicked)="unregister()"
       />
     } @else {
       <p class="event__login-hint">
