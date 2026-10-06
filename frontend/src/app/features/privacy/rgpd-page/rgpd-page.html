@@ -1,0 +1,19 @@
+<main class="rgpd-page">
+  <section class="rgpd-page__content" aria-labelledby="rgpd-title">
+    <h1 id="rgpd-title">Politique RGPD</h1>
+
+    @if (loading()) {
+      <app-loading-state> Chargement de la politique RGPD... </app-loading-state>
+    } @else if (errorMessage()) {
+      <app-error-state>
+        {{ errorMessage() }}
+
+        <button actions type="button" (click)="retry()">Réessayer</button>
+      </app-error-state>
+    } @else if (document(); as rgpd) {
+      <div class="rgpd-page__document">
+        {{ rgpd.content }}
+      </div>
+    }
+  </section>
+</main>

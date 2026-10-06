@@ -107,6 +107,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/privacy/cgu-page/cgu-page').then((m) => m.CguPage),
   },
   {
+    path: 'rgpd',
+    title: 'Politique RGPD',
+    loadComponent: () => import('./features/privacy/rgpd-page/rgpd-page').then((m) => m.RgpdPage),
+  },
+  {
     path: '**',
     title: 'Page introuvable',
     loadComponent: () =>
