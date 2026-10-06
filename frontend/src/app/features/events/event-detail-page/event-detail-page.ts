@@ -17,6 +17,7 @@ import { NotFoundPage } from '../../not-found/not-found-page/not-found-page';
 import { ImageGallery } from '../image-gallery/image-gallery';
 import { RegistrationPanel } from '../registration-panel/registration-panel';
 import { Confirmation } from '../../../core/dialog/confirmation';
+import { downloadBlob } from '../../../core/files/download-blob';
 
 /** Message à afficher pour une inscription refusée, tel que renvoyé par le back. */
 function registrationErrorMessage(error: unknown): string {
@@ -74,6 +75,8 @@ export class EventDetailPage {
   protected readonly registering = signal(false);
   protected readonly unregistering = signal(false);
   protected readonly registrationError = signal('');
+  protected readonly pdfDownloading = signal(false);
+  protected readonly pdfError = signal('');
 
   protected readonly commentSubmitting = signal(false);
   protected readonly commentError = signal('');
@@ -138,6 +141,19 @@ export class EventDetailPage {
       }
     } finally {
       this.unregistering.set(false);
+    }
+  }
+
+  protected async downloadPdf(): Promise<void> {
+    this.pdfError.set('');
+    this.pdfDownloading.set(true);
+
+    try {
+      downloadBlob(await this.eventApi.getPdf(this.id()), `evenement-${this.id()}.pdf`);
+    } catch {
+      this.pdfError.set('Le téléchargement de la fiche PDF a échoué, réessayez.');
+    } finally {
+      this.pdfDownloading.set(false);
     }
   }
 
