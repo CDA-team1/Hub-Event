@@ -48,4 +48,26 @@ describe('LegalDocumentApi', () => {
 
     request.flush(response);
   });
+
+  it('enregistre un document légal', () => {
+    const response: LegalDocumentDto = {
+      id: 2,
+      type: 'RGPD',
+      content: 'Nouvelle politique RGPD',
+      updatedAt: '2026-10-07T13:40:00',
+    };
+
+    service.upsert('RGPD', 'Nouvelle politique RGPD').subscribe((document) => {
+      expect(document).toEqual(response);
+    });
+
+    const request = httpTesting.expectOne('/api/admin/documents/RGPD');
+
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      content: 'Nouvelle politique RGPD',
+    });
+
+    request.flush(response);
+  });
 });

@@ -1,0 +1,41 @@
+<main class="legal-document-admin-page">
+  <section class="legal-document-admin-page__content">
+    <h1>{{ title }}</h1>
+
+    @if (loading()) {
+      <app-loading-state>Chargement du document...</app-loading-state>
+    } @else if (loadErrorMessage()) {
+      <app-error-state>
+        {{ loadErrorMessage() }}
+
+        <button actions type="button" (click)="retry()">Réessayer</button>
+      </app-error-state>
+    } @else {
+      @if (saveErrorMessage()) {
+        <app-error-state>
+          {{ saveErrorMessage() }}
+        </app-error-state>
+      }
+
+      <form (ngSubmit)="save()">
+        <div class="legal-document-admin-page__field">
+          <label for="content">Contenu</label>
+
+          <textarea id="content" rows="14" [formControl]="content"></textarea>
+
+          @if (content.touched && content.hasError('required')) {
+            <p class="legal-document-admin-page__error">Le contenu du document est obligatoire.</p>
+          }
+        </div>
+
+        <div class="legal-document-admin-page__actions">
+          <button type="submit" [disabled]="saving()">
+            {{ saving() ? 'Enregistrement...' : 'Valider' }}
+          </button>
+
+          <button type="button" [disabled]="saving()" (click)="cancel()">Annuler</button>
+        </div>
+      </form>
+    }
+  </section>
+</main>
