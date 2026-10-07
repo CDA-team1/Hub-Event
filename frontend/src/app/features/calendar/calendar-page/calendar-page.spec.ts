@@ -119,4 +119,65 @@ describe('CalendarPage', () => {
 
     expect(element.textContent).toContain('Concert');
   });
+
+  it('exporte la période affichée en Excel au clic sur le bouton', async () => {
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:calendrier');
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    try {
+      const fixture = TestBed.createComponent(CalendarPage);
+      TestBed.tick();
+      const calendarRequest = http.expectOne((req) => req.url.endsWith('/calendar'));
+      const from = calendarRequest.request.params.get('from');
+      const to = calendarRequest.request.params.get('to');
+      calendarRequest.flush([todayEvent(1, 'Concert')]);
+      await stable();
+
+      const element = fixture.nativeElement as HTMLElement;
+      const exportButton = element.querySelector<HTMLButtonElement>('.export')!;
+      exportButton.click();
+      TestBed.tick();
+
+      expect(exportButton.disabled).toBe(true);
+      expect(exportButton.textContent).toContain('Export en cours');
+
+      const request = http.expectOne((req) => req.url.endsWith('/calendar/export'));
+      expect(request.request.method).toBe('GET');
+      expect(request.request.responseType).toBe('blob');
+      expect(request.request.params.get('from')).toBe(from);
+      expect(request.request.params.get('to')).toBe(to);
+      request.flush(new Blob(['xlsx']));
+      await stable();
+
+      expect(click).toHaveBeenCalledTimes(1);
+      const link = click.mock.contexts[0] as HTMLAnchorElement;
+      expect(link.download).toBe(`calendrier-${from}-${to}.xlsx`);
+      expect(exportButton.disabled).toBe(false);
+    } finally {
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+      click.mockRestore();
+    }
+  });
+
+  it("affiche un message si l'export Excel échoue", async () => {
+    const fixture = TestBed.createComponent(CalendarPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/calendar')).flush([todayEvent(1, 'Concert')]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('.export')!.click();
+
+    http
+      .expectOne((req) => req.url.endsWith('/calendar/export'))
+      .flush(new Blob(['erreur']), { status: 500, statusText: 'Server Error' });
+    await stable();
+
+    expect(element.querySelector('.error')?.textContent).toContain("L'export Excel a échoué");
+    expect(element.querySelector<HTMLButtonElement>('.export')!.disabled).toBe(false);
+  });
 });

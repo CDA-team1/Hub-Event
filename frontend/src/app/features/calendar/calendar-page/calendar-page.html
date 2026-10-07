@@ -41,7 +41,15 @@
       (rangeChanged)="onRangeChanged($event)"
     />
   }
+
+  <button type="button" class="export" [disabled]="exporting()" (click)="exportExcel()">
+    {{ exporting() ? 'Export en cours…' : 'Export Excel' }}
+  </button>
 </section>
+
+@if (exportError()) {
+  <p class="error" role="alert">{{ exportError() }}</p>
+}
 
 @if (isLoading()) {
   <app-loading-state>Chargement du calendrier…</app-loading-state>
