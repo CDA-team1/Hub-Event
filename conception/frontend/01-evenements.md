@@ -12,21 +12,21 @@ connecté), 12 (mes événements), 13 (création/modification), 14 (suppression/
 
 ```
 EventsHomePage                    features/events · entrée : — (données via EventApi)
-├── Carousel × 3 (une par catégorie)     shared/ui
+├── Carousel × 3 (une par catégorie)     features/events/events-home-page
 │   └── EventCard × n                    shared/ui · entrées : event, showActions
 └── EmptyState                           shared/ui (si aucun événement publié)
 
 EventSearchPage                   features/events · entrée : query params (critères)
-├── SearchForm                    features/events · sortie : criteriaChanged
+├── SearchForm                    features/events/event-search-page · sortie : criteriaChanged
 ├── EventCard × n                 shared/ui
 └── EmptyState
 
 EventDetailPage                   features/events · entrée : id (paramètre de route)
 ├── StatusBadge, CategoryBadge    shared/ui · entrée : status / category
-├── ImageGallery                  features/events · entrée : images · sortie : imageAdded, imageRemoved (organisateur propriétaire uniquement)
-├── RegistrationPanel             features/events · entrées : event, myRegistration · sorties : registerClicked, unregisterClicked — voir 02
-├── CommentList / CommentForm     shared/ui · voir 02
-└── OwnerActions                  features/events · entrée : event · sorties : editClicked, publishClicked, finishClicked, cancelClicked, deleteClicked (visible seulement si organisateur propriétaire)
+├── ImageGallery                  features/events/event-detail-page · entrée : images · sortie : imageAdded, imageRemoved (organisateur propriétaire uniquement)
+├── RegistrationPanel             features/events/event-detail-page · entrées : event, myRegistration · sorties : registerClicked, unregisterClicked — voir 02
+├── CommentList / CommentForm     features/events/event-detail-page (CommentForm dans comment-list) · voir 02
+└── OwnerActions                  features/events/event-detail-page · entrée : event · sorties : editClicked, publishClicked, finishClicked, cancelClicked, deleteClicked (visible seulement si organisateur propriétaire)
 
 MyEventsPage                      features/events · entrée : — (événements de l'organisateur connecté)
 ├── StatusBadge × n                shared/ui
