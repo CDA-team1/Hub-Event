@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { EventDetailResponse } from '../../../domain/event.model';
+import { EventDetailResponse } from '../../../../domain/event.model';
 import { OwnerActions } from './owner-actions';
 
 const EVENT: EventDetailResponse = {

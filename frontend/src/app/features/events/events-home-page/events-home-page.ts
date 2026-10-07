@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { Carousel } from '../../../shared/ui/carousel/carousel';
+import { Carousel } from './carousel/carousel';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { EventCard } from '../../../shared/ui/event-card/event-card';

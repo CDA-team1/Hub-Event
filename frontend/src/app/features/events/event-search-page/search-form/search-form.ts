@@ -1,8 +1,8 @@
 import { Component, input, linkedSignal, output } from '@angular/core';
 import { FormField, form, submit, validate } from '@angular/forms/signals';
-import { Category } from '../../../domain/category';
-import { EventSearchCriteria } from '../../../domain/event.model';
-import { CategoryLabelPipe } from '../../../shared/pipes/category-label-pipe';
+import { Category } from '../../../../domain/category';
+import { EventSearchCriteria } from '../../../../domain/event.model';
+import { CategoryLabelPipe } from '../../../../shared/pipes/category-label-pipe';
 
 const CATEGORIES: Category[] = ['CULTURE', 'LEISURE', 'SPORT'];
 

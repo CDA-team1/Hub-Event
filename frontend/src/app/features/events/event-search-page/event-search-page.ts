@@ -9,7 +9,7 @@ import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { EventCard } from '../../../shared/ui/event-card/event-card';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
-import { SearchForm } from '../search-form/search-form';
+import { SearchForm } from './search-form/search-form';
 
 @Component({
   selector: 'app-event-search-page',
