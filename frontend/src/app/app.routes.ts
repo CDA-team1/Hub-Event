@@ -168,6 +168,15 @@ export const routes: Routes = [
       import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
   },
   {
+    path: 'admin/anonymisation',
+    title: "Demandes d'anonymisation",
+    canActivate: [roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/privacy/anonymization-admin-page/anonymization-admin-page').then(
+        (m) => m.AnonymizationAdminPage,
+      ),
+  },
+  {
     path: 'cgu',
     title: 'Conditions Générales d’Utilisation',
     loadComponent: () => import('./features/privacy/cgu-page/cgu-page').then((m) => m.CguPage),

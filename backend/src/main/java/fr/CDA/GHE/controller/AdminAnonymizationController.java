@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AnonymizationDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.AdminAnonymizationDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.service.AnonymizationRequestService;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +30,7 @@ public class AdminAnonymizationController implements AdminAnonymizationControlle
     @Override
     @Secured("ROLE_ADMIN")
     @GetMapping
-    public PageDto<AnonymizationDto> getAll(Pageable pageable) {
+    public PageDto<AdminAnonymizationDto> getAll(Pageable pageable) {
         return anonymizationRequestService.extractAll(pageable);
     }
 

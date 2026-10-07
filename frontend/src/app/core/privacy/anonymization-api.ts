@@ -1,9 +1,15 @@
-import { HttpClient } from '@angular/common/http';
-import { inject, Service } from '@angular/core';
+import { HttpClient, httpResource } from '@angular/common/http';
+import { inject, Service, Signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { AnonymizationDto } from '../../domain/anonymization.model';
+import { AdminAnonymizationDto, AnonymizationDto } from '../../domain/anonymization.model';
+import { PageDto } from '../../domain/page.model';
 import { API_URL } from '../http/api-url';
+
+export interface AnonymizationListParams {
+  readonly page: number;
+  readonly size: number;
+}
 
 @Service()
 export class AnonymizationApi {
@@ -13,6 +19,29 @@ export class AnonymizationApi {
   async createRequest(): Promise<AnonymizationDto> {
     return firstValueFrom(
       this.http.post<AnonymizationDto>(`${this.apiUrl}/anonymization-requests`, null),
+    );
+  }
+
+  listPending(params: Signal<AnonymizationListParams>) {
+    return httpResource<PageDto<AdminAnonymizationDto>>(
+      () => ({
+        url: `${this.apiUrl}/admin/anonymization`,
+        params: {
+          page: String(params().page),
+          size: String(params().size),
+        },
+      }),
+      {
+        defaultValue: {
+          content: [],
+          page: 0,
+          size: params().size,
+          totalElements: 0,
+          totalPages: 0,
+          first: true,
+          last: true,
+        },
+      },
     );
   }
 }

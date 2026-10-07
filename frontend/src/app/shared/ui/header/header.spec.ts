@@ -24,31 +24,33 @@ describe('Header', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it("ne montre pas le menu Administration à un visiteur non connecté", async () => {
+  it('ne montre pas le menu Administration à un visiteur non connecté', async () => {
     const element = await render();
     expect(element.textContent).not.toContain('Administration');
   });
 
-  it("ne montre pas le menu Administration à un membre", async () => {
+  it('ne montre pas le menu Administration à un membre', async () => {
     signIn('MEMBER');
     const element = await render();
     expect(element.textContent).not.toContain('Administration');
   });
 
-  it('montre le menu Administration avec le lien Clubs à un admin', async () => {
+  it("montre les liens d'administration à un admin", async () => {
     signIn('ADMIN');
     const element = await render();
+
     expect(element.textContent).toContain('Administration');
     expect(element.querySelector('a[href="/clubs"]')).not.toBeNull();
+    expect(element.querySelector('a[href="/admin/anonymisation"]')).not.toBeNull();
   });
 
-  it("ne montre pas le lien Mes évènements à un membre", async () => {
+  it('ne montre pas le lien Mes évènements à un membre', async () => {
     signIn('MEMBER');
     const element = await render();
     expect(element.textContent).not.toContain('Mes évènements');
   });
 
-  it("montre le lien Mes évènements à un organisateur", async () => {
+  it('montre le lien Mes évènements à un organisateur', async () => {
     signIn('ORGANIZER');
     const element = await render();
     expect(element.querySelector('a[href="/mes-evenements"]')).not.toBeNull();
