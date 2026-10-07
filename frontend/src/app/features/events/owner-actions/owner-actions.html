@@ -1,0 +1,63 @@
+<section class="owner-actions" aria-label="Gestion de l'événement">
+  <button
+    type="button"
+    class="owner-actions__button"
+    [disabled]="pending()"
+    (click)="editClicked.emit()"
+  >
+    Modifier
+  </button>
+
+  @if (isDraft()) {
+    <button
+      type="button"
+      class="owner-actions__button"
+      [disabled]="pending()"
+      (click)="publishClicked.emit()"
+    >
+      Publier
+    </button>
+    <button
+      type="button"
+      class="owner-actions__button owner-actions__button--danger"
+      [disabled]="pending()"
+      (click)="deleteClicked.emit()"
+    >
+      Supprimer
+    </button>
+  }
+
+  @if (isPublished()) {
+    <button
+      type="button"
+      class="owner-actions__button"
+      [disabled]="pending()"
+      (click)="finishClicked.emit()"
+    >
+      Terminer
+    </button>
+    @if (hasRegistrations()) {
+      <button
+        type="button"
+        class="owner-actions__button owner-actions__button--danger"
+        [disabled]="pending()"
+        (click)="cancelClicked.emit()"
+      >
+        Annuler l'événement
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="owner-actions__button owner-actions__button--danger"
+        [disabled]="pending()"
+        (click)="deleteClicked.emit()"
+      >
+        Supprimer
+      </button>
+    }
+  }
+
+  @if (errorMessage()) {
+    <p class="owner-actions__error" role="alert">{{ errorMessage() }}</p>
+  }
+</section>

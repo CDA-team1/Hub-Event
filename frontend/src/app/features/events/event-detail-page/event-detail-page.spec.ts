@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Auth } from '../../../core/auth/auth';
@@ -467,5 +467,160 @@ describe('EventDetailPage', () => {
     expect(element.querySelector('[role="alert"]')?.textContent).toContain(
       'Votre compte doit être actif pour publier un commentaire.',
     );
+  });
+
+  describe('actions du propriétaire', () => {
+    async function openOwnedEvent(overrides: Partial<EventDetailResponse> = {}) {
+      connected = true;
+      const element = await open('/evenements/5');
+      http.expectOne('/api/events/5').flush({ ...DETAIL, owner: true, ...overrides });
+      http.expectOne('/api/events/5/comments').flush([]);
+      await stable();
+      return element;
+    }
+
+    const ownerButtons = (element: HTMLElement) =>
+      Array.from(
+        element.querySelectorAll<HTMLButtonElement>('app-owner-actions .owner-actions__button'),
+      );
+
+    const labels = (element: HTMLElement) =>
+      ownerButtons(element).map((button) => button.textContent?.trim());
+
+    async function clickOwnerButton(element: HTMLElement, label: string) {
+      ownerButtons(element)
+        .find((button) => button.textContent?.trim() === label)!
+        .click();
+      await flushPromises();
+      TestBed.tick();
+    }
+
+    async function reloadWith(detail: EventDetailResponse) {
+      await flushPromises();
+      TestBed.tick();
+      http.expectOne('/api/events/5').flush(detail);
+      await stable();
+    }
+
+    it("n'affiche pas les actions de gestion à un utilisateur qui n'est pas propriétaire", async () => {
+      const element = await openOwnedEvent({ owner: false });
+
+      expect(element.querySelector('app-owner-actions')).toBeNull();
+    });
+
+    it('affiche les actions de gestion au propriétaire', async () => {
+      const element = await openOwnedEvent({ status: 'DRAFT' });
+
+      expect(labels(element)).toEqual(['Modifier', 'Publier', 'Supprimer']);
+    });
+
+    it('ouvre le formulaire de modification au clic sur Modifier', async () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const element = await openOwnedEvent();
+
+      await clickOwnerButton(element, 'Modifier');
+
+      expect(navigate).toHaveBeenCalledWith(['/evenements', 5, 'modifier']);
+    });
+
+    it("publie l'événement après confirmation puis recharge le détail", async () => {
+      const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+      const element = await openOwnedEvent({ status: 'DRAFT' });
+
+      await clickOwnerButton(element, 'Publier');
+
+      expect(confirm).toHaveBeenCalledWith(
+        "Publier l'évènement « Soirée jeux au café ludique » ? Il sera visible par tous les utilisateurs.",
+        'Publier',
+        'Annuler',
+      );
+
+      const request = http.expectOne('/api/events/5/publish');
+      expect(request.request.method).toBe('POST');
+      request.flush({});
+
+      await reloadWith({ ...DETAIL, owner: true, status: 'PUBLISHED' });
+
+      expect(labels(element)).toEqual(['Modifier', 'Terminer', 'Supprimer']);
+    });
+
+    it("ne publie pas l'événement si la confirmation est annulée", async () => {
+      vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+      const element = await openOwnedEvent({ status: 'DRAFT' });
+
+      await clickOwnerButton(element, 'Publier');
+
+      http.expectNone('/api/events/5/publish');
+    });
+
+    it("termine l'événement après confirmation puis recharge le détail", async () => {
+      vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+      const element = await openOwnedEvent({ status: 'PUBLISHED' });
+
+      await clickOwnerButton(element, 'Terminer');
+
+      const request = http.expectOne('/api/events/5/status');
+      expect(request.request.method).toBe('POST');
+      request.flush({});
+
+      await reloadWith({ ...DETAIL, owner: true, status: 'FINISHED' });
+
+      expect(labels(element)).toEqual(['Modifier']);
+    });
+
+    it("ouvre la page d'annulation au clic sur Annuler l'événement", async () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const element = await openOwnedEvent({ status: 'PUBLISHED', remainingSeats: 20 });
+
+      await clickOwnerButton(element, "Annuler l'événement");
+
+      expect(navigate).toHaveBeenCalledWith(['/mes-evenements', 5, 'annuler']);
+    });
+
+    it('ouvre la page de suppression au clic sur Supprimer', async () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const element = await openOwnedEvent({ status: 'DRAFT' });
+
+      await clickOwnerButton(element, 'Supprimer');
+
+      expect(navigate).toHaveBeenCalledWith(['/mes-evenements', 5, 'supprimer']);
+    });
+
+    it("affiche le message du back quand l'action est refusée", async () => {
+      vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+      const element = await openOwnedEvent({ status: 'DRAFT' });
+
+      await clickOwnerButton(element, 'Publier');
+
+      http.expectOne('/api/events/5/publish').flush('Cet événement ne peut pas être publié.', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+      await flushPromises();
+      TestBed.tick();
+      await stable();
+
+      expect(element.querySelector('.owner-actions__error')?.textContent).toBe(
+        'Cet événement ne peut pas être publié.',
+      );
+    });
+
+    it("affiche un message générique quand l'action échoue sans message du back", async () => {
+      vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+      const element = await openOwnedEvent({ status: 'DRAFT' });
+
+      await clickOwnerButton(element, 'Publier');
+
+      http
+        .expectOne('/api/events/5/publish')
+        .flush(null, { status: 500, statusText: 'Server Error' });
+      await flushPromises();
+      TestBed.tick();
+      await stable();
+
+      expect(element.querySelector('.owner-actions__error')?.textContent).toBe(
+        "L'action a échoué, réessayez.",
+      );
+    });
   });
 });
