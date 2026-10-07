@@ -69,6 +69,20 @@ describe('UsersListPage', () => {
     expect(element.textContent).toContain('alice@test.com');
   });
 
+  it('affiche les comptes dans la table dynamique avec l’action Modifier', async () => {
+    const fixture = TestBed.createComponent(UsersListPage);
+
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('app-data-table')).not.toBeNull();
+
+    const modifyAction = element.querySelector('app-action-button[label="Modifier"]');
+
+    expect(modifyAction).not.toBeNull();
+  });
+
   it('lit le rôle et la page depuis les query params', async () => {
     const router = TestBed.inject(Router);
 

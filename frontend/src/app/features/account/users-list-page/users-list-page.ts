@@ -4,11 +4,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AccountApi } from '../../../core/accounts/account-api';
 import { AccountDto } from '../../../domain/account.model';
 import { Role } from '../../../domain/role';
-import { AccountCard } from '../../../shared/ui/account-card/account-card';
+import { ActionButton } from '../../../shared/ui/action-button/action-button';
+import { Column } from '../../../shared/ui/data-table/column';
+import { DataTable, DataTableColumn } from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { RoleBadge } from '../../../shared/ui/role-badge/role-badge';
 
 function isRole(value: string | null): value is Role {
   return value === 'MEMBER' || value === 'ORGANIZER' || value === 'ADMIN';
@@ -16,7 +19,17 @@ function isRole(value: string | null): value is Role {
 
 @Component({
   selector: 'app-users-list-page',
-  imports: [AccountCard, EmptyState, ErrorState, LoadingState, Pagination, RouterLink],
+  imports: [
+    ActionButton,
+    Column,
+    DataTable,
+    EmptyState,
+    ErrorState,
+    LoadingState,
+    Pagination,
+    RoleBadge,
+    RouterLink,
+  ],
   templateUrl: './users-list-page.html',
   styleUrl: './users-list-page.css',
 })
@@ -33,6 +46,15 @@ export class UsersListPage {
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+
+  protected readonly columns: DataTableColumn[] = [
+    { key: 'lastName', header: 'Nom' },
+    { key: 'firstName', header: 'Prénom' },
+    { key: 'email', header: 'Email' },
+    { key: 'role', header: 'Rôle' },
+    { key: 'status', header: 'Statut' },
+    { key: 'actions', header: 'Actions' },
+  ];
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {

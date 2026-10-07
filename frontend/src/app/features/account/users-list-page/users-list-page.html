@@ -23,7 +23,7 @@
     </div>
 
     @if (loading()) {
-      <app-loading-state> Chargement des comptes... </app-loading-state>
+      <app-loading-state>Chargement des comptes...</app-loading-state>
     } @else if (errorMessage()) {
       <app-error-state>
         {{ errorMessage() }}
@@ -31,22 +31,50 @@
         <button actions type="button" (click)="reload()">Réessayer</button>
       </app-error-state>
     } @else if (users().length === 0) {
-      <app-empty-state> Aucun compte ne correspond à ce filtre. </app-empty-state>
+      <app-empty-state>Aucun compte ne correspond à ce filtre.</app-empty-state>
     } @else {
-      <div class="users-list-page__table-header" aria-hidden="true">
-        <span>Nom</span>
-        <span>Prénom</span>
-        <span>Email</span>
-        <span>Rôle</span>
-        <span>Statut</span>
-        <span>Actions</span>
-      </div>
+      <app-data-table [columns]="columns" [rows]="users()">
+        <ng-template appColumn="lastName" let-user>
+          {{ user.lastName }}
+        </ng-template>
 
-      <div class="users-list-page__list">
-        @for (user of users(); track user.id) {
-          <app-account-card [user]="user" />
-        }
-      </div>
+        <ng-template appColumn="firstName" let-user>
+          {{ user.firstName }}
+        </ng-template>
+
+        <ng-template appColumn="email" let-user>
+          {{ user.email }}
+        </ng-template>
+
+        <ng-template appColumn="role" let-user>
+          <app-role-badge [role]="user.role" />
+        </ng-template>
+
+        <ng-template appColumn="status" let-user>
+          @switch (user.status) {
+            @case ('ACTIVE') {
+              <span>Actif</span>
+            }
+            @case ('INACTIVE') {
+              <span>Inactif</span>
+            }
+            @case ('ANONYMIZED') {
+              <span>Anonymisé</span>
+            }
+          }
+        </ng-template>
+
+        <ng-template appColumn="actions" let-user>
+          <div class="actions">
+            <app-action-button
+              icon="✏️"
+              label="Modifier"
+              level="primary"
+              [routerLink]="['/admin/comptes', user.id]"
+            />
+          </div>
+        </ng-template>
+      </app-data-table>
 
       <app-pagination
         [page]="page()"
