@@ -96,6 +96,24 @@ export const routes: Routes = [
       import('./features/events/my-events-page/my-events-page').then((m) => m.MyEventsPage),
   },
   {
+    path: 'mes-evenements/:id/supprimer',
+    title: "Supprimer l'évènement",
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/event-delete-page/event-delete-page').then(
+        (m) => m.EventDeletePage,
+      ),
+  },
+  {
+    path: 'mes-evenements/:id/annuler',
+    title: "Annuler l'évènement",
+    canActivate: [roleGuard('ORGANIZER')],
+    loadComponent: () =>
+      import('./features/events/event-cancel-page/event-cancel-page').then(
+        (m) => m.EventCancelPage,
+      ),
+  },
+  {
     path: 'mes-evenements/:id/inscriptions',
     title: 'Inscriptions',
     canActivate: [roleGuard('ORGANIZER')],
