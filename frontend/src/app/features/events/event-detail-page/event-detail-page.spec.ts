@@ -568,19 +568,25 @@ describe('EventDetailPage', () => {
       expect(labels(element)).toEqual(['Modifier']);
     });
 
-    it("annule l'événement après confirmation puis recharge le détail", async () => {
-      vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+    it("annule l'événement après confirmation puis retourne sur Mes évènements", async () => {
+      const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       const element = await openOwnedEvent({ status: 'PUBLISHED', remainingSeats: 20 });
 
       await clickOwnerButton(element, "Annuler l'événement");
 
+      expect(confirm).toHaveBeenCalledWith(
+        "Annuler l'évènement « Soirée jeux au café ludique » ? Les inscrits en seront informés par email.",
+        "Oui, annuler l'évènement",
+        'Non, revenir',
+      );
+
       const request = http.expectOne('/api/events/5/cancel');
       expect(request.request.method).toBe('POST');
       request.flush({});
+      await flushPromises();
 
-      await reloadWith({ ...DETAIL, owner: true, status: 'CANCELLED', remainingSeats: 20 });
-
-      expect(labels(element)).toEqual(['Modifier']);
+      expect(navigate).toHaveBeenCalledWith(['/mes-evenements']);
     });
 
     it("supprime l'événement après confirmation puis retourne sur Mes évènements", async () => {

@@ -263,9 +263,10 @@ export class EventDetailPage {
       return;
     }
 
+    // Un événement annulé n'est plus consultable : retour à la liste.
     await this.runOwnerAction(
       () => this.eventApi.cancel(this.id()),
-      () => this.detail.reload(),
+      () => this.router.navigate(['/mes-evenements']),
     );
   }
 
