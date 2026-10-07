@@ -13,4 +13,8 @@ export class LegalDocumentApi {
   getByType(type: LegalDocumentType): Observable<LegalDocumentDto> {
     return this.http.get<LegalDocumentDto>(`${this.apiUrl}/documents/${type}`);
   }
+
+  upsert(type: LegalDocumentType, content: string): Observable<LegalDocumentDto> {
+    return this.http.put<LegalDocumentDto>(`${this.apiUrl}/admin/documents/${type}`, { content });
+  }
 }

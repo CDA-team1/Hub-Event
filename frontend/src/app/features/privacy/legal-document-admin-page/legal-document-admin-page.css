@@ -1,0 +1,84 @@
+.legal-document-admin-page {
+  width: min(100% - 2rem, 1226px);
+  margin: 2rem auto;
+}
+
+.legal-document-admin-page__content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.legal-document-admin-page__content h1 {
+  margin: 0;
+}
+
+.legal-document-admin-page form {
+  display: grid;
+  gap: 1rem;
+}
+
+.legal-document-admin-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.legal-document-admin-page__field label {
+  font-size: 0.875rem;
+}
+
+.legal-document-admin-page__field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 20rem;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font: inherit;
+  resize: vertical;
+}
+
+.legal-document-admin-page__error {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.legal-document-admin-page__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.legal-document-admin-page__actions button {
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  cursor: pointer;
+}
+
+.legal-document-admin-page__actions button[type='submit'] {
+  border-color: #64748b;
+  background: #64748b;
+  color: white;
+  font-weight: 600;
+}
+
+.legal-document-admin-page__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+  .legal-document-admin-page {
+    margin: 1.25rem auto;
+  }
+
+  .legal-document-admin-page__actions {
+    flex-direction: column;
+  }
+
+  .legal-document-admin-page__actions button {
+    width: 100%;
+  }
+}

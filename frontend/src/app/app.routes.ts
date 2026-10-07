@@ -177,6 +177,26 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'admin/rgpd',
+    title: 'Modifier la politique RGPD',
+    canActivate: [roleGuard('ADMIN')],
+    data: { legalDocumentType: 'RGPD' },
+    loadComponent: () =>
+      import('./features/privacy/legal-document-admin-page/legal-document-admin-page').then(
+        (m) => m.LegalDocumentAdminPage,
+      ),
+  },
+  {
+    path: 'admin/cgu',
+    title: 'Modifier les Conditions Générales d’Utilisation',
+    canActivate: [roleGuard('ADMIN')],
+    data: { legalDocumentType: 'CGU' },
+    loadComponent: () =>
+      import('./features/privacy/legal-document-admin-page/legal-document-admin-page').then(
+        (m) => m.LegalDocumentAdminPage,
+      ),
+  },
+  {
     path: 'cgu',
     title: 'Conditions Générales d’Utilisation',
     loadComponent: () => import('./features/privacy/cgu-page/cgu-page').then((m) => m.CguPage),

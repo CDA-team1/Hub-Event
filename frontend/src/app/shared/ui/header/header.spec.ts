@@ -42,6 +42,8 @@ describe('Header', () => {
     expect(element.textContent).toContain('Administration');
     expect(element.querySelector('a[href="/clubs"]')).not.toBeNull();
     expect(element.querySelector('a[href="/admin/anonymisation"]')).not.toBeNull();
+    expect(element.querySelector('a[href="/admin/rgpd"]')).not.toBeNull();
+    expect(element.querySelector('a[href="/admin/cgu"]')).not.toBeNull();
   });
 
   it('ne montre pas le lien Mes évènements à un membre', async () => {
