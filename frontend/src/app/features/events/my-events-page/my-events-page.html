@@ -50,19 +50,24 @@
             icon="🗑️"
             label="Supprimer"
             level="danger"
-            (triggered)="deleteEvent(event)"
+            [routerLink]="['/mes-evenements', event.id, 'supprimer']"
           />
         }
         @if (event.status === 'PUBLISHED') {
           <app-action-button icon="🏁" label="Terminer" level="neutral" (triggered)="finish(event)" />
           @if (event.registeredCount > 0) {
-            <app-action-button icon="❌" label="Annuler" level="danger" (triggered)="cancel(event)" />
+            <app-action-button
+              icon="❌"
+              label="Annuler"
+              level="danger"
+              [routerLink]="['/mes-evenements', event.id, 'annuler']"
+            />
           } @else {
             <app-action-button
               icon="🗑️"
               label="Supprimer"
               level="danger"
-              (triggered)="deleteEvent(event)"
+              [routerLink]="['/mes-evenements', event.id, 'supprimer']"
             />
           }
         }

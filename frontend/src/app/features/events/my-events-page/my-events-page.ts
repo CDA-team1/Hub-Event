@@ -138,30 +138,6 @@ export class MyEventsPage {
     await this.runAction(() => this.eventApi.finish(event.id));
   }
 
-  protected async cancel(event: OrganizerEventDto): Promise<void> {
-    const confirmed = await this.confirmation.confirm(
-      `Annuler l'évènement « ${event.title} » ? Les inscrits en seront informés par email.`,
-      "Oui, annuler l'évènement",
-      'Non, revenir',
-    );
-    if (!confirmed) {
-      return;
-    }
-    await this.runAction(() => this.eventApi.cancel(event.id));
-  }
-
-  protected async deleteEvent(event: OrganizerEventDto): Promise<void> {
-    const confirmed = await this.confirmation.confirm(
-      `Supprimer définitivement l'évènement « ${event.title} » ? Cette action est irréversible.`,
-      'Supprimer',
-      'Annuler',
-    );
-    if (!confirmed) {
-      return;
-    }
-    await this.runAction(() => this.eventApi.delete(event.id));
-  }
-
   private async runAction(action: () => Promise<unknown>): Promise<void> {
     this.actionError.set('');
     try {
