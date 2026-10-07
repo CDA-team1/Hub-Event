@@ -1,11 +1,27 @@
 .comment-form {
   display: grid;
   gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.comment-form label {
+  font-weight: 600;
 }
 
 .comment-form textarea {
   width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  color: var(--color-text);
   resize: vertical;
+}
+
+.comment-form textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .comment-form__actions {
@@ -13,6 +29,24 @@
   gap: 0.75rem;
 }
 
+.comment-form__actions button {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.comment-form__actions button[type='submit'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
 .comment-form__error {
   margin: 0;
+  color: #d33f3f;
 }
