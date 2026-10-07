@@ -138,4 +138,33 @@ describe('AnonymizationApi', () => {
     expect(resource.value().content[0].user.clubs[0].name).toBe('Club Test');
     expect(resource.value().totalElements).toBe(1);
   });
+
+  it("valide une demande d'anonymisation", async () => {
+    const validated: AnonymizationDto = {
+      id: 1,
+      user: {
+        id: 20,
+        lastName: 'ANONYMIZED',
+        firstName: 'ANONYMIZED',
+        postalAddress: 'ANONYMIZED',
+        email: 'anonymized@test.com',
+        phone: null,
+        status: 'ANONYMIZED',
+        role: 'MEMBER',
+      },
+      status: 'VALIDATED',
+      requestDate: '2026-10-07T10:00:00',
+    };
+
+    const result = service.validate(1);
+
+    const request = httpTesting.expectOne('/api/admin/anonymization/1/validate');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBeNull();
+
+    request.flush(validated);
+
+    await expect(result).resolves.toEqual(validated);
+  });
 });

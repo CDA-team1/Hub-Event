@@ -22,6 +22,12 @@ export class AnonymizationApi {
     );
   }
 
+  async validate(id: number): Promise<AnonymizationDto> {
+    return firstValueFrom(
+      this.http.post<AnonymizationDto>(`${this.apiUrl}/admin/anonymization/${id}/validate`, null),
+    );
+  }
+
   listPending(params: Signal<AnonymizationListParams>) {
     return httpResource<PageDto<AdminAnonymizationDto>>(
       () => ({
