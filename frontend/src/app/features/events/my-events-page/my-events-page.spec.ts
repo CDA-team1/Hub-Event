@@ -112,7 +112,9 @@ describe('MyEventsPage', () => {
     expect(element.querySelectorAll('app-action-button a')).toHaveLength(2);
   });
 
-  it('publie un évènement en brouillon et recharge la liste', async () => {
+  it('publie un évènement en brouillon après confirmation et recharge la liste', async () => {
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
     const fixture = TestBed.createComponent(MyEventsPage);
     TestBed.tick();
     http.expectOne((req) => req.url.endsWith('/events/mine')).flush([makeEvent()]);
@@ -132,7 +134,118 @@ describe('MyEventsPage', () => {
       .flush([makeEvent({ status: 'PUBLISHED' })]);
     await stable();
 
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Concert'), 'Publier', 'Annuler');
     expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Publié');
+  });
+
+  it("ne publie pas si on annule la confirmation", async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+
+    const fixture = TestBed.createComponent(MyEventsPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/events/mine')).flush([makeEvent()]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelectorAll<HTMLButtonElement>('app-action-button button')[0].click();
+    await stable();
+
+    expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Brouillon');
+  });
+
+  it("affiche le message du back si la publication n'est pas permise", async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(MyEventsPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/events/mine')).flush([makeEvent()]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelectorAll<HTMLButtonElement>('app-action-button button')[0].click();
+    await stable();
+
+    http
+      .expectOne((req) => req.method === 'POST' && req.url.endsWith('/events/1/publish'))
+      .flush('Cet événement ne peut pas être publié dans son état actuel.', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+    await macrotask();
+    await stable();
+
+    expect(element.textContent).toContain('Cet événement ne peut pas être publié dans son état actuel.');
+  });
+
+  it('termine un évènement publié après confirmation et recharge la liste', async () => {
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(MyEventsPage);
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/events/mine'))
+      .flush([makeEvent({ status: 'PUBLISHED' })]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelectorAll<HTMLButtonElement>('app-action-button button')[0].click();
+    await stable();
+
+    http
+      .expectOne((req) => req.method === 'POST' && req.url.endsWith('/events/1/status'))
+      .flush({});
+    await macrotask();
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/events/mine'))
+      .flush([makeEvent({ status: 'FINISHED' })]);
+    await stable();
+
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Concert'), 'Terminer', 'Annuler');
+    expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Terminé');
+  });
+
+  it("ne termine pas si on annule la confirmation", async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+
+    const fixture = TestBed.createComponent(MyEventsPage);
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/events/mine'))
+      .flush([makeEvent({ status: 'PUBLISHED' })]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelectorAll<HTMLButtonElement>('app-action-button button')[0].click();
+    await stable();
+
+    expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Publié');
+  });
+
+  it("affiche le message du back si le changement de statut n'est pas autorisé", async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(MyEventsPage);
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/events/mine'))
+      .flush([makeEvent({ status: 'PUBLISHED' })]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelectorAll<HTMLButtonElement>('app-action-button button')[0].click();
+    await stable();
+
+    http
+      .expectOne((req) => req.method === 'POST' && req.url.endsWith('/events/1/status'))
+      .flush('Ce changement de statut n’est pas autorisé.', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+    await macrotask();
+    await stable();
+
+    expect(element.textContent).toContain('Ce changement de statut n’est pas autorisé.');
   });
 
   it('propose Annuler (pas Supprimer) pour un évènement publié avec des inscrits', async () => {
@@ -186,7 +299,7 @@ describe('MyEventsPage', () => {
     expect(element.textContent).toContain('Concert');
   });
 
-  it("affiche une erreur si l'action échoue", async () => {
+  it("affiche le message du back quand l'action est refusée", async () => {
     vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
 
     const fixture = TestBed.createComponent(MyEventsPage);
@@ -201,6 +314,27 @@ describe('MyEventsPage', () => {
     http
       .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/events/1'))
       .flush('Cet évènement ne peut pas être supprimé.', { status: 400, statusText: 'Bad Request' });
+    await macrotask();
+    await stable();
+
+    expect(element.textContent).toContain('Cet évènement ne peut pas être supprimé.');
+  });
+
+  it("affiche un message générique quand l'erreur ne contient pas de message exploitable", async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(MyEventsPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/events/mine')).flush([makeEvent()]);
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelectorAll<HTMLButtonElement>('app-action-button button')[1].click();
+    await stable();
+
+    http
+      .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/events/1'))
+      .flush(null, { status: 500, statusText: 'Server Error' });
     await macrotask();
     await stable();
 
