@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { CommentDto } from '../../../domain/event.model';
+import { CommentDto } from '../../../../domain/event.model';
 import { CommentList } from './comment-list';
 
 describe('CommentList', () => {

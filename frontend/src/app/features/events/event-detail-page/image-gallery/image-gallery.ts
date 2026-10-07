@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-import { ImageDto } from '../../../domain/event.model';
+import { ImageDto } from '../../../../domain/event.model';
 
 @Component({
   selector: 'app-image-gallery',

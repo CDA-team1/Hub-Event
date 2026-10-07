@@ -52,7 +52,6 @@ présence ou non d'un `id` dans la route).
 | `EventCard` | `shared/ui` | `event`, `showActions` | `registerToggled(id)` | accueil, recherche, mes événements |
 | `ClubCard` | `shared/ui` | `club` | — | liste des clubs |
 | `AccountCard` | `shared/ui` | `user` | `suspendClicked(id)` | liste des comptes |
-| `Carousel` | `shared/ui` | `items`, `renderItem` (ng-template) | `indexChanged(i)` | accueil (mise en avant par catégorie) |
 | `StatusBadge` | `shared/ui` | `status` (EventStatus) | — | toutes les pages événement |
 | `CategoryBadge` | `shared/ui` | `category` | — | événements, clubs |
 | `RoleBadge` | `shared/ui` | `role` | — | comptes |
@@ -61,7 +60,11 @@ présence ou non d'un `id` dans la route).
 | `ErrorState` | `shared/ui` | `message`, `retry` (optionnel) | `retryClicked` | toutes les pages avec `httpResource` |
 | `ConfirmDialog` (service) | `core/dialog` | — | — (retourne une `Promise<boolean>`) | annulation/suppression d'événement, fin d'affiliation club, validation anonymisation |
 | `Pagination` | `shared/ui` | `page`, `totalPages` | `pageChanged(n)` | comptes, clubs, demandes d'anonymisation |
-| `CommentList` / `CommentForm` | `shared/ui` | `comments` / `eventId` | — / `commentAdded` | détail événement |
+
+Un composant utilisé par **une seule page** n'est pas dans `shared/` : il est rangé dans le
+dossier de cette page. Pour les événements : `Carousel` dans `events-home-page`, `SearchForm`
+dans `event-search-page`, `RegistrationPanel`, `OwnerActions`, `ImageGallery` et
+`CommentList` dans `event-detail-page`, et `CommentForm` dans `comment-list`.
 
 Deux décisions à commenter, dans l'esprit de la phase 04 :
 - `EventCard` ne sait pas si l'utilisateur est inscrit : elle reçoit l'état déjà calculé et

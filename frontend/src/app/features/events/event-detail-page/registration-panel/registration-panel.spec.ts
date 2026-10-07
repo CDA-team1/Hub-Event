@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { EventDetailResponse, MyRegistrationDto } from '../../../domain/event.model';
+import { EventDetailResponse, MyRegistrationDto } from '../../../../domain/event.model';
 import { RegistrationPanel } from './registration-panel';
 
 const EVENT: EventDetailResponse = {

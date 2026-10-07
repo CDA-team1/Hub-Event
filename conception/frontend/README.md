@@ -16,6 +16,7 @@ Sources utilisées :
 Pour chaque écran on répond aux quatre questions de la phase 04 :
 1. Qu'est-ce qui se répète ? → un composant, alimenté par une entrée.
 2. Qu'est-ce qui revient sur plusieurs écrans ? → `shared/`.
+   Un composant utilisé par une seule page reste dans le dossier de cette page.
 3. Qui détient la donnée ? → le composant le plus haut qui en a besoin, ou un service
    `core/` si plusieurs écrans la partagent.
 4. Qui décide ? → un composant d'affichage n'émet que des événements ; c'est toujours une
