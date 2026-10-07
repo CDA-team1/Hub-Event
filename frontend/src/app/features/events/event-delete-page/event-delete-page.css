@@ -1,0 +1,57 @@
+:host {
+  display: block;
+  padding: 1.5rem 2rem;
+}
+
+h1 {
+  margin: 0 0 1.5rem;
+}
+
+.confirm-panel {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.event-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.actions button {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.actions .confirm {
+  border-color: #d33f3f;
+  background: #d33f3f;
+  color: #fff;
+}
+
+.actions .confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0 0 1rem;
+  color: #d33f3f;
+}
+
+.note {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.875rem;
+}

@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -19,6 +20,14 @@ const PAGE_SIZE = 10;
 
 const CATEGORY_ORDER: Record<Category, number> = { CULTURE: 0, LEISURE: 1, SPORT: 2 };
 const STATUS_ORDER: Record<EventStatus, number> = { DRAFT: 0, PUBLISHED: 1, CANCELLED: 2, FINISHED: 3 };
+
+/** Message métier renvoyé par le back (ex. « Cet événement ne peut pas être publié… »), sinon générique. */
+function actionErrorMessage(error: unknown): string {
+  if (error instanceof HttpErrorResponse && typeof error.error === 'string') {
+    return error.error;
+  }
+  return "L'action a échoué, réessayez.";
+}
 
 type EventComparator = (a: OrganizerEventDto, b: OrganizerEventDto) => number;
 
@@ -106,35 +115,27 @@ export class MyEventsPage {
   }
 
   protected async publish(event: OrganizerEventDto): Promise<void> {
-    await this.runAction(() => this.eventApi.publish(event.id));
-  }
-
-  protected async finish(event: OrganizerEventDto): Promise<void> {
-    await this.runAction(() => this.eventApi.finish(event.id));
-  }
-
-  protected async cancel(event: OrganizerEventDto): Promise<void> {
     const confirmed = await this.confirmation.confirm(
-      `Annuler l'évènement « ${event.title} » ? Les inscrits en seront informés par email.`,
-      "Oui, annuler l'évènement",
-      'Non, revenir',
-    );
-    if (!confirmed) {
-      return;
-    }
-    await this.runAction(() => this.eventApi.cancel(event.id));
-  }
-
-  protected async deleteEvent(event: OrganizerEventDto): Promise<void> {
-    const confirmed = await this.confirmation.confirm(
-      `Supprimer définitivement l'évènement « ${event.title} » ? Cette action est irréversible.`,
-      'Supprimer',
+      `Publier l'évènement « ${event.title} » ? Il sera visible par tous les utilisateurs.`,
+      'Publier',
       'Annuler',
     );
     if (!confirmed) {
       return;
     }
-    await this.runAction(() => this.eventApi.delete(event.id));
+    await this.runAction(() => this.eventApi.publish(event.id));
+  }
+
+  protected async finish(event: OrganizerEventDto): Promise<void> {
+    const confirmed = await this.confirmation.confirm(
+      `Terminer l'évènement « ${event.title} » ? Cette action est définitive : seules ses images resteront modifiables.`,
+      'Terminer',
+      'Annuler',
+    );
+    if (!confirmed) {
+      return;
+    }
+    await this.runAction(() => this.eventApi.finish(event.id));
   }
 
   private async runAction(action: () => Promise<unknown>): Promise<void> {
@@ -142,8 +143,8 @@ export class MyEventsPage {
     try {
       await action();
       this.events.reload();
-    } catch {
-      this.actionError.set("L'action a échoué, réessayez.");
+    } catch (error) {
+      this.actionError.set(actionErrorMessage(error));
     }
   }
 }
