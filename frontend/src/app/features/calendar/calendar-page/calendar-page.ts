@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { CalendarApi, DateRange } from '../../../core/calendar/calendar-api';
 import { Confirmation } from '../../../core/dialog/confirmation';
+import { downloadBlob } from '../../../core/files/download-blob';
 import { RegistrationApi } from '../../../core/registrations/registration-api';
 import {
   addDays,
@@ -67,6 +68,8 @@ export class CalendarPage {
   protected readonly page = signal(0);
   protected readonly pageSize = PAGE_SIZE;
   protected readonly unregisterError = signal('');
+  protected readonly exporting = signal(false);
+  protected readonly exportError = signal('');
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'title', header: 'Évènement' },
@@ -129,6 +132,21 @@ export class CalendarPage {
 
   protected reload(): void {
     this.calendar.reload();
+  }
+
+  /** Télécharge au format Excel la période actuellement affichée (CAL-02). */
+  protected async exportExcel(): Promise<void> {
+    this.exportError.set('');
+    this.exporting.set(true);
+    const range = this.range();
+
+    try {
+      downloadBlob(await this.calendarApi.exportExcel(range), `calendrier-${range.from}-${range.to}.xlsx`);
+    } catch {
+      this.exportError.set("L'export Excel a échoué, réessayez.");
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   protected async unregister(eventId: number, title: string): Promise<void> {
