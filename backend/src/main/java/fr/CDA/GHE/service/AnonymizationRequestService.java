@@ -2,6 +2,7 @@ package fr.CDA.GHE.service;
 
 import fr.CDA.GHE.dto.AnonymizationDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.AdminAnonymizationDto;
 import fr.CDA.GHE.entity.AnonymizationRequest;
 import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
@@ -40,6 +41,7 @@ public class AnonymizationRequestService {
     private final AnonymizationRequestRepository anonymizationRequestRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final UserService userService;
     private final AnonymizationRequestMapper anonymizationRequestMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -47,12 +49,15 @@ public class AnonymizationRequestService {
                                         UserRepository userRepository,
                                         EventRepository eventRepository,
                                         AnonymizationRequestMapper anonymizationRequestMapper,
-                                        PasswordEncoder passwordEncoder) {
+                                        PasswordEncoder passwordEncoder,
+                                        UserService userService
+) {
         this.anonymizationRequestRepository = anonymizationRequestRepository;
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
         this.anonymizationRequestMapper = anonymizationRequestMapper;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     /**
@@ -93,12 +98,30 @@ public class AnonymizationRequestService {
      * @return la page de demandes correspondante
      */
     @Transactional(readOnly = true)
-    public PageDto<AnonymizationDto> extractAll(Pageable pageable) {
-        Page<AnonymizationRequest> page = anonymizationRequestRepository.findAll(pageable);
-        List<AnonymizationDto> content = anonymizationRequestMapper.toDtoList(page.getContent());
-        return new PageDto<>(content, page.getNumber(), page.getSize(), page.getTotalElements(),
-                page.getTotalPages(), page.isFirst(), page.isLast());
-    }
+    public PageDto<AdminAnonymizationDto> extractAll(Pageable pageable) {
+        Page<AnonymizationRequest> page =
+            anonymizationRequestRepository.findByStatus(RequestStatus.PENDING, pageable);
+
+        List<AdminAnonymizationDto> content = page.getContent()
+            .stream()
+            .map(request -> new AdminAnonymizationDto(
+                    request.getId(),
+                    userService.extractById(request.getUser().getId()),
+                    request.getStatus(),
+                    request.getRequestDate()
+            ))
+            .toList();
+
+    return new PageDto<>(
+            content,
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.isFirst(),
+            page.isLast()
+    );
+}
 
     /**
      * Valide une demande d'anonymisation et anonymise le compte concerné (CU29, SFG §2.32).

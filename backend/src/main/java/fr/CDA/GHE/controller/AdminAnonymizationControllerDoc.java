@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.AnonymizationDto;
 import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.AdminAnonymizationDto;
 import fr.CDA.GHE.exception.FunctionalException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,8 +28,7 @@ public interface AdminAnonymizationControllerDoc {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PageDto.class)))
     })
-    PageDto<AnonymizationDto> getAll(Pageable pageable);
-
+        PageDto<AdminAnonymizationDto> getAll(Pageable pageable);
     @Operation(summary = "Valide une demande d'anonymisation",
             description = "Anonymise le compte de l'utilisateur concerné : données personnelles remplacées par "
                     + "des valeurs aléatoires, statut ANONYMIZED. Si l'utilisateur est organisateur, ses "
