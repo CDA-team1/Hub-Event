@@ -14,7 +14,7 @@ page dédiée, seulement des blocs de cette page et une page de gestion pour l'o
 ## Arbre des composants
 
 ```
-RegistrationPanel                 features/events · entrées : event, myRegistration
+RegistrationPanel                 features/events/event-detail-page · entrées : event, myRegistration
 │                                  · sorties : registerClicked, unregisterClicked
 └── (pas de sous-composant : juste un bouton + l'affichage du statut/de la position en liste d'attente)
 
@@ -22,8 +22,8 @@ MemberUnregisterPage               features/events · entrée : id événement (
 ├── AccountCard × n (inscrits)     shared/ui
 └── CancelRegistrationForm         features/events · sortie : cancelled(userId, reason)
 
-CommentList                        shared/ui · entrée : comments
-CommentForm                        shared/ui · sortie : submitted(content)
+CommentList                        features/events/event-detail-page · entrée : comments
+CommentForm                        features/events/event-detail-page/comment-list · sortie : submitted(content)
 ```
 
 Décision à commenter : `RegistrationPanel` ne connaît pas les règles de statut (places

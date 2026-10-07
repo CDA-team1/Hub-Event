@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ImageDto } from '../../../domain/event.model';
+import { ImageDto } from '../../../../domain/event.model';
 import { ImageGallery } from './image-gallery';
 
 describe('ImageGallery', () => {

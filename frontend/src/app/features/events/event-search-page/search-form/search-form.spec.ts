@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { EventSearchCriteria } from '../../../domain/event.model';
+import { EventSearchCriteria } from '../../../../domain/event.model';
 import { SearchForm } from './search-form';
 
 describe('SearchForm', () => {

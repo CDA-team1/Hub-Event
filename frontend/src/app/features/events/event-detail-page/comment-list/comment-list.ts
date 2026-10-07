@@ -1,8 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { Component, input } from '@angular/core';
 
-import { CommentDto } from '../../../domain/event.model';
-import { EmptyState } from '../empty-state/empty-state';
+import { CommentDto } from '../../../../domain/event.model';
+import { EmptyState } from '../../../../shared/ui/empty-state/empty-state';
 
 @Component({
   selector: 'app-comment-list',

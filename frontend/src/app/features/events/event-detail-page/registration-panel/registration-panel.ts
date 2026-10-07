@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 
-import { EventDetailResponse } from '../../../domain/event.model';
+import { EventDetailResponse } from '../../../../domain/event.model';
 
 @Component({
   selector: 'app-registration-panel',
