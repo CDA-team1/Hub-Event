@@ -68,6 +68,19 @@
       </p>
     }
 
+    @if (current.owner) {
+      <app-owner-actions
+        [event]="current"
+        [pending]="ownerActionPending()"
+        [errorMessage]="ownerActionError()"
+        (editClicked)="edit()"
+        (publishClicked)="publish()"
+        (finishClicked)="finish()"
+        (cancelClicked)="cancel()"
+        (deleteClicked)="deleteEvent()"
+      />
+    }
+
     <section class="event__section">
       <h2>Description</h2>
       <p class="event__description">{{ current.description }}</p>
