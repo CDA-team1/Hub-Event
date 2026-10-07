@@ -568,40 +568,22 @@ describe('EventDetailPage', () => {
       expect(labels(element)).toEqual(['Modifier']);
     });
 
-    it("annule l'événement après confirmation puis retourne sur Mes évènements", async () => {
-      const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+    it("ouvre la page d'annulation au clic sur Annuler l'événement", async () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       const element = await openOwnedEvent({ status: 'PUBLISHED', remainingSeats: 20 });
 
       await clickOwnerButton(element, "Annuler l'événement");
 
-      expect(confirm).toHaveBeenCalledWith(
-        "Annuler l'évènement « Soirée jeux au café ludique » ? Les inscrits en seront informés par email.",
-        "Oui, annuler l'évènement",
-        'Non, revenir',
-      );
-
-      const request = http.expectOne('/api/events/5/cancel');
-      expect(request.request.method).toBe('POST');
-      request.flush({});
-      await flushPromises();
-
-      expect(navigate).toHaveBeenCalledWith(['/mes-evenements']);
+      expect(navigate).toHaveBeenCalledWith(['/mes-evenements', 5, 'annuler']);
     });
 
-    it("supprime l'événement après confirmation puis retourne sur Mes évènements", async () => {
-      vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+    it('ouvre la page de suppression au clic sur Supprimer', async () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       const element = await openOwnedEvent({ status: 'DRAFT' });
 
       await clickOwnerButton(element, 'Supprimer');
 
-      const request = http.expectOne('/api/events/5');
-      expect(request.request.method).toBe('DELETE');
-      request.flush(null, { status: 204, statusText: 'No Content' });
-      await flushPromises();
-
-      expect(navigate).toHaveBeenCalledWith(['/mes-evenements']);
+      expect(navigate).toHaveBeenCalledWith(['/mes-evenements', 5, 'supprimer']);
     });
 
     it("affiche le message du back quand l'action est refusée", async () => {

@@ -246,51 +246,12 @@ export class EventDetailPage {
     );
   }
 
-  protected async cancel(): Promise<void> {
-    const current = this.event();
-
-    if (!current) {
-      return;
-    }
-
-    const confirmed = await this.confirmation.confirm(
-      `Annuler l'évènement « ${current.title} » ? Les inscrits en seront informés par email.`,
-      "Oui, annuler l'évènement",
-      'Non, revenir',
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    // Un événement annulé n'est plus consultable : retour à la liste.
-    await this.runOwnerAction(
-      () => this.eventApi.cancel(this.id()),
-      () => this.router.navigate(['/mes-evenements']),
-    );
+  protected cancel(): void {
+    void this.router.navigate(['/mes-evenements', this.id(), 'annuler']);
   }
 
-  protected async deleteEvent(): Promise<void> {
-    const current = this.event();
-
-    if (!current) {
-      return;
-    }
-
-    const confirmed = await this.confirmation.confirm(
-      `Supprimer définitivement l'évènement « ${current.title} » ? Cette action est irréversible.`,
-      'Supprimer',
-      'Annuler',
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    await this.runOwnerAction(
-      () => this.eventApi.delete(this.id()),
-      () => this.router.navigate(['/mes-evenements']),
-    );
+  protected deleteEvent(): void {
+    void this.router.navigate(['/mes-evenements', this.id(), 'supprimer']);
   }
 
   private async runOwnerAction(
