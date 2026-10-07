@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 
+import { AdminAnonymizationDto } from '../../../domain/anonymization.model';
 import { AnonymizationApi } from '../../../core/privacy/anonymization-api';
 import { Column } from '../../../shared/ui/data-table/column';
 import { DataTable, DataTableColumn } from '../../../shared/ui/data-table/data-table';
@@ -7,17 +8,22 @@ import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { Confirmation } from '../../../core/dialog/confirmation';
+import { ActionButton } from '../../../shared/ui/action-button/action-button';
 
 const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-anonymization-admin-page',
-  imports: [Column, DataTable, EmptyState, ErrorState, LoadingState, Pagination],
+  imports: [ActionButton, Column, DataTable, EmptyState, ErrorState, LoadingState, Pagination],
   templateUrl: './anonymization-admin-page.html',
   styleUrl: './anonymization-admin-page.css',
 })
 export class AnonymizationAdminPage {
   private readonly anonymizationApi = inject(AnonymizationApi);
+  private readonly confirmation = inject(Confirmation);
+
+  protected readonly actionError = signal('');
 
   protected readonly page = signal(0);
   protected readonly pageSize = PAGE_SIZE;
@@ -29,6 +35,7 @@ export class AnonymizationAdminPage {
     { key: 'postalAddress', header: 'Adresse postale' },
     { key: 'clubs', header: 'Clubs affiliés' },
     { key: 'phone', header: 'Téléphone' },
+    { key: 'actions', header: 'Actions' },
   ];
 
   private readonly requests = this.anonymizationApi.listPending(
@@ -53,5 +60,26 @@ export class AnonymizationAdminPage {
 
   protected reload(): void {
     this.requests.reload();
+  }
+
+  protected async validateRequest(request: AdminAnonymizationDto): Promise<void> {
+    this.actionError.set('');
+
+    const confirmed = await this.confirmation.confirm(
+      `Valider la demande d'anonymisation de ${request.user.firstName} ${request.user.lastName} ? Cette action est irréversible.`,
+      'Valider',
+      'Annuler',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await this.anonymizationApi.validate(request.id);
+      this.requests.reload();
+    } catch {
+      this.actionError.set("La validation de la demande d'anonymisation a échoué. Réessayez.");
+    }
   }
 }

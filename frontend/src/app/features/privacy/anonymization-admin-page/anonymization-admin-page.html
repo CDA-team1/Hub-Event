@@ -1,6 +1,10 @@
 <main class="anonymization-admin-page">
   <h1>Demandes d'anonymisation</h1>
 
+  @if (actionError()) {
+    <p role="alert">{{ actionError() }}</p>
+  }
+
   <p>{{ totalElements() }} demande(s) en attente</p>
 
   @if (isLoading()) {
@@ -49,6 +53,15 @@
 
       <ng-template appColumn="phone" let-request>
         {{ request.user.phone ?? '—' }}
+      </ng-template>
+
+      <ng-template appColumn="actions" let-request>
+        <app-action-button
+          icon="✅"
+          label="Valider"
+          level="success"
+          (triggered)="validateRequest(request)"
+        />
       </ng-template>
     </app-data-table>
 

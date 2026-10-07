@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Confirmation } from '../../../core/dialog/confirmation';
 
 import { AdminAnonymizationDto } from '../../../domain/anonymization.model';
 import { PageDto } from '../../../domain/page.model';
@@ -55,6 +56,7 @@ describe('AnonymizationAdminPage', () => {
   let http: HttpTestingController;
 
   const stable = () => TestBed.inject(ApplicationRef).whenStable();
+  const macrotask = () => new Promise((resolve) => setTimeout(resolve));
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -212,5 +214,135 @@ describe('AnonymizationAdminPage', () => {
 
     expect(element.querySelector('app-error-state')).not.toBeNull();
     expect(element.textContent).toContain("Impossible de charger les demandes d'anonymisation.");
+  });
+
+  it('valide la demande après confirmation et recharge la liste', async () => {
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(AnonymizationAdminPage);
+    TestBed.tick();
+
+    http
+      .expectOne((req) => req.url.endsWith('/admin/anonymization'))
+      .flush(pageOf([makeRequest(1)]));
+
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+
+    element.querySelector<HTMLButtonElement>('button[aria-label="Valider"]')!.click();
+    await stable();
+
+    const validationRequest = http.expectOne(
+      (req) => req.method === 'POST' && req.url.endsWith('/admin/anonymization/1/validate'),
+    );
+
+    validationRequest.flush({
+      id: 1,
+      user: {
+        id: 20,
+        lastName: 'ANONYMIZED',
+        firstName: 'ANONYMIZED',
+        postalAddress: 'ANONYMIZED',
+        email: 'anonymized@test.com',
+        phone: null,
+        status: 'ANONYMIZED',
+        role: 'MEMBER',
+      },
+      status: 'VALIDATED',
+      requestDate: '2026-10-07T10:00:00',
+    });
+
+    await macrotask();
+    TestBed.tick();
+
+    http.expectOne((req) => req.url.endsWith('/admin/anonymization')).flush(pageOf([]));
+
+    await stable();
+
+    expect(confirm).toHaveBeenCalledWith(
+      expect.stringContaining('irréversible'),
+      'Valider',
+      'Annuler',
+    );
+
+    expect(element.querySelector('app-empty-state')).not.toBeNull();
+  });
+
+  it("ne valide pas la demande si l'administrateur annule la confirmation", async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(false);
+
+    const fixture = TestBed.createComponent(AnonymizationAdminPage);
+    TestBed.tick();
+
+    http
+      .expectOne((req) => req.url.endsWith('/admin/anonymization'))
+      .flush(pageOf([makeRequest(1)]));
+
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+
+    element.querySelector<HTMLButtonElement>('button[aria-label="Valider"]')!.click();
+
+    await stable();
+
+    expect(element.textContent).toContain('Doe');
+    expect(element.querySelector('button[aria-label="Valider"]')).not.toBeNull();
+  });
+
+  it('affiche une erreur si la validation échoue', async () => {
+    vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(AnonymizationAdminPage);
+    TestBed.tick();
+
+    http
+      .expectOne((req) => req.url.endsWith('/admin/anonymization'))
+      .flush(pageOf([makeRequest(1)]));
+
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+
+    element.querySelector<HTMLButtonElement>('button[aria-label="Valider"]')!.click();
+    await stable();
+
+    http
+      .expectOne(
+        (req) => req.method === 'POST' && req.url.endsWith('/admin/anonymization/1/validate'),
+      )
+      .flush('Erreur serveur', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+    await macrotask();
+    await stable();
+
+    expect(element.querySelector('[role="alert"]')?.textContent).toContain(
+      "La validation de la demande d'anonymisation a échoué. Réessayez.",
+    );
+  });
+
+  it('affiche le bouton Valider avec le niveau success', async () => {
+    const fixture = TestBed.createComponent(AnonymizationAdminPage);
+    TestBed.tick();
+
+    http
+      .expectOne((req) => req.url.endsWith('/admin/anonymization'))
+      .flush(pageOf([makeRequest(1)]));
+
+    await stable();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector(
+      'button[aria-label="Valider"]',
+    );
+
+    expect(button).not.toBeNull();
+
+    const actionButton = (fixture.nativeElement as HTMLElement).querySelector('app-action-button');
+
+    expect(actionButton).not.toBeNull();
   });
 });
