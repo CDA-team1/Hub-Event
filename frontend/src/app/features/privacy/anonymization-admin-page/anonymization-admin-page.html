@@ -22,6 +22,13 @@
     <app-data-table [columns]="columns" [rows]="content()">
       <ng-template appColumn="lastName" let-request>
         {{ request.user.lastName }}
+        <div class="request-meta">
+          <span>{{ request.user.firstName }}</span>
+          <span>{{ request.user.email }}</span>
+          <span>{{ request.user.postalAddress }}</span>
+          <span>Clubs : {{ clubNames(request) }}</span>
+          <span>{{ request.user.phone ?? '—' }}</span>
+        </div>
       </ng-template>
 
       <ng-template appColumn="firstName" let-request>

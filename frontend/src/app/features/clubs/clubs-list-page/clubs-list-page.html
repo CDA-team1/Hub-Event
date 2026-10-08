@@ -19,7 +19,14 @@
   }
 
   <app-data-table [columns]="columns" [rows]="content()">
-    <ng-template appColumn="name" let-club>{{ club.name }}</ng-template>
+    <ng-template appColumn="name" let-club>
+      {{ club.name }}
+      <div class="club-meta">
+        <span>{{ club.postalAddress }}</span>
+        <span>{{ club.email }}</span>
+        <span>{{ club.phone }}</span>
+      </div>
+    </ng-template>
     <ng-template appColumn="category" let-club>
       <app-category-badge [category]="club.category" />
     </ng-template>

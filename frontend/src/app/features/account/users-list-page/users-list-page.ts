@@ -13,6 +13,12 @@ import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
 import { RoleBadge } from '../../../shared/ui/role-badge/role-badge';
 
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Actif',
+  INACTIVE: 'Inactif',
+  ANONYMIZED: 'Anonymisé',
+};
+
 function isRole(value: string | null): value is Role {
   return value === 'MEMBER' || value === 'ORGANIZER' || value === 'ADMIN';
 }
@@ -49,12 +55,16 @@ export class UsersListPage {
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'lastName', header: 'Nom' },
-    { key: 'firstName', header: 'Prénom' },
-    { key: 'email', header: 'Email' },
+    { key: 'firstName', header: 'Prénom', hideOnSmall: true },
+    { key: 'email', header: 'Email', hideOnSmall: true },
     { key: 'role', header: 'Rôle' },
-    { key: 'status', header: 'Statut' },
+    { key: 'status', header: 'Statut', hideOnSmall: true },
     { key: 'actions', header: 'Actions' },
   ];
+
+  protected statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status;
+  }
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {

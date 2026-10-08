@@ -36,6 +36,11 @@
       <app-data-table [columns]="columns" [rows]="users()">
         <ng-template appColumn="lastName" let-user>
           {{ user.lastName }}
+          <div class="user-meta">
+            <span>{{ user.firstName }}</span>
+            <span>{{ user.email }}</span>
+            <span>{{ statusLabel(user.status) }}</span>
+          </div>
         </ng-template>
 
         <ng-template appColumn="firstName" let-user>

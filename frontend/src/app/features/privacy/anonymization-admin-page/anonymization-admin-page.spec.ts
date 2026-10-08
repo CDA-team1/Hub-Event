@@ -345,4 +345,21 @@ describe('AnonymizationAdminPage', () => {
 
     expect(actionButton).not.toBeNull();
   });
+
+  it('reprend les coordonnées et les clubs sous le nom', async () => {
+    const fixture = TestBed.createComponent(AnonymizationAdminPage);
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/admin/anonymization'))
+      .flush(pageOf([makeRequest(1)]));
+    await stable();
+
+    const meta = (fixture.nativeElement as HTMLElement).querySelector('tbody td .request-meta')!;
+
+    expect(meta.textContent).toContain('Jane');
+    expect(meta.textContent).toContain('jane.doe@test.com');
+    expect(meta.textContent).toContain('1 rue de Test');
+    expect(meta.textContent).toContain('Clubs : Club Alpha');
+    expect(meta.textContent).toContain('0600000000');
+  });
 });

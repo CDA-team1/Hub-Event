@@ -41,17 +41,19 @@ export class ClubsListPage {
   protected readonly columns: DataTableColumn[] = [
     { key: 'name', header: 'Nom' },
     { key: 'category', header: 'Catégorie' },
-    { key: 'address', header: 'Adresse' },
-    { key: 'email', header: 'Email' },
-    { key: 'phone', header: 'Téléphone' },
+    { key: 'address', header: 'Adresse', hideOnSmall: true },
+    { key: 'email', header: 'Email', hideOnSmall: true },
+    { key: 'phone', header: 'Téléphone', hideOnSmall: true },
     { key: 'actions', header: 'Actions' },
   ];
 
-  private readonly clubs = this.clubApi.list(computed(() => ({ page: this.page(), size: this.pageSize })));
+  private readonly clubs = this.clubApi.list(computed(() => ({ page: this.page(), size:
+    this.pageSize })));
 
   protected readonly isLoading = this.clubs.isLoading;
   protected readonly error = this.clubs.error;
-  protected readonly content = computed(() => (this.clubs.hasValue() ? this.clubs.value().content : []));
+  protected readonly content = computed(() => (this.clubs.hasValue() ? this.clubs.value().content
+    : []));
   protected readonly totalElements = computed(() =>
     this.clubs.hasValue() ? this.clubs.value().totalElements : 0,
   );

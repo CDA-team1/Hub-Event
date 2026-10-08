@@ -30,13 +30,19 @@ export class AnonymizationAdminPage {
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'lastName', header: 'Nom' },
-    { key: 'firstName', header: 'Prénom' },
-    { key: 'email', header: 'Email' },
-    { key: 'postalAddress', header: 'Adresse postale' },
-    { key: 'clubs', header: 'Clubs affiliés' },
-    { key: 'phone', header: 'Téléphone' },
+    { key: 'firstName', header: 'Prénom', hideOnSmall: true },
+    { key: 'email', header: 'Email', hideOnSmall: true },
+    { key: 'postalAddress', header: 'Adresse postale', hideOnSmall: true },
+    { key: 'clubs', header: 'Clubs affiliés', hideOnSmall: true },
+    { key: 'phone', header: 'Téléphone', hideOnSmall: true },
     { key: 'actions', header: 'Actions' },
   ];
+
+  protected clubNames(request: AdminAnonymizationDto): string {
+    return request.user.clubs.length === 0
+      ? 'Aucun'
+      : request.user.clubs.map((club) => club.name).join(', ');
+  }
 
   private readonly requests = this.anonymizationApi.listPending(
     computed(() => ({
