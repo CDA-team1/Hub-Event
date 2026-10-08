@@ -1,0 +1,42 @@
+<fieldset class="images" [disabled]="disabled()">
+  <legend>Images (facultatif)</legend>
+
+  @if (keptImages().length > 0 || pending().length > 0) {
+    <ul class="images__list">
+      @for (image of keptImages(); track image.id) {
+        <li class="images__item">
+          <img [src]="image.url" [alt]="'Photo ' + ($index + 1)" />
+          <button
+            type="button"
+            class="images__remove"
+            aria-label="Retirer cette photo"
+            (click)="removeExisting(image.id)"
+          >
+            ×
+          </button>
+        </li>
+      }
+      @for (item of pending(); track item.previewUrl) {
+        <li class="images__item images__item--new">
+          <img [src]="item.previewUrl" [alt]="item.file.name" />
+          <button
+            type="button"
+            class="images__remove"
+            [attr.aria-label]="'Retirer ' + item.file.name"
+            (click)="removePending(item)"
+          >
+            ×
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <input #picker type="file" accept="image/*" multiple hidden (change)="onFilesSelected($event)" />
+  <button type="button" class="images__browse" (click)="picker.click()">Parcourir</button>
+  <p class="images__hint">Images uniquement, {{ maxSizeMb }} Mo maximum par fichier.</p>
+
+  @if (error()) {
+    <p class="images__error" role="alert">{{ error() }}</p>
+  }
+</fieldset>
