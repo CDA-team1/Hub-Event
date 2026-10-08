@@ -18,7 +18,10 @@
       [initialValue]="initialValue()"
       [clubs]="availableClubs()"
       [locked]="locked()"
+      [images]="gallery()"
+      [saving]="saving()"
       (submitted)="onSubmitted($event)"
+      (imagesChanged)="onImagesChanged($event)"
       (cancelled)="onCancelled()"
     />
   }
