@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ClubDto } from '../../../../domain/club.model';
+import { ImageDto } from '../../../../domain/event.model';
 import { EventForm, EventFormValue } from './event-form';
+import { ImageChanges } from './event-images/event-images';
 
 function makeClub(id: number, name: string): ClubDto {
   return {
@@ -14,6 +16,11 @@ function makeClub(id: number, name: string): ClubDto {
     members: [],
   };
 }
+
+const IMAGES: ImageDto[] = [
+  { id: 5, eventId: 1, url: 'https://i.ibb.co/a/first.webp', isPreview: true },
+  { id: 6, eventId: 1, url: 'https://i.ibb.co/b/second.webp', isPreview: false },
+];
 
 describe('EventForm', () => {
   async function render(options: { initialValue?: EventFormValue; clubs?: ClubDto[] } = {}) {
@@ -152,7 +159,7 @@ describe('EventForm', () => {
     const emitted: void[] = [];
     fixture.componentInstance.cancelled.subscribe(() => emitted.push(undefined));
 
-    element.querySelector<HTMLButtonElement>('button[type="button"]')!.click();
+    element.querySelector<HTMLButtonElement>('.actions button[type="button"]')!.click();
 
     expect(emitted).toHaveLength(1);
   });
@@ -180,5 +187,66 @@ describe('EventForm', () => {
     expect(element.textContent).toContain(
       "Cet évènement est terminé : ses informations ne sont plus modifiables.",
     );
+  });
+
+  it("affiche les photos existantes dans le bloc d'images", async () => {
+    const { fixture, element } = await render();
+    fixture.componentRef.setInput('images', IMAGES);
+    await fixture.whenStable();
+
+    expect(element.querySelectorAll('app-event-images .images__item img')).toHaveLength(2);
+  });
+
+  it('relaie les modifications de photos via imagesChanged', async () => {
+    const { fixture, element } = await render();
+    fixture.componentRef.setInput('images', IMAGES);
+    await fixture.whenStable();
+    const emitted: ImageChanges[] = [];
+    fixture.componentInstance.imagesChanged.subscribe((changes) => emitted.push(changes));
+
+    element.querySelector<HTMLButtonElement>('.images__remove')!.click();
+
+    expect(emitted).toEqual([{ added: [], removedIds: [5] }]);
+  });
+
+  it("bloque Valider et le bloc d'images pendant l'enregistrement", async () => {
+    const { fixture, element } = await render();
+    fixture.componentRef.setInput('saving', true);
+    await fixture.whenStable();
+
+    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+    expect(element.querySelector('app-event-images fieldset')?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('garde Valider actif sur un évènement terminé quand une photo change', async () => {
+    const { fixture, element } = await render();
+    fixture.componentRef.setInput('locked', true);
+    fixture.componentRef.setInput('images', IMAGES);
+    await fixture.whenStable();
+    const valider = () => element.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+    expect(valider()?.disabled).toBe(true);
+    expect(element.textContent).toContain('Seules ses images peuvent encore être modifiées.');
+
+    element.querySelector<HTMLButtonElement>('.images__remove')!.click();
+    await fixture.whenStable();
+
+    expect(valider()?.disabled).toBe(false);
+  });
+
+  it('émet submitted sur un évènement terminé sans exiger les champs', async () => {
+    const { fixture, element } = await render();
+    fixture.componentRef.setInput('locked', true);
+    fixture.componentRef.setInput('images', IMAGES);
+    await fixture.whenStable();
+    const emitted: EventFormValue[] = [];
+    fixture.componentInstance.submitted.subscribe((value) => emitted.push(value));
+
+    element.querySelector<HTMLButtonElement>('.images__remove')!.click();
+    await fixture.whenStable();
+    submitForm(element);
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(emitted).toHaveLength(1);
   });
 });

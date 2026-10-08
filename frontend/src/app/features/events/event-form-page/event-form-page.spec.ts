@@ -234,7 +234,7 @@ describe('EventFormPage', () => {
       await stable();
       const element = fixture.nativeElement as HTMLElement;
 
-      element.querySelector<HTMLButtonElement>('button[type="button"]')!.click();
+      element.querySelector<HTMLButtonElement>('.actions button[type="button"]')!.click();
       await stable();
 
       expect(navigate).toHaveBeenCalledWith(['/mes-evenements']);
