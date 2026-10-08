@@ -226,7 +226,11 @@ describe('MyEventsPage', () => {
         .flush([makeEvent({ status: 'FINISHED' })]);
       await stable();
 
-      expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Concert'), 'Terminer', 'Annuler');
+      expect(confirm).toHaveBeenCalledWith(
+        expect.stringContaining('Concert'),
+        'Terminer',
+        'Annuler',
+      );
       expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Terminé');
     });
 
@@ -257,6 +261,53 @@ describe('MyEventsPage', () => {
       await stable();
 
       expect(element.textContent).toContain('Ce changement de statut n’est pas autorisé.');
+    });
+  });
+
+  describe('affichage sur petit écran', () => {
+    it('propose des boutons de tri par catégorie, dates et statut', async () => {
+      const element = await render([makeEvent()]);
+
+      const labels = Array.from(element.querySelectorAll('.sort-bar button')).map((button) =>
+        button.textContent?.trim(),
+      );
+
+      expect(labels).toEqual(['Catégorie', 'Dates', 'Statut']);
+    });
+
+    it('trie par date au clic sur le bouton de tri, et inverse au second clic', async () => {
+      const element = await render([
+        makeEvent({ id: 1, title: 'Plus tôt', startDateTime: '2026-11-01T10:00:00' }),
+        makeEvent({ id: 2, title: 'Plus tard', startDateTime: '2026-12-01T10:00:00' }),
+      ]);
+      const datesButton = Array.from(
+        element.querySelectorAll<HTMLButtonElement>('.sort-bar button'),
+      ).find((button) => button.textContent?.includes('Dates'))!;
+
+      datesButton.click();
+      await stable();
+
+      let rows = element.querySelectorAll('tbody tr');
+      expect(rows[0].textContent).toContain('Plus tôt');
+      expect(datesButton.classList.contains('active')).toBe(true);
+      expect(datesButton.textContent).toContain('▲');
+
+      datesButton.click();
+      await stable();
+
+      rows = element.querySelectorAll('tbody tr');
+      expect(rows[0].textContent).toContain('Plus tard');
+      expect(datesButton.textContent).toContain('▼');
+    });
+
+    it('reprend la catégorie, le statut et les places sous le titre', async () => {
+      const element = await render([makeEvent({ registeredCount: 3, maxSeats: 100 })]);
+
+      const meta = element.querySelector('tbody td .event-meta')!;
+
+      expect(meta.querySelector('app-category-badge')?.textContent?.trim()).toBe('Culture');
+      expect(meta.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Brouillon');
+      expect(meta.querySelector('.event-places')?.textContent?.trim()).toBe('3 / 100 places');
     });
   });
 });

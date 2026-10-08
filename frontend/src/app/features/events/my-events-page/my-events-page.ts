@@ -66,12 +66,15 @@ export class MyEventsPage {
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'title', header: 'Titre' },
-    { key: 'category', header: 'Catégorie', sortable: true },
+    { key: 'category', header: 'Catégorie', sortable: true, hideOnSmall: true },
     { key: 'dates', header: 'Dates', sortable: true },
-    { key: 'status', header: 'Statut', sortable: true },
-    { key: 'seats', header: 'Places' },
+    { key: 'status', header: 'Statut', sortable: true, hideOnSmall: true },
+    { key: 'seats', header: 'Places', hideOnSmall: true },
     { key: 'actions', header: 'Actions' },
   ];
+
+  /** Boutons de tri affichés sur petit écran, où les en-têtes des colonnes masquées disparaissent. */
+  protected readonly sortableColumns = this.columns.filter((column) => column.sortable);
 
   protected readonly trackByEventId = (event: OrganizerEventDto) => event.id;
 
