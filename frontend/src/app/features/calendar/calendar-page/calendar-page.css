@@ -80,3 +80,18 @@ app-data-table {
   margin-top: 1rem;
   color: #d33f3f;
 }
+
+@media (max-width: 640px) {
+  :host {
+    padding: 1rem;
+  }
+
+  .navigation {
+    flex: 1 1 100%;
+  }
+
+  .navigation p {
+    min-width: 0;
+    flex: 1;
+  }
+}
