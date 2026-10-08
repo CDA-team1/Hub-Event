@@ -175,4 +175,14 @@ describe('UsersListPage', () => {
     expect(meta.textContent).toContain('alice@test.com');
     expect(meta.textContent).toContain('Actif');
   });
+
+  it('affiche le tableau avec une grille complète', async () => {
+    const fixture = TestBed.createComponent(UsersListPage);
+
+    await stable();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+
+    expect(table.classList.contains('bordered')).toBe(true);
+  });
 });

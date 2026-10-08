@@ -36,12 +36,15 @@ export interface DataTableSort {
   imports: [NgTemplateOutlet],
   templateUrl: './data-table.html',
   styleUrl: './data-table.css',
+  host: { '[class.bordered]': 'bordered()' },
 })
 export class DataTable<T> {
   readonly columns = input.required<DataTableColumn[]>();
   readonly rows = input.required<readonly T[]>();
   readonly trackBy = input<(row: T, index: number) => unknown>((_row, index) => index);
   readonly sort = input<DataTableSort | null>(null);
+  /** Grille complète : cadre arrondi, en-tête grisé et traits entre les cellules. */
+  readonly bordered = input(false);
 
   readonly sortChanged = output<string>();
 

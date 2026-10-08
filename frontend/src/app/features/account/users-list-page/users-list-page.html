@@ -33,7 +33,7 @@
     } @else if (users().length === 0) {
       <app-empty-state>Aucun compte ne correspond à ce filtre.</app-empty-state>
     } @else {
-      <app-data-table [columns]="columns" [rows]="users()">
+      <app-data-table [columns]="columns" [rows]="users()" [bordered]="true">
         <ng-template appColumn="lastName" let-user>
           {{ user.lastName }}
           <div class="user-meta">

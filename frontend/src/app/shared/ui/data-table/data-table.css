@@ -35,6 +35,34 @@ th button {
   font-size: 0.7rem;
 }
 
+:host(.bordered) table {
+  border: 1px solid #c9c2b6;
+  border-radius: 0.75rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+:host(.bordered) th {
+  background: #eae7e3;
+}
+
+:host(.bordered) th,
+:host(.bordered) td {
+  border-right: 1px solid #c9c2b6;
+  border-bottom: 1px solid #c9c2b6;
+}
+
+:host(.bordered) th:last-child,
+:host(.bordered) td:last-child {
+  border-right: none;
+}
+
+:host(.bordered) tbody tr:last-child td {
+  border-bottom: none;
+}
+
 @media (max-width: 640px) {
   .hide-on-small {
     display: none;

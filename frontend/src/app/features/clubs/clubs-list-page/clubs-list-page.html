@@ -18,7 +18,7 @@
     <p class="error" role="alert">{{ deleteError() }}</p>
   }
 
-  <app-data-table [columns]="columns" [rows]="content()">
+  <app-data-table [columns]="columns" [rows]="content()" [bordered]="true">
     <ng-template appColumn="name" let-club>
       {{ club.name }}
       <div class="club-meta">
