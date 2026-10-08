@@ -1,7 +1,8 @@
 <form (submit)="save($event)" novalidate>
   @if (locked()) {
     <p class="locked-note">
-      Cet évènement est terminé : ses informations ne sont plus modifiables.
+      Cet évènement est terminé : ses informations ne sont plus modifiables. Seules ses images
+      peuvent encore être modifiées.
     </p>
   }
 
@@ -125,8 +126,15 @@
     </div>
   </div>
 
+  <app-event-images [images]="images()" [disabled]="saving()" (changed)="onImagesChanged($event)" />
+
   <div class="actions">
-    <button type="submit" [disabled]="eventForm().submitting() || locked()">Valider</button>
+    <button
+      type="submit"
+      [disabled]="eventForm().submitting() || saving() || (locked() && !hasImageChanges())"
+    >
+      Valider
+    </button>
     <button type="button" (click)="cancel()">Annuler</button>
   </div>
 </form>

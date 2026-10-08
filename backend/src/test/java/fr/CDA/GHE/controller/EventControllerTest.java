@@ -27,12 +27,14 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
@@ -1233,5 +1235,26 @@ class EventControllerTest {
 
     mockMvc.perform(get("/events/999/comments"))
         .andExpect(status().isNotFound());
+  }
+
+  /**
+   * Vérifie qu'un envoi d'images dépassant la taille maximale autorisée est refusé
+   * avec un 400 et un message exploitable par le front.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturnBadRequestWhenImageUploadIsTooLarge() throws Exception {
+
+    MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+
+    when(imageService.addImages(eq(100L), any()))
+            .thenThrow(new MaxUploadSizeExceededException(5L * 1024 * 1024));
+
+    mockMvc.perform(multipart("/events/100/images")
+                    .file(file)
+                    .with(user("organizer@test.fr").roles("ORGANIZER")))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string(containsString("trop volumineuses")));
   }
 }

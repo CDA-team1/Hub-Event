@@ -1,8 +1,10 @@
-import { Component, input, linkedSignal, output } from '@angular/core';
+import { Component, input, linkedSignal, output, signal } from '@angular/core';
 import { disabled, FormField, form, min, required, submit } from '@angular/forms/signals';
 import { Category } from '../../../../domain/category';
 import { ClubDto } from '../../../../domain/club.model';
+import { ImageDto } from '../../../../domain/event.model';
 import { CategoryLabelPipe } from '../../../../shared/pipes/category-label-pipe';
+import { EventImages, ImageChanges } from './event-images/event-images';
 
 const CATEGORIES: Category[] = ['CULTURE', 'LEISURE', 'SPORT'];
 
@@ -37,7 +39,7 @@ function emptyDraft(): EventFormValue {
 
 @Component({
   selector: 'app-event-form',
-  imports: [FormField, CategoryLabelPipe],
+  imports: [FormField, CategoryLabelPipe, EventImages],
   templateUrl: './event-form.html',
   styleUrl: './event-form.css',
 })
@@ -46,13 +48,20 @@ export class EventForm {
   readonly initialValue = input<EventFormValue>();
   /** Clubs actifs de l'organisateur, pour le choix du club à la création uniquement. */
   readonly clubs = input<ClubDto[]>();
-  /** Événement FINISHED (EVT-06) : formulaire entièrement verrouillé. */
+  /** Événement FINISHED (EVT-06) : champs verrouillés, seules les images restent modifiables. */
   readonly locked = input(false);
+  /** Photos déjà enregistrées de l'évènement, en modification uniquement (EVT-09). */
+  readonly images = input<ImageDto[]>([]);
+  /** Enregistrement en cours (évènement puis images) : bloque Valider et le bloc d'images. */
+  readonly saving = input(false);
 
   readonly submitted = output<EventFormValue>();
   readonly cancelled = output<void>();
+  /** Photos à ajouter ou à retirer, en attente du clic sur Valider. */
+  readonly imagesChanged = output<ImageChanges>();
 
   protected readonly categories = CATEGORIES;
+  protected readonly hasImageChanges = signal(false);
   protected readonly isEditMode = () => this.clubs() === undefined;
 
   protected readonly draft = linkedSignal<EventFormValue>(() => this.initialValue() ?? emptyDraft());
@@ -80,10 +89,21 @@ export class EventForm {
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
+
+    if (this.locked()) {
+      this.submitted.emit(this.eventForm().value());
+      return;
+    }
+
     await submit(this.eventForm, async (field) => {
       this.submitted.emit(field().value());
       return undefined;
     });
+  }
+
+  protected onImagesChanged(changes: ImageChanges): void {
+    this.hasImageChanges.set(changes.added.length > 0 || changes.removedIds.length > 0);
+    this.imagesChanged.emit(changes);
   }
 
   protected cancel(): void {
