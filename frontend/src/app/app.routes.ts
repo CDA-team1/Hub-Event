@@ -161,6 +161,15 @@ export const routes: Routes = [
       import('./features/account/user-form-page/user-form-page').then((m) => m.UserFormPage),
   },
   {
+    path: 'admin/comptes/:id/suspension',
+    title: 'Suspendre un compte utilisateur',
+    canActivate: [roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/account/suspend-user-page/suspend-user-page').then(
+        (m) => m.SuspendUserPage,
+      ),
+  },
+  {
     path: 'admin/comptes/:id',
     title: 'Modifier un compte utilisateur',
     canActivate: [roleGuard('ADMIN')],

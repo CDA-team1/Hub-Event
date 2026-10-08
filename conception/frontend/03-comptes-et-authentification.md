@@ -28,14 +28,15 @@ MyAccountPage                      features/account · entrée : — (utilisateu
 └── AccountForm                    features/account · sortie : submitted(UpdateUserRequest)
 
 UsersListPage                      features/account (admin) · entrée : query params (rôle, page)
-├── Pagination                     shared/ui
-└── AccountCard × n                shared/ui · sortie : suspendClicked(id)
+├── DataTable                      shared/ui · actions « Modifier » et « Suspendre » (ActionButton, liens)
+└── Pagination                     shared/ui
 
 UserFormPage                       features/account (admin) · entrée : id (optionnel), rôle cible
 └── UserForm                       features/account · sortie : submitted(AdminUserRequest)
     └── ClubAffiliationPicker      features/account · entrées : clubs, selected · sortie : selectionChanged
 
-SuspendUserForm                    features/account (admin) · sortie : submitted(reason, endDate | null)
+SuspendUserPage                    features/account (admin) · entrée : id (route) · formulaire motif + date de fin
+                                   (vide = définitive) intégré à la page, maquette 21
 ```
 
 Décisions à commenter :
