@@ -2,7 +2,6 @@
   display: flex;
   justify-content: center;
   padding: 4rem 1rem;
-  background: #f8fafc;
   min-height: calc(100vh - 4rem);
 }
 
