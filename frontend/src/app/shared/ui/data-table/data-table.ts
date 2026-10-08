@@ -7,6 +7,8 @@ export interface DataTableColumn {
   readonly header: string;
   /** Rend l'en-tête cliquable ; le tri lui-même reste à la charge de l'appelant (voir `sort`). */
   readonly sortable?: boolean;
+  /** Masquée sur petit écran (640 px et moins) : l'appelant reprend son contenu ailleurs. */
+  readonly hideOnSmall?: boolean;
 }
 
 export interface DataTableSort {

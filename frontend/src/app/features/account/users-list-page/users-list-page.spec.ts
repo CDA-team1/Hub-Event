@@ -163,4 +163,16 @@ describe('UsersListPage', () => {
 
     expect(link?.getAttribute('href')).toBe('/admin/comptes/1/suspension');
   });
+
+  it('reprend le prénom, l’email et le statut sous le nom', async () => {
+    const fixture = TestBed.createComponent(UsersListPage);
+
+    await stable();
+
+    const meta = (fixture.nativeElement as HTMLElement).querySelector('tbody td .user-meta')!;
+
+    expect(meta.textContent).toContain('Alice');
+    expect(meta.textContent).toContain('alice@test.com');
+    expect(meta.textContent).toContain('Actif');
+  });
 });

@@ -1,0 +1,26 @@
+:host {
+  display: block;
+  padding: 1.5rem 2rem;
+}
+
+.request-meta {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  :host {
+    padding: 1rem;
+  }
+
+  .request-meta {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    overflow-wrap: anywhere;
+  }
+
+  .request-meta span {
+    display: block;
+  }
+}

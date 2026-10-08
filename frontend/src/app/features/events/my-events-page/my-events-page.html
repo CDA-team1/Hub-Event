@@ -18,6 +18,23 @@
     <p class="error" role="alert">{{ actionError() }}</p>
   }
 
+  <div class="sort-bar" role="group" aria-label="Trier par">
+    <span>Trier par</span>
+    @for (column of sortableColumns; track column.key) {
+      <button
+        type="button"
+        [class.active]="sort()?.key === column.key"
+        [attr.aria-pressed]="sort()?.key === column.key"
+        (click)="onSortChanged(column.key)"
+      >
+        {{ column.header }}
+        @if (sort()?.key === column.key) {
+          {{ sort()?.direction === 'asc' ? '▲' : '▼' }}
+        }
+      </button>
+    }
+  </div>
+
   <app-data-table
     [columns]="columns"
     [rows]="pagedEvents()"
@@ -25,7 +42,14 @@
     [sort]="sort()"
     (sortChanged)="onSortChanged($event)"
   >
-    <ng-template appColumn="title" let-event>{{ event.title }}</ng-template>
+    <ng-template appColumn="title" let-event>
+      {{ event.title }}
+      <div class="event-meta">
+        <app-category-badge [category]="event.category" />
+        <app-event-status-badge [status]="event.status" />
+        <span class="event-places">{{ event.registeredCount }} / {{ event.maxSeats }} places</span>
+      </div>
+    </ng-template>
     <ng-template appColumn="category" let-event>
       <app-category-badge [category]="event.category" />
     </ng-template>

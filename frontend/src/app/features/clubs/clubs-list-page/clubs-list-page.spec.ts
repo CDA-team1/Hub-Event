@@ -158,4 +158,17 @@ describe('ClubsListPage', () => {
 
     expect(element.textContent).toContain('La suppression a échoué, réessayez.');
   });
+
+  it("reprend l'adresse, l'email et le téléphone sous le nom", async () => {
+    const fixture = TestBed.createComponent(ClubsListPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/clubs')).flush(pageOf([makeClub(1, 'Club Alpha')]));
+    await stable();
+
+    const meta = (fixture.nativeElement as HTMLElement).querySelector('tbody td .club-meta')!;
+
+    expect(meta.textContent).toContain('1 rue de Test');
+    expect(meta.textContent).toContain('club alpha@test.fr');
+    expect(meta.textContent).toContain('0600000000');
+  });
 });
