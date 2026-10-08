@@ -34,3 +34,9 @@ th button {
 .sort-indicator {
   font-size: 0.7rem;
 }
+
+@media (max-width: 640px) {
+  .hide-on-small {
+    display: none;
+  }
+}

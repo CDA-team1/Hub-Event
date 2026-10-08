@@ -79,7 +79,7 @@ describe('DataTable', () => {
     expect(rows[0].textContent).toContain('Alpha');
   });
 
-  it("affiche la flèche du tri courant sur la bonne colonne", async () => {
+  it('affiche la flèche du tri courant sur la bonne colonne', async () => {
     const fixture = TestBed.createComponent(Host);
     fixture.componentInstance.sort.set({ key: 'name', direction: 'asc' });
     await fixture.whenStable();
@@ -93,5 +93,24 @@ describe('DataTable', () => {
     await fixture.whenStable();
     expect(header.querySelector('.sort-indicator')?.textContent).toBe('▼');
     expect(header.getAttribute('aria-sort')).toBe('descending');
+  });
+
+  it('marque les colonnes à masquer sur petit écran', async () => {
+    const fixture = TestBed.createComponent(DataTable);
+    fixture.componentRef.setInput('columns', [
+      { key: 'name', header: 'Nom' },
+      { key: 'extra', header: 'Extra', hideOnSmall: true },
+    ]);
+    fixture.componentRef.setInput('rows', [{ id: 1, name: 'Alpha' }]);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const hidden = (selector: string) =>
+      Array.from(element.querySelectorAll(selector)).map((cell) =>
+        cell.classList.contains('hide-on-small'),
+      );
+
+    expect(hidden('th')).toEqual([false, true]);
+    expect(hidden('tbody td')).toEqual([false, true]);
   });
 });
