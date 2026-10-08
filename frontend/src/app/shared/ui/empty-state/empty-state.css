@@ -1,8 +1,9 @@
 :host {
   display: block;
   padding: 2rem 1rem;
-  border: 2px dashed #e5e7eb;
+  border: 2px dashed #c9c2b6;
   border-radius: 0.75rem;
+  background: #eae7e3;
   text-align: center;
   color: #64748b;
 }

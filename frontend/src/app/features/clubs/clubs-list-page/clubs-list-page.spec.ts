@@ -171,4 +171,15 @@ describe('ClubsListPage', () => {
     expect(meta.textContent).toContain('club alpha@test.fr');
     expect(meta.textContent).toContain('0600000000');
   });
+
+  it('affiche le tableau avec une grille complète', async () => {
+    const fixture = TestBed.createComponent(ClubsListPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/clubs')).flush(pageOf([makeClub(1, 'Club Alpha')]));
+    await stable();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+
+    expect(table.classList.contains('bordered')).toBe(true);
+  });
 });

@@ -15,6 +15,7 @@ interface Row {
       [columns]="columns"
       [rows]="rows"
       [sort]="sort()"
+      [bordered]="bordered()"
       (sortChanged)="onSortChanged($event)"
     >
       <ng-template appColumn="name" let-row>{{ row.name }}</ng-template>
@@ -34,6 +35,7 @@ class Host {
     { id: 2, name: 'Bravo' },
   ];
   readonly sort = signal<DataTableSort | null>(null);
+  readonly bordered = signal(false);
   readonly sortChanged: string[] = [];
 
   onSortChanged(key: string): void {
@@ -112,5 +114,26 @@ describe('DataTable', () => {
 
     expect(hidden('th')).toEqual([false, true]);
     expect(hidden('tbody td')).toEqual([false, true]);
+  });
+
+  it('reste sans grille par défaut', async () => {
+    const fixture = TestBed.createComponent(Host);
+    await fixture.whenStable();
+    const host = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+    const table = host.querySelector('table')!;
+
+    expect(host.classList.contains('bordered')).toBe(false);
+    expect(getComputedStyle(table).borderCollapse).toBe('collapse');
+  });
+
+  it('dessine une grille complète quand bordered est activé', async () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.bordered.set(true);
+    await fixture.whenStable();
+    const host = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+    const table = host.querySelector('table')!;
+
+    expect(host.classList.contains('bordered')).toBe(true);
+    expect(getComputedStyle(table).borderCollapse).toBe('separate');
   });
 });
