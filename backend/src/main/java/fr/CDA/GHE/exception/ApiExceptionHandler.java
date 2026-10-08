@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Gestionnaire global des exceptions de l'application.
@@ -62,6 +63,19 @@ public class ApiExceptionHandler {
     @ExceptionHandler(FunctionalException.class)
     protected ResponseEntity<String> handleFunctionalException(FunctionalException ex) {
         return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
+    /**
+     * Gère les envois de fichiers trop volumineux (limites {@code spring.servlet.multipart.*}) et
+     * retourne un 400 Bad Request : le front n'affiche le message du back que pour cette erreur.
+     *
+     * @param ex l'exception levée
+     * @return la réponse HTTP avec le message d'erreur
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    protected ResponseEntity<String> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.badRequest()
+                .body("Les images sont trop volumineuses : 5 Mo maximum par fichier et 30 Mo par envoi.");
     }
 
     /**
