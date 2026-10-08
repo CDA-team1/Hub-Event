@@ -8,6 +8,7 @@ import { AccountDto, AdminUserDto, UserProfileDto } from '../../domain/account.m
 import { UpdateUserRequest } from '../../domain/update-user-request';
 import { ConfirmAccountCreationRequest } from '../../domain/confirm-account-creation-request';
 import { AdminUserRequest } from '../../domain/admin-user-request';
+import { SuspendUserRequest } from '../../domain/suspend-user-request';
 import { API_URL } from '../http/api-url';
 
 @Service()
@@ -60,5 +61,10 @@ export class AccountApi {
 
   updateUser(id: number, request: AdminUserRequest): Observable<AccountDto> {
     return this.http.put<AccountDto>(`${this.apiUrl}/admin/users/${id}`, request);
+  }
+
+  /** Suspend un compte (SUSP-01) : sans date de fin, la suspension est définitive. */
+  suspendUser(id: number, request: SuspendUserRequest): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/admin/users/${id}/suspension`, request);
   }
 }

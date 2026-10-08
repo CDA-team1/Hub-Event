@@ -50,8 +50,8 @@ présence ou non d'un `id` dans la route).
 | Composant | Dossier | Entrées | Sorties | Réutilisé par |
 |---|---|---|---|---|
 | `EventCard` | `shared/ui` | `event`, `showActions` | `registerToggled(id)` | accueil, recherche, mes événements |
-| `ClubCard` | `shared/ui` | `club` | — | liste des clubs |
-| `AccountCard` | `shared/ui` | `user` | `suspendClicked(id)` | liste des comptes |
+| `DataTable` | `shared/ui` | `columns`, `rows`, `trackBy`, `sort` | `sortChanged(key)` | liste des clubs, des comptes, des demandes d'anonymisation, calendrier, mes évènements, inscrits (maquettes 09, 12, 15, 20, 23 : tableaux, pas de cartes) |
+| `ActionButton` | `shared/ui` | `icon`, `label`, `level`, `routerLink` (optionnel) | `triggered` | colonne « Actions » de chaque `DataTable` |
 | `StatusBadge` | `shared/ui` | `status` (EventStatus) | — | toutes les pages événement |
 | `CategoryBadge` | `shared/ui` | `category` | — | événements, clubs |
 | `RoleBadge` | `shared/ui` | `role` | — | comptes |

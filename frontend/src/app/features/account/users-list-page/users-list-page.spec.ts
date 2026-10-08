@@ -149,4 +149,18 @@ describe('UsersListPage', () => {
 
     expect(element.textContent).toContain('Impossible de charger la liste des comptes.');
   });
+
+  it('propose Suspendre, qui mène à la page de suspension du compte', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/');
+
+    const fixture = TestBed.createComponent(UsersListPage);
+
+    await stable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const link = element.querySelector<HTMLAnchorElement>('a[aria-label="Suspendre"]');
+
+    expect(link?.getAttribute('href')).toBe('/admin/comptes/1/suspension');
+  });
 });

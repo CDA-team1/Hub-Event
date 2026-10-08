@@ -72,6 +72,12 @@
               level="primary"
               [routerLink]="['/admin/comptes', user.id]"
             />
+            <app-action-button
+              icon="🚫"
+              label="Suspendre"
+              level="danger"
+              [routerLink]="['/admin/comptes', user.id, 'suspension']"
+            />
           </div>
         </ng-template>
       </app-data-table>

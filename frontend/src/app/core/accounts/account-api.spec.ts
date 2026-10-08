@@ -150,4 +150,27 @@ describe('AccountApi', () => {
       status: 'ACTIVE',
     });
   });
+
+  it('suspend un compte avec un motif et une date de fin', () => {
+    const body = { reason: 'Propos injurieux', endDate: '2026-12-31' };
+
+    service.suspendUser(12, body).subscribe();
+
+    const request = httpTesting.expectOne('/api/admin/users/12/suspension');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+
+    request.flush(null);
+  });
+
+  it('suspend définitivement un compte quand la date de fin est nulle', () => {
+    service.suspendUser(12, { reason: 'Fraude', endDate: null }).subscribe();
+
+    const request = httpTesting.expectOne('/api/admin/users/12/suspension');
+
+    expect(request.request.body).toEqual({ reason: 'Fraude', endDate: null });
+
+    request.flush(null);
+  });
 });

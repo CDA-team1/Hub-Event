@@ -18,8 +18,8 @@ AnonymizationRequestPage           features/privacy · entrée : — (utilisateu
 └── (bouton + texte d'explication, pas de formulaire)
 
 AnonymizationAdminPage             features/privacy (admin) · entrée : query params (page)
-├── Pagination                     shared/ui
-└── AccountCard × n                shared/ui · sortie : validateClicked(requestId)
+├── DataTable                      shared/ui · action « Valider » (ActionButton) par demande
+└── Pagination                     shared/ui
 
 CguPage / RgpdPage                 features/privacy · entrée : — (contenu public)
 
