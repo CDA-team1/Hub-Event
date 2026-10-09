@@ -51,6 +51,25 @@ describe('CguPage', () => {
     );
   });
 
+  it('affiche un état vide si aucun document CGU n’est disponible', async () => {
+    const fixture = TestBed.createComponent(CguPage);
+
+    fixture.detectChanges();
+
+    const request = httpTesting.expectOne('/api/documents/CGU');
+
+    request.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Aucun document CGU disponible pour le moment.',
+    );
+  });
+
   it('affiche une erreur si les CGU ne peuvent pas être chargées', async () => {
     const fixture = TestBed.createComponent(CguPage);
 

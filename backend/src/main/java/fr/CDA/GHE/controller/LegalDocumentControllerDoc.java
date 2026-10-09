@@ -24,11 +24,10 @@ public interface LegalDocumentControllerDoc {
             @ApiResponse(responseCode = "200", description = "Document trouvé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = LegalDocumentDto.class))),
-            @ApiResponse(responseCode = "404", description = "Aucun document enregistré pour ce type",
-                    content = @Content)
+            @ApiResponse(responseCode = "204", description = "Aucun document enregistré pour ce type",
+                content = @Content)
     })
-    LegalDocumentDto getByType(@Parameter(description = "Type de document (RGPD ou CGU)") DocumentType type);
-
+    ResponseEntity<LegalDocumentDto> getByType(@Parameter(description = "Type de document (RGPD ou CGU)") DocumentType type);
     @Operation(summary = "Retourne un document légal au format PDF",
             description = "Accessible sans authentification.")
     @ApiResponses(value = {

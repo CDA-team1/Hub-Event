@@ -14,6 +14,8 @@
       <div class="rgpd-page__document">
         {{ rgpd.content }}
       </div>
+    } @else {
+      <app-empty-state> Aucun document RGPD disponible pour le moment. </app-empty-state>
     }
   </section>
 </main>
