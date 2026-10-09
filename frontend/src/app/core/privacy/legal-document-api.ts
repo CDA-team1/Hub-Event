@@ -10,8 +10,8 @@ export class LegalDocumentApi {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_URL);
 
-  getByType(type: LegalDocumentType): Observable<LegalDocumentDto> {
-    return this.http.get<LegalDocumentDto>(`${this.apiUrl}/documents/${type}`);
+  getByType(type: LegalDocumentType): Observable<LegalDocumentDto | null> {
+    return this.http.get<LegalDocumentDto | null>(`${this.apiUrl}/documents/${type}`);
   }
 
   upsert(type: LegalDocumentType, content: string): Observable<LegalDocumentDto> {

@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,17 +71,23 @@ class LegalDocumentServiceTest {
 
     @Test
     void extractByType_shouldReturnDocument_whenItExists() {
-        legalDocumentRepository.save(new LegalDocument(DocumentType.RGPD, "Contenu RGPD", LocalDateTime.now()));
+        legalDocumentRepository.save(
+                new LegalDocument(DocumentType.RGPD, "Contenu RGPD", LocalDateTime.now())
+        );
 
-        LegalDocumentDto dto = legalDocumentService.extractByType(DocumentType.RGPD);
+        Optional<LegalDocumentDto> result =
+                legalDocumentService.extractByType(DocumentType.RGPD);
 
-        assertThat(dto.content()).isEqualTo("Contenu RGPD");
+        assertThat(result).isPresent();
+        assertThat(result.orElseThrow().content()).isEqualTo("Contenu RGPD");
     }
 
     @Test
-    void extractByType_shouldThrow_whenDocumentDoesNotExist() {
-        assertThatThrownBy(() -> legalDocumentService.extractByType(DocumentType.CGU))
-                .isInstanceOf(NotFoundException.class);
+    void extractByType_shouldReturnEmpty_whenDocumentDoesNotExist() {
+        Optional<LegalDocumentDto> result =
+                legalDocumentService.extractByType(DocumentType.CGU);
+
+        assertThat(result).isEmpty();
     }
 
     @Test

@@ -49,6 +49,25 @@ describe('RgpdPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Politique RGPD du Hub événementiel.');
   });
 
+  it('affiche un état vide si aucun document RGPD n’est disponible', async () => {
+    const fixture = TestBed.createComponent(RgpdPage);
+
+    fixture.detectChanges();
+
+    const request = httpTesting.expectOne('/api/documents/RGPD');
+
+    request.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Aucun document RGPD disponible pour le moment.',
+    );
+  });
+
   it('affiche une erreur si la politique RGPD ne peut pas être chargée', async () => {
     const fixture = TestBed.createComponent(RgpdPage);
 

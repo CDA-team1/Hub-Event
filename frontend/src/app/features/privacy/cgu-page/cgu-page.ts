@@ -5,10 +5,11 @@ import { LegalDocumentApi } from '../../../core/privacy/legal-document-api';
 import { LegalDocumentDto } from '../../../domain/legal-document.model';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 
 @Component({
   selector: 'app-cgu-page',
-  imports: [LoadingState, ErrorState],
+  imports: [LoadingState, ErrorState, EmptyState],
   templateUrl: './cgu-page.html',
   styleUrl: './cgu-page.css',
 })

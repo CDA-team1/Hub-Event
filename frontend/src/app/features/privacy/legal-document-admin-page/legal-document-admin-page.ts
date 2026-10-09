@@ -88,16 +88,11 @@ export class LegalDocumentAdminPage {
 
     this.legalDocumentApi.getByType(this.type).subscribe({
       next: (document) => {
-        this.content.setValue(document.content);
+        this.content.setValue(document?.content ?? '');
         this.loading.set(false);
       },
-      error: (error: HttpErrorResponse) => {
+      error: () => {
         this.loading.set(false);
-
-        if (error.status === 404) {
-          this.content.setValue('');
-          return;
-        }
 
         this.loadErrorMessage.set(
           this.type === 'RGPD'

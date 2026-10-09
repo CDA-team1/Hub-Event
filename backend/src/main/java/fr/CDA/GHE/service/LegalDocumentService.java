@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * Gère les documents légaux de la plateforme (CGU, politique RGPD) — CU31, CU32.
@@ -70,16 +71,16 @@ public class LegalDocumentService {
     }
 
     /**
-     * Retourne le document légal d'un type donné, consultable sans authentification
-     * (CU7 §2.10, CU8).
-     *
-     * @param type type de document recherché (RGPD ou CGU)
-     * @return le document correspondant
-     * @throws NotFoundException si aucun document n'a encore été enregistré pour ce type
-     */
-    @Transactional(readOnly = true)
-    public LegalDocumentDto extractByType(DocumentType type) {
-        return legalDocumentMapper.toDto(findByTypeOrThrow(type));
+    * Retourne le document légal d'un type donné, consultable sans authentification
+    * (CU7 §2.10, CU8).
+    *
+    * @param type type de document recherché (RGPD ou CGU)
+    * @return le document correspondant s'il existe, sinon un Optional vide
+    */
+   @Transactional(readOnly = true)
+    public Optional<LegalDocumentDto> extractByType(DocumentType type) {
+        return legalDocumentRepository.findByType(type)
+            .map(legalDocumentMapper::toDto);
     }
 
     /**
