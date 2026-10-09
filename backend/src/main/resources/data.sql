@@ -1,9 +1,30 @@
 -- Jeu de données de démo (CPT-07), chargé au démarrage en dev (spring.sql.init.mode=always).
 -- Remplace le mécanisme DataConfig/JpaUserDetailsService.initData() (SEC-06), retiré.
 --
--- Mot de passe commun aux 4 comptes : Password123! (respecte les règles CU5 : 12 car. min,
+-- Mot de passe commun à TOUS les comptes : Password123! (respecte les règles CU5 : 12 car. min,
 -- majuscule, minuscule, chiffre, spécial). Hash BCrypt pré-calculé avec le même
 -- BCryptPasswordEncoder que l'application (ne peut pas être généré en SQL brut).
+--
+-- Ce jeu de données couvre un maximum d'états, pour tester toute l'application sans rien saisir.
+-- Comptes (tous en Password123!) :
+--   1  member.demo@ghe.local                   membre actif, affilié à 2 clubs (1 et 2)
+--   2  admin.demo@ghe.local                    administrateur
+--   3  organizer.demo@ghe.local                organisateur (clubs 1 et 2), propriétaire des évènements 1 à 35, 37 et 40
+--   4  pending.demo@ghe.local                  compte INACTIF, en attente d'activation (jeton ci-dessous)
+--   5  organizer2.demo@ghe.local               organisateur du club de loisirs (3), autre propriétaire d'évènements
+--   6  organizer3.demo@ghe.local               organisateur du club sportif breton (4), demande d'anonymisation EN ATTENTE
+--   7  member2.demo@ghe.local                  membre actif affilié au club 1
+--   8  member3.demo@ghe.local                  membre actif affilié au club 2
+--   9  member4.demo@ghe.local                  membre actif affilié à 2 clubs (1 et 3)
+--   10 nonaffilie.demo@ghe.local               membre actif NON affilié, sans téléphone
+--   11 password.pending.demo@ghe.local         changement de mot de passe en attente de confirmation par email
+--   12 anonymization.pending.demo@ghe.local    membre avec demande d'anonymisation EN ATTENTE
+--   13 suspended.temp.demo@ghe.local           suspendu TEMPORAIREMENT (jusqu'au 2026-11-30)
+--   14 suspended.forever.demo@ghe.local        suspendu DÉFINITIVEMENT
+--   15 suspension.expired.demo@ghe.local       suspension EXPIRÉE (peut se connecter)
+--   16 anonymized-...@ghe.local                compte ANONYMISÉ (demande validée), apparaît « SUPPRIMÉ » en commentaire
+--   17 former.organizer.demo@ghe.local         ancien organisateur d'un club supprimé, redevenu simple membre
+--   18 admin2.demo@ghe.local                   second administrateur
 
 -- --- Club de démo (nécessaire pour affilier un ORGANIZER, règle PO) ---
 INSERT INTO clubs (id, name, category, postal_address, email, phone, validity_end_date)
@@ -13,6 +34,20 @@ VALUES (1, 'Club Démo Occitanie', 'SPORT', '1 rue de la Fédération, 31000 Tou
 INSERT INTO clubs (id, name, category, postal_address, email, phone, validity_end_date)
 VALUES (2, 'Club Culture Toulouse', 'CULTURE', '5 place du Capitole, 31000 Toulouse',
         'contact@club-culture-demo.local', '0500000001', NULL);
+
+-- Autres clubs : un club de loisirs, un second club sportif, et un club désaffilié (fin
+-- d'affiliation par l'admin, CU24 : validity_end_date renseignée, plus aucun membre).
+INSERT INTO clubs (id, name, category, postal_address, email, phone, validity_end_date)
+VALUES (3, 'Club Loisirs Lyonnais', 'LEISURE', '12 quai Saint-Antoine, 69002 Lyon',
+        'contact@club-loisirs-demo.local', '0500000002', NULL);
+
+INSERT INTO clubs (id, name, category, postal_address, email, phone, validity_end_date)
+VALUES (4, 'Association Sportive Bretonne', 'SPORT', '8 rue de la Monnaie, 35000 Rennes',
+        'contact@asb-demo.local', '0500000003', NULL);
+
+INSERT INTO clubs (id, name, category, postal_address, email, phone, validity_end_date)
+VALUES (5, 'Ancien Club Escalade Grenoble', 'SPORT', '3 rue Lesdiguières, 38000 Grenoble',
+        'contact@club-escalade-demo.local', '0500000004', '2026-06-30');
 
 -- --- Comptes utilisateurs ---
 
@@ -57,6 +92,63 @@ INSERT INTO affiliation (club_id, user_id) VALUES (2, 1);
 -- L'organisateur de démo est aussi affilié au club culture, pour pouvoir y organiser
 -- un évènement (règle CU19 : l'évènement doit appartenir à un club de l'organisateur).
 INSERT INTO affiliation (club_id, user_id) VALUES (2, 3);
+
+-- --- Comptes de démo supplémentaires : un compte par état à tester ---
+
+-- 5) Second organisateur, club de loisirs (propriétaire des évènements 36 et 38)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (5, 'Lefèvre', 'Camille', '14 rue des Marronniers, 69003 Lyon', 'organizer2.demo@ghe.local', '0612345678', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'ORGANIZER', false);
+-- 6) Organisateur du club sportif breton, avec une demande d’anonymisation en attente
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (6, 'Moreau', 'Hugo', '27 rue de Fougères, 35000 Rennes', 'organizer3.demo@ghe.local', '0623456789', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'ORGANIZER', false);
+-- 7) Membre actif, affilié au club sportif
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (7, 'Bernard', 'Léa', '5 rue Pasteur, 31000 Toulouse', 'member2.demo@ghe.local', '0634567890', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
+-- 8) Membre actif, affilié au club culturel
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (8, 'Petit', 'Nathan', '19 avenue de Muret, 31300 Toulouse', 'member3.demo@ghe.local', '0645678901', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
+-- 9) Membre actif, affilié à deux clubs (sportif et loisirs)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (9, 'Roux', 'Inès', '2 place Bellecour, 69002 Lyon', 'member4.demo@ghe.local', '0656789012', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
+-- 10) Membre actif NON affilié, sans téléphone (tarif non affilié)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (10, 'Fournier', 'Lucas', '8 rue Nationale, 59800 Lille', 'nonaffilie.demo@ghe.local', NULL, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
+-- 11) Changement de mot de passe demandé, en attente de confirmation par email :
+--     GET http://localhost:8080/auth/confirm-password-change?token=demo-password-change-token-manon
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended, pending_password, password_change_token)
+VALUES (11, 'Girard', 'Manon', '31 cours Mirabeau, 13100 Aix-en-Provence', 'password.pending.demo@ghe.local', '0667890123', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'demo-password-change-token-manon');
+-- 12) Membre actif ayant demandé son anonymisation (demande en attente, voir plus bas)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (12, 'Muller', 'Théo', '4 rue des Tanneurs, 35000 Rennes', 'anonymization.pending.demo@ghe.local', '0678901234', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
+-- 13) Suspension TEMPORAIRE, active jusqu’au 2026-11-30 (connexion refusée)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended, suspension_end_date, suspension_reason)
+VALUES (13, 'Dubois', 'Chloé', '16 rue Sainte-Catherine, 33000 Bordeaux', 'suspended.temp.demo@ghe.local', '0689012345', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', true, '2026-11-30', 'Propos déplacés répétés dans les commentaires.');
+-- 14) Suspension DÉFINITIVE (pas de date de fin, connexion refusée)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended, suspension_end_date, suspension_reason)
+VALUES (14, 'Lambert', 'Antoine', '9 boulevard Gambetta, 06000 Nice', 'suspended.forever.demo@ghe.local', '0690123456', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', true, NULL, 'Non-respect répété des conditions d’utilisation.');
+-- 15) Suspension EXPIRÉE : suspended = true mais date de fin dépassée, la connexion est autorisée
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended, suspension_end_date, suspension_reason)
+VALUES (15, 'Garcia', 'Sofia', '22 rue du Faubourg, 34000 Montpellier', 'suspension.expired.demo@ghe.local', '0601234567', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', true, '2026-09-15', 'Comportement inapproprié lors d’un évènement.');
+-- 16) Compte ANONYMISÉ (demande validée) : données remplacées par des valeurs aléatoires
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (16, 'a3f1c9d2-7b4e-4c8a-9e15-2d6f0b7a1c43', '5e8b2a71-0c3d-4f96-8a2e-91b7d4c6e038', '9c2d7e40-3a15-4b8f-b6d1-7e0a5f3c2b19', 'anonymized-d41e6b92-8f07-4a3c-b5e2-1c9a7d3f6e80@ghe.local', NULL, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ANONYMIZED', 'MEMBER', false);
+-- 17) Ancien organisateur du club supprimé (5) : redevenu membre, sans club (CU24)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (17, 'Marchand', 'Victor', '11 rue Bayard, 38000 Grenoble', 'former.organizer.demo@ghe.local', '0612348765', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
+-- 18) Second administrateur
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
+VALUES (18, 'Morel', 'Julie', '1 rue de Test, 31000 Toulouse', 'admin2.demo@ghe.local', NULL, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'ADMIN', false);
+
+-- Affiliations des comptes ci-dessus (le club 5, désaffilié, n'a plus aucun membre).
+INSERT INTO affiliation (club_id, user_id) VALUES (3, 5);
+INSERT INTO affiliation (club_id, user_id) VALUES (4, 6);
+INSERT INTO affiliation (club_id, user_id) VALUES (1, 7);
+INSERT INTO affiliation (club_id, user_id) VALUES (2, 8);
+INSERT INTO affiliation (club_id, user_id) VALUES (1, 9);
+INSERT INTO affiliation (club_id, user_id) VALUES (3, 9);
+INSERT INTO affiliation (club_id, user_id) VALUES (4, 12);
+INSERT INTO affiliation (club_id, user_id) VALUES (2, 13);
+INSERT INTO affiliation (club_id, user_id) VALUES (1, 15);
 
 -- --- Évènements de démo (COM-02) ---
 
@@ -371,6 +463,75 @@ VALUES (34, 'Grande soirée quiz pop culture',
         4.00, 8.00, 80, 'PUBLISHED', 'LEISURE', 3, 1);
 
 
+-- --- Évènements de démo : états manquants (seed enrichi) ---
+-- Brouillons, annulés, complet avec liste d'attente, sans date de fin, publié mais passé (à
+-- terminer), et évènements d'autres organisateurs (test des droits de propriété). Ils n'ont
+-- volontairement pas d'image : cela représente aussi l'état « évènement sans photo ».
+
+-- 35) BROUILLON (visible uniquement de son organisateur), club culture.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (35, 'Rencontre avec un auteur local',
+        'Une soirée d’échange avec un auteur de la région autour de son dernier roman, suivie d’une séance de dédicaces. Évènement encore en préparation.',
+        'Médiathèque José Cabanis, 31000 Toulouse', '2027-01-23 18:30:00', '2027-01-23 20:30:00',
+        0.00, 4.00, 40, 'DRAFT', 'CULTURE', 3, 2);
+
+-- 36) BROUILLON d’un autre organisateur (5), club de loisirs.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (36, 'Tournoi de mölkky entre amis',
+        'Un tournoi décontracté de mölkky par équipes de deux, au parc, avec buvette. Brouillon à finaliser avant publication.',
+        'Parc de la Tête d’Or, 69006 Lyon', '2027-02-06 14:00:00', '2027-02-06 18:00:00',
+        2.00, 5.00, 24, 'DRAFT', 'LEISURE', 5, 3);
+
+-- 37) ANNULÉ, avec inscrits (conservé en base), club sportif.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (37, 'Course d’orientation en forêt',
+        'Course d’orientation par équipes dans la forêt de Bouconne, avec cartes et balises. Évènement annulé par l’organisateur : les inscrits ont été prévenus par email.',
+        'Forêt de Bouconne, 31530 Montaigut-sur-Save', '2026-11-22 09:00:00', '2026-11-22 13:00:00',
+        3.00, 6.00, 30, 'CANCELLED', 'SPORT', 3, 1);
+
+-- 38) COMPLET : 4 places, 4 inscrits et 2 personnes en liste d’attente.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (38, 'Dégustation de fromages et vins',
+        'Une soirée de découverte des fromages et vins de la région, guidée par un caviste. Places très limitées : l’évènement est complet, une liste d’attente est ouverte.',
+        'Cave Les Trois Sources, 69002 Lyon', '2026-11-27 19:00:00', '2026-11-27 22:00:00',
+        20.00, 30.00, 4, 'PUBLISHED', 'LEISURE', 5, 3);
+
+-- 39) Gratuit, SANS date de fin, organisé par un 3e organisateur (6), club sportif breton.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (39, 'Randonnée urbaine nocturne',
+        'Une balade à pied de quartier en quartier à la tombée de la nuit, à la découverte des lieux insolites de la ville. Gratuit, sans heure de fin précise.',
+        'Parvis de la gare, 35000 Rennes', '2026-11-29 18:00:00', NULL,
+        0.00, 0.00, 30, 'PUBLISHED', 'SPORT', 6, 4);
+
+-- 40) PUBLIÉ mais déjà passé : l’organisateur doit encore le « terminer ».
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (40, 'Vernissage de rentrée',
+        'Vernissage de la nouvelle saison culturelle en présence des artistes. Évènement passé mais pas encore clôturé par son organisateur.',
+        'Espace des Arts, 31000 Toulouse', '2026-10-03 18:00:00', '2026-10-03 21:00:00',
+        0.00, 0.00, 40, 'PUBLISHED', 'CULTURE', 3, 2);
+
+-- 41) ANNULÉ à la suppression du club (5, désaffilié) : l’organisateur (17) est redevenu simple membre.
+INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
+                     affiliated_price, non_affiliated_price, max_seats, status, category,
+                     organizer_id, club_id)
+VALUES (41, 'Soirée jeu de piste urbain',
+        'Un jeu de piste en équipes dans les rues de la ville. Évènement annulé suite à la fin d’affiliation du club organisateur.',
+        'Centre-ville, 38000 Grenoble', '2026-11-05 18:30:00', '2026-11-05 21:30:00',
+        4.00, 8.00, 25, 'CANCELLED', 'SPORT', 17, 5);
+
+
 -- --- Images de démo (EVT-10) ---
 -- Hébergées sur imgbb (voir ImgbbClient), une par évènement, choisies pour être cohérentes
 -- avec le thème de chacun (ex. photo de concert sur l'évènement concert).
@@ -556,3 +717,404 @@ VALUES (5, 'Dommage d''avoir manqué le vernissage, est-ce qu''une captation vid
 INSERT INTO comments (id, content, user_id, event_id, created_at)
 VALUES (6, 'Merci à toutes les personnes venues nombreuses ! On prépare déjà la suite pour l''année prochaine.',
         3, 2, '2026-08-12 08:00:00');
+
+-- --- Inscriptions de démo ---
+-- REGISTERED = inscrit, WAITING_LIST = liste d'attente (évènement complet). Aucun chevauchement
+-- d'horaires par utilisateur (règle CU9). Pour tester ce blocage : le membre 1 est inscrit à l'évènement 4
+-- (14/11, 19h30) : s'inscrire à l'évènement 24 (14/11, 20h30) doit être refusé.
+
+-- Évènements terminés
+-- 2 · Exposition regards sur la ville
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (1, 1, 2, 'REGISTERED', '2026-07-31 11:07:00'),
+  (2, 8, 2, 'REGISTERED', '2026-07-31 13:56:00'),
+  (3, 9, 2, 'REGISTERED', '2026-07-31 18:03:00'),
+  (4, 16, 2, 'REGISTERED', '2026-07-31 20:52:00');
+-- 26 · Beach-volley
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (5, 7, 26, 'REGISTERED', '2026-08-12 13:49:00'),
+  (6, 10, 26, 'REGISTERED', '2026-08-12 16:10:00'),
+  (7, 12, 26, 'REGISTERED', '2026-08-12 17:24:00'),
+  (8, 15, 26, 'REGISTERED', '2026-08-12 23:45:00');
+-- 6 · Cinéma en plein air
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (9, 1, 6, 'REGISTERED', '2026-08-19 22:07:00'),
+  (10, 7, 6, 'REGISTERED', '2026-08-20 03:49:00'),
+  (11, 8, 6, 'REGISTERED', '2026-08-20 03:56:00'),
+  (12, 9, 6, 'REGISTERED', '2026-08-20 08:03:00'),
+  (13, 10, 6, 'REGISTERED', '2026-08-20 12:10:00'),
+  (14, 16, 6, 'REGISTERED', '2026-08-20 13:52:00');
+-- 16 · Paddle
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (15, 7, 16, 'REGISTERED', '2026-08-26 22:19:00'),
+  (16, 12, 16, 'REGISTERED', '2026-08-26 22:54:00'),
+  (17, 9, 16, 'REGISTERED', '2026-08-27 02:33:00');
+-- 8 · Concert de jazz
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (18, 1, 8, 'REGISTERED', '2026-09-02 20:07:00'),
+  (19, 8, 8, 'REGISTERED', '2026-09-02 22:56:00'),
+  (20, 9, 8, 'REGISTERED', '2026-09-03 03:03:00'),
+  (21, 11, 8, 'REGISTERED', '2026-09-03 08:17:00'),
+  (22, 16, 8, 'REGISTERED', '2026-09-03 08:52:00');
+-- 13 · Brunch fleuri
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (23, 7, 13, 'REGISTERED', '2026-09-03 14:19:00'),
+  (24, 9, 13, 'REGISTERED', '2026-09-03 15:33:00'),
+  (25, 10, 13, 'REGISTERED', '2026-09-03 19:40:00');
+-- 30 · Lanternes
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (26, 1, 30, 'REGISTERED', '2026-09-09 20:37:00'),
+  (27, 7, 30, 'REGISTERED', '2026-09-10 02:19:00'),
+  (28, 8, 30, 'REGISTERED', '2026-09-10 02:26:00'),
+  (29, 11, 30, 'REGISTERED', '2026-09-10 08:47:00'),
+  (30, 16, 30, 'REGISTERED', '2026-09-10 09:22:00');
+-- 19 · Festival de street art
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (31, 1, 19, 'REGISTERED', '2026-09-16 12:07:00'),
+  (32, 7, 19, 'REGISTERED', '2026-09-16 17:49:00'),
+  (33, 8, 19, 'REGISTERED', '2026-09-16 17:56:00'),
+  (34, 9, 19, 'REGISTERED', '2026-09-16 22:03:00'),
+  (35, 10, 19, 'REGISTERED', '2026-09-17 02:10:00'),
+  (36, 11, 19, 'REGISTERED', '2026-09-17 06:17:00'),
+  (37, 12, 19, 'REGISTERED', '2026-09-17 06:24:00'),
+  (38, 13, 19, 'REGISTERED', '2026-09-17 10:31:00'),
+  (39, 14, 19, 'REGISTERED', '2026-09-17 14:38:00'),
+  (40, 15, 19, 'REGISTERED', '2026-09-17 18:45:00'),
+  (41, 16, 19, 'REGISTERED', '2026-09-17 18:52:00');
+
+-- Évènement publié mais passé (à terminer)
+-- 40 · Vernissage (passé, à terminer)
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (42, 1, 40, 'REGISTERED', '2026-09-23 19:07:00'),
+  (43, 7, 40, 'REGISTERED', '2026-09-24 00:49:00'),
+  (44, 8, 40, 'REGISTERED', '2026-09-24 00:56:00'),
+  (45, 9, 40, 'REGISTERED', '2026-09-24 05:03:00');
+
+-- Évènements à venir
+-- 11 · Yoga
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (46, 1, 11, 'REGISTERED', '2026-10-01 08:52:00'),
+  (47, 7, 11, 'REGISTERED', '2026-10-01 14:34:00'),
+  (48, 9, 11, 'REGISTERED', '2026-10-01 15:48:00');
+-- 5 · Café ludique (Lyon)
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (49, 1, 5, 'REGISTERED', '2026-10-02 13:07:00'),
+  (50, 7, 5, 'REGISTERED', '2026-10-02 18:49:00'),
+  (51, 9, 5, 'REGISTERED', '2026-10-02 20:03:00');
+-- 25 · Aviron
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (52, 8, 25, 'REGISTERED', '2026-10-06 12:56:00'),
+  (53, 12, 25, 'REGISTERED', '2026-10-06 16:24:00');
+-- 15 · Escalade en bloc
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (54, 7, 15, 'REGISTERED', '2026-10-04 15:49:00'),
+  (55, 10, 15, 'REGISTERED', '2026-10-04 18:10:00'),
+  (56, 12, 15, 'REGISTERED', '2026-10-04 19:24:00');
+-- 3 · Concert acoustique
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (57, 1, 3, 'REGISTERED', '2026-10-04 13:07:00'),
+  (58, 7, 3, 'REGISTERED', '2026-10-04 18:49:00'),
+  (59, 8, 3, 'REGISTERED', '2026-10-04 18:56:00'),
+  (60, 9, 3, 'REGISTERED', '2026-10-04 23:03:00'),
+  (61, 10, 3, 'REGISTERED', '2026-10-05 03:10:00'),
+  (62, 11, 3, 'REGISTERED', '2026-10-05 07:17:00'),
+  (63, 12, 3, 'REGISTERED', '2026-10-05 07:24:00'),
+  (64, 15, 3, 'REGISTERED', '2026-10-05 13:45:00'),
+  (65, 6, 3, 'REGISTERED', '2026-10-05 14:42:00');
+-- 10 · Futsal nocturne
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (66, 7, 10, 'REGISTERED', '2026-10-03 15:49:00'),
+  (67, 12, 10, 'REGISTERED', '2026-10-03 16:24:00'),
+  (68, 10, 10, 'REGISTERED', '2026-10-03 21:10:00'),
+  (69, 8, 10, 'REGISTERED', '2026-10-03 21:56:00');
+-- 17 · Tir à l’arc
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (70, 1, 17, 'REGISTERED', '2026-10-02 13:07:00'),
+  (71, 8, 17, 'REGISTERED', '2026-10-02 15:56:00'),
+  (72, 9, 17, 'REGISTERED', '2026-10-02 20:03:00');
+-- 9 · Marathon
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (73, 7, 9, 'REGISTERED', '2026-10-04 15:49:00'),
+  (74, 10, 9, 'REGISTERED', '2026-10-04 18:10:00'),
+  (75, 11, 9, 'REGISTERED', '2026-10-04 22:17:00'),
+  (76, 15, 9, 'REGISTERED', '2026-10-05 01:45:00'),
+  (77, 12, 9, 'REGISTERED', '2026-10-05 01:24:00'),
+  (78, 8, 9, 'REGISTERED', '2026-10-05 03:56:00'),
+  (79, 6, 9, 'REGISTERED', '2026-10-05 08:42:00');
+-- 18 · Soirée lecture
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (80, 8, 18, 'REGISTERED', '2026-10-07 12:56:00'),
+  (81, 1, 18, 'REGISTERED', '2026-10-07 16:07:00'),
+  (82, 11, 18, 'REGISTERED', '2026-10-07 22:17:00');
+-- 27 · Parkour
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (83, 7, 27, 'REGISTERED', '2026-10-04 15:49:00'),
+  (84, 10, 27, 'REGISTERED', '2026-10-04 18:10:00');
+-- 20 · Visite du château
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (85, 8, 20, 'REGISTERED', '2026-10-05 12:56:00'),
+  (86, 9, 20, 'REGISTERED', '2026-10-05 17:03:00'),
+  (87, 1, 20, 'REGISTERED', '2026-10-05 19:07:00');
+-- 29 · Balade photo
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (88, 1, 29, 'REGISTERED', '2026-10-02 13:07:00'),
+  (89, 8, 29, 'REGISTERED', '2026-10-02 15:56:00'),
+  (90, 11, 29, 'REGISTERED', '2026-10-02 22:17:00');
+-- 12 · Escape game
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (91, 1, 12, 'REGISTERED', '2026-10-07 13:07:00'),
+  (92, 7, 12, 'REGISTERED', '2026-10-07 18:49:00'),
+  (93, 9, 12, 'REGISTERED', '2026-10-07 20:03:00'),
+  (94, 10, 12, 'REGISTERED', '2026-10-08 00:10:00');
+-- 28 · Calligraphie
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (95, 8, 28, 'REGISTERED', '2026-10-03 12:56:00'),
+  (96, 11, 28, 'REGISTERED', '2026-10-03 19:17:00'),
+  (97, 9, 28, 'REGISTERED', '2026-10-03 20:03:00');
+-- 7 · Exposition (Nantes)
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (98, 1, 7, 'REGISTERED', '2026-10-06 13:07:00'),
+  (99, 8, 7, 'REGISTERED', '2026-10-06 15:56:00'),
+  (100, 9, 7, 'REGISTERED', '2026-10-06 20:03:00'),
+  (101, 11, 7, 'REGISTERED', '2026-10-07 01:17:00');
+-- 21 · Cuisine du monde
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (102, 9, 21, 'REGISTERED', '2026-10-04 14:03:00'),
+  (103, 10, 21, 'REGISTERED', '2026-10-04 18:10:00');
+-- 4 · Soirée jeux de société
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (104, 1, 4, 'REGISTERED', '2026-10-03 13:07:00'),
+  (105, 7, 4, 'REGISTERED', '2026-10-03 18:49:00'),
+  (106, 10, 4, 'REGISTERED', '2026-10-03 21:10:00');
+-- 24 · Étoiles
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (107, 8, 24, 'REGISTERED', '2026-10-07 12:56:00'),
+  (108, 9, 24, 'REGISTERED', '2026-10-07 17:03:00'),
+  (109, 11, 24, 'REGISTERED', '2026-10-07 22:17:00'),
+  (110, 12, 24, 'REGISTERED', '2026-10-07 22:24:00');
+-- 34 · Quiz pop culture
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (111, 1, 34, 'REGISTERED', '2026-10-03 13:07:00'),
+  (112, 7, 34, 'REGISTERED', '2026-10-03 18:49:00'),
+  (113, 8, 34, 'REGISTERED', '2026-10-03 18:56:00'),
+  (114, 9, 34, 'REGISTERED', '2026-10-03 23:03:00'),
+  (115, 10, 34, 'REGISTERED', '2026-10-04 03:10:00'),
+  (116, 11, 34, 'REGISTERED', '2026-10-04 07:17:00'),
+  (117, 12, 34, 'REGISTERED', '2026-10-04 07:24:00');
+-- 14 · Poterie
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (118, 7, 14, 'REGISTERED', '2026-10-05 15:49:00'),
+  (119, 9, 14, 'REGISTERED', '2026-10-05 17:03:00'),
+  (120, 1, 14, 'REGISTERED', '2026-10-05 19:07:00');
+-- 38 · Dégustation (complet)
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (121, 7, 38, 'REGISTERED', '2026-10-05 15:49:00'),
+  (122, 8, 38, 'REGISTERED', '2026-10-05 15:56:00'),
+  (123, 9, 38, 'REGISTERED', '2026-10-05 20:03:00'),
+  (124, 10, 38, 'REGISTERED', '2026-10-06 00:10:00'),
+  (125, 11, 38, 'WAITING_LIST', '2026-10-06 04:17:00'),
+  (126, 12, 38, 'WAITING_LIST', '2026-10-06 04:24:00');
+-- 23 · Terrarium
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (127, 8, 23, 'REGISTERED', '2026-10-02 12:56:00'),
+  (128, 10, 23, 'REGISTERED', '2026-10-02 18:10:00');
+-- 39 · Randonnée urbaine
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (129, 7, 39, 'REGISTERED', '2026-10-04 15:49:00'),
+  (130, 9, 39, 'REGISTERED', '2026-10-04 17:03:00'),
+  (131, 12, 39, 'REGISTERED', '2026-10-04 19:24:00'),
+  (132, 8, 39, 'REGISTERED', '2026-10-04 21:56:00');
+-- 31 · Parfum
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (133, 1, 31, 'REGISTERED', '2026-10-06 13:07:00'),
+  (134, 8, 31, 'REGISTERED', '2026-10-06 15:56:00'),
+  (135, 9, 31, 'REGISTERED', '2026-10-06 20:03:00');
+-- 1 · Tournoi de foot à 5
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (136, 1, 1, 'REGISTERED', '2026-10-06 13:07:00'),
+  (137, 7, 1, 'REGISTERED', '2026-10-06 18:49:00'),
+  (138, 10, 1, 'REGISTERED', '2026-10-06 21:10:00'),
+  (139, 12, 1, 'REGISTERED', '2026-10-06 22:24:00'),
+  (140, 15, 1, 'REGISTERED', '2026-10-07 04:45:00'),
+  (141, 6, 1, 'REGISTERED', '2026-10-07 05:42:00');
+-- 22 · Karaoké rétro
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (142, 1, 22, 'REGISTERED', '2026-10-03 13:07:00'),
+  (143, 7, 22, 'REGISTERED', '2026-10-03 18:49:00'),
+  (144, 8, 22, 'REGISTERED', '2026-10-03 18:56:00'),
+  (145, 9, 22, 'REGISTERED', '2026-10-03 23:03:00'),
+  (146, 11, 22, 'REGISTERED', '2026-10-04 04:17:00'),
+  (147, 12, 22, 'REGISTERED', '2026-10-04 04:24:00');
+-- 33 · Bougies
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (148, 8, 33, 'REGISTERED', '2026-10-04 12:56:00'),
+  (149, 9, 33, 'REGISTERED', '2026-10-04 17:03:00'),
+  (150, 11, 33, 'REGISTERED', '2026-10-04 22:17:00');
+-- 32 · Apiculture
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (151, 1, 32, 'REGISTERED', '2026-10-05 13:07:00'),
+  (152, 9, 32, 'REGISTERED', '2026-10-05 17:03:00'),
+  (153, 10, 32, 'REGISTERED', '2026-10-05 21:10:00');
+
+-- Évènements annulés (inscrits conservés)
+-- 37 · Course d’orientation (annulé)
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (154, 7, 37, 'REGISTERED', '2026-10-06 15:49:00'),
+  (155, 8, 37, 'REGISTERED', '2026-10-06 15:56:00'),
+  (156, 12, 37, 'REGISTERED', '2026-10-06 19:24:00');
+-- 41 · Jeu de piste (club supprimé)
+INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
+  (157, 8, 41, 'REGISTERED', '2026-10-02 12:56:00'),
+  (158, 10, 41, 'REGISTERED', '2026-10-02 18:10:00');
+
+-- --- Commentaires de démo supplémentaires ---
+-- Variés : questions/réponses de l'organisateur, commentaire très long (mise en page), sur évènement
+-- terminé, annulé et complet, et commentaires d'un compte ANONYMISÉ (16) affichés « SUPPRIMÉ ».
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (7, 'Quelqu’un sait s’il y aura un parking près de l’entrée ? On viendra à plusieurs voitures.',
+        7, 3, '2026-10-01 18:20:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (8, 'Bonjour, un parking gratuit est disponible à 200 m de l’entrée principale. Venez un peu en avance !',
+        3, 3, '2026-10-02 09:05:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (9, 'Hâte d’y être, j’ai déjà prévu la couverture et le thermos.',
+        9, 3, '2026-10-03 20:40:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (10, 'Y a-t-il un vestiaire avec douches sur place ? Merci d’avance.',
+        12, 1, '2026-09-14 20:10:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (11, 'Superbe festival ! Les fresques en cours de réalisation sont impressionnantes, bravo aux artistes.',
+        1, 19, '2026-09-27 10:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (12, 'Une journée magnifique, on a pu discuter avec plusieurs artistes. À refaire !',
+        16, 19, '2026-09-27 15:30:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (13, 'Franchement, je ne m’attendais pas à une telle ampleur. Les murs des anciens bassins se sont transformés en véritable galerie à ciel ouvert, avec des artistes venus de toute la France qui expliquaient leurs techniques au public. J’ai particulièrement aimé la démonstration au pochoir et les ateliers pour les enfants. L’organisation était impeccable, avec de l’ombre, de l’eau à disposition et des bénévoles très accueillants. Un grand merci, je serai présent l’an prochain avec toute ma famille.',
+        9, 19, '2026-09-28 08:15:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (14, 'Un moment suspendu au bord du lac, le quartet était exceptionnel.',
+        8, 8, '2026-09-13 09:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (15, 'Merci pour cette belle soirée.',
+        16, 8, '2026-09-13 11:45:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (16, 'Très bonne ambiance sous les guirlandes. Le film était bien choisi.',
+        7, 6, '2026-08-30 10:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (17, 'Dommage que le son soit un peu faible depuis le fond du parc.',
+        10, 6, '2026-08-30 12:15:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (18, 'Je suis en liste d’attente, je croise les doigts pour qu’une place se libère !',
+        11, 38, '2026-10-07 21:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (19, 'Pas de panique : si quelqu’un se désiste, le premier de la liste est automatiquement inscrit et prévenu par mail.',
+        5, 38, '2026-10-08 08:30:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (20, 'Dommage pour l’annulation, j’espère une nouvelle date bientôt.',
+        7, 37, '2026-10-05 19:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (21, 'Merci pour votre compréhension. Une nouvelle date sera proposée dès que la météo le permettra.',
+        3, 37, '2026-10-05 20:10:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (22, 'Belle soirée, merci à l’équipe pour l’accueil !',
+        8, 40, '2026-10-04 10:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (23, 'Les sculptures en lévitation m’ont marqué. Très belle exposition.',
+        16, 2, '2026-08-12 14:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (24, 'Les lanternes sur l’eau, un spectacle magique. Merci aux organisateurs !',
+        11, 30, '2026-09-20 09:30:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (25, 'Quel est le dernier délai pour se désinscrire ?',
+        15, 9, '2026-10-06 18:00:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (26, 'Vous pouvez vous désinscrire à tout moment depuis la page « Mon calendrier ».',
+        3, 9, '2026-10-06 19:20:00');
+
+INSERT INTO comments (id, content, user_id, event_id, created_at)
+VALUES (27, 'On est quatre à vouloir tenter le mystère égyptien, ça va chauffer !',
+        1, 12, '2026-10-02 12:00:00');
+
+-- --- Demandes d'anonymisation (CU28/CU29) ---
+-- 2 demandes EN ATTENTE (membre 12 et organisateur 6 : ses évènements publiés à venir seront
+-- auto-annulés à la validation) et 1 demande VALIDÉE (compte 16, déjà anonymisé).
+INSERT INTO anonymization_requests (id, user_id, status, request_date)
+VALUES (1, 12, 'PENDING', '2026-10-06 10:15:00');
+
+INSERT INTO anonymization_requests (id, user_id, status, request_date)
+VALUES (2, 6, 'PENDING', '2026-10-07 16:40:00');
+
+INSERT INTO anonymization_requests (id, user_id, status, request_date)
+VALUES (3, 16, 'VALIDATED', '2026-09-30 09:00:00');
+
+-- --- Documents légaux (CU31) : CGU et politique RGPD, affichés dans les pages publiques ---
+INSERT INTO legal_documents (id, type, content, updated_at)
+VALUES (1, 'CGU', 'Conditions Générales d’Utilisation du Hub évènementiel
+
+Article 1 - Objet
+Les présentes conditions encadrent l’utilisation de la plateforme du Hub évènementiel, qui permet aux membres d’une fédération de clubs de consulter, d’organiser et de s’inscrire à des évènements sportifs, culturels et de loisirs.
+
+Article 2 - Création et utilisation d’un compte
+La création d’un compte nécessite une adresse email valide et un mot de passe respectant les règles de sécurité en vigueur (12 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial). L’utilisateur est responsable de la confidentialité de ses identifiants.
+
+Article 3 - Inscription aux évènements
+Un utilisateur connecté peut s’inscrire à un évènement publié tant qu’il reste des places. Lorsque l’évènement est complet, il est placé sur liste d’attente et informé par email dès qu’une place se libère. Il est impossible de s’inscrire à deux évènements dont les horaires se chevauchent.
+
+Article 4 - Tarifs
+Les tarifs affichés sont donnés à titre d’information. Aucun paiement n’est effectué sur la plateforme : le règlement a lieu sur place le jour de l’évènement.
+
+Article 5 - Comportement des utilisateurs
+Les commentaires et les échanges doivent rester courtois. Tout propos injurieux, discriminatoire ou contraire à la loi peut entraîner la suspension, temporaire ou définitive, du compte par un administrateur, avec notification par email du motif.
+
+Article 6 - Responsabilité des organisateurs
+Les organisateurs sont responsables du contenu de leurs évènements et des informations publiées. Ils peuvent annuler un évènement publié comportant des inscrits : les personnes concernées en sont alors informées par email.
+
+Article 7 - Protection des données
+Les données personnelles sont traitées conformément à la politique RGPD de la plateforme. Chaque utilisateur peut demander l’anonymisation de son compte, qui est traitée par un administrateur.
+
+Article 8 - Modification des conditions
+Les présentes conditions peuvent être mises à jour à tout moment par l’administrateur de la plateforme. La date de dernière mise à jour est indiquée sur cette page.', '2026-09-01 10:00:00');
+
+INSERT INTO legal_documents (id, type, content, updated_at)
+VALUES (2, 'RGPD', 'Politique de protection des données personnelles (RGPD)
+
+1. Responsable du traitement
+La fédération de clubs éditrice du Hub évènementiel est responsable du traitement des données personnelles collectées via la plateforme.
+
+2. Données collectées
+Nom, prénom, adresse postale, adresse email, numéro de téléphone (facultatif), club(s) d’affiliation, inscriptions aux évènements et commentaires publiés.
+
+3. Finalités
+Ces données servent uniquement à gérer les comptes, les affiliations, les inscriptions aux évènements, l’envoi des emails de service (activation, confirmation, annulation, suspension) et la modération des échanges.
+
+4. Durée de conservation
+Les données sont conservées tant que le compte est actif. Après anonymisation, les informations personnelles sont remplacées par des valeurs aléatoires et irréversibles. Les commentaires publiés sont conservés mais restent anonymes, leur auteur apparaissant comme « SUPPRIMÉ ».
+
+5. Vos droits
+Vous pouvez accéder à vos données, les rectifier depuis la page « Mon compte », ou demander leur anonymisation. La demande est examinée puis validée par un administrateur.
+
+6. Sécurité
+Les mots de passe sont stockés sous forme chiffrée et ne sont jamais accessibles en clair. Les échanges avec la plateforme sont protégés.
+
+7. Contact
+Pour toute question relative à vos données, contactez l’administrateur de la plateforme à l’adresse affichée sur la page d’accueil.', '2026-09-01 10:05:00');
