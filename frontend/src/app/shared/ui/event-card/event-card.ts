@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 
+import { defaultEventImage } from '../../../domain/default-event-image';
 import { EventCardDto } from '../../../domain/event.model';
 import { Card, CardData } from '../card/card';
 
@@ -17,7 +18,7 @@ export class EventCard {
 
   readonly cardData = computed<CardData>(() => ({
     title: this.event().title,
-    imageUrl: this.event().imageUrl ?? undefined,
+    imageUrl: this.event().imageUrl ?? defaultEventImage(this.event().category),
     category: this.event().category,
     information: [
       this.event().startDateTime,

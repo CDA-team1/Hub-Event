@@ -11,4 +11,13 @@
       }
     </ul>
   </section>
+} @else if (placeholderUrl(); as placeholder) {
+  <section class="gallery" aria-label="Photos de l'événement">
+    <ul class="gallery__list">
+      <li class="gallery__item gallery__item--preview">
+        <img [src]="placeholder" alt="" />
+        <span class="gallery__badge gallery__badge--soft">Photo à venir</span>
+      </li>
+    </ul>
+  </section>
 }

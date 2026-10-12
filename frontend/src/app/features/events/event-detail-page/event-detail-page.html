@@ -86,12 +86,14 @@
       <p class="event__description">{{ current.description }}</p>
     </section>
 
-    @if (current.gallery.length > 0) {
-      <section class="event__section">
-        <h2>Photos</h2>
-        <app-image-gallery [images]="current.gallery" [eventTitle]="current.title" />
-      </section>
-    }
+    <section class="event__section">
+      <h2>Photos</h2>
+      <app-image-gallery
+        [images]="current.gallery"
+        [eventTitle]="current.title"
+        [placeholderUrl]="defaultEventImage(current.category)"
+      />
+    </section>
 
     <section class="event__section">
       <h2>Commentaires</h2>

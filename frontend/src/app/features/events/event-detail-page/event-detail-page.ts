@@ -9,6 +9,7 @@ import { Auth } from '../../../core/auth/auth';
 import { CommentApi } from '../../../core/comments/comment-api';
 import { EventApi, isValidEventId } from '../../../core/events/event-api';
 import { RegistrationApi } from '../../../core/registrations/registration-api';
+import { defaultEventImage } from '../../../domain/default-event-image';
 import { CommentForm } from './comment-list/comment-form/comment-form';
 import { CommentList } from './comment-list/comment-list';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
@@ -80,6 +81,7 @@ export class EventDetailPage {
   );
 
   protected readonly detail = this.eventApi.eventDetail(this.id);
+  protected readonly defaultEventImage = defaultEventImage;
   protected readonly comments = this.eventApi.comment(this.id);
 
   protected readonly isConnected = this.auth.isAuthenticated;

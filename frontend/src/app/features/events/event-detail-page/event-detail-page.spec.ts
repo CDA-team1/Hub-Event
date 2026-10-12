@@ -102,6 +102,18 @@ describe('EventDetailPage', () => {
     expect(element.querySelectorAll('.comment')).toHaveLength(1);
   });
 
+  it("affiche l'illustration de la catégorie quand l'évènement n'a aucune photo", async () => {
+    const element = await open('/evenements/5');
+    http.expectOne('/api/events/5').flush({ ...DETAIL, gallery: [] });
+    http.expectOne('/api/events/5/comments').flush([]);
+    await stable();
+
+    const image = element.querySelector('app-image-gallery img');
+    const badge = element.querySelector('app-image-gallery .gallery__badge');
+    expect(image?.getAttribute('src')).toBe('placeholders/leisure.webp');
+    expect(badge?.textContent?.trim()).toBe('Photo à venir');
+  });
+
   it('affiche la page introuvable quand le serveur répond 404', async () => {
     const element = await open('/evenements/9999');
     http
