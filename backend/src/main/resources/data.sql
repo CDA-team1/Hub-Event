@@ -688,6 +688,336 @@ INSERT INTO images (id, event_id, url, delete_url, is_preview)
 VALUES (37, 10, 'https://i.ibb.co/RpXQbfrh/sport-tournoi-futsal-nocturne-2.webp',
         'https://ibb.co/1fCRQ1ys/f13b2770f663e76fc1e410415c1590bf', FALSE);
 
+-- Photos supplémentaires des 34 évènements : 82 photos hébergées sur imgbb (1 à 3 par évènement).
+-- La photo de preview reste celle d'origine ci-dessus ; ces photos n'apparaissent que dans la galerie.
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (38, 1, 'https://i.ibb.co/C3ffkr2Y/event-football-2.webp',
+        'https://ibb.co/q3vvtZ5c/df5ba37ca6546c54a01da6979b59e5f7', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (39, 1, 'https://i.ibb.co/XZ6FXWKH/event-football-3.webp',
+        'https://ibb.co/3yVS1TjK/799ce924132f88a88b41b0a223f58b07', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (40, 1, 'https://i.ibb.co/Rkv2LNxS/event-football-4.webp',
+        'https://ibb.co/fz1Mm9hS/e35997027ea2dcb9e5e22bd50d120ae3', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (41, 2, 'https://i.ibb.co/233dt7YP/event-museum-2.webp',
+        'https://ibb.co/600FPRJb/2de619491a021e3a34dab29b71f7d8af', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (42, 2, 'https://i.ibb.co/0RBwdMTS/event-museum-3.webp',
+        'https://ibb.co/Rkh5V0fm/1907a503afa1409a2e274d61e5a86caf', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (43, 3, 'https://i.ibb.co/svqTzwW9/event-music-2.webp',
+        'https://ibb.co/ynqz7y4F/1693d6ae9192f9e729aaa4a81357f3b7', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (44, 3, 'https://i.ibb.co/vvJqTCRW/event-music-3.webp',
+        'https://ibb.co/bRrmCjDV/b54cf98945b42dcd2b00f85dee7bddb7', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (45, 3, 'https://i.ibb.co/8nwBgpNn/event-music-4.webp',
+        'https://ibb.co/35bsmq45/26e46ac3c61960dc2d2c6a60158f7388', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (46, 4, 'https://i.ibb.co/bRmw8Npv/event-boardgame-2.webp',
+        'https://ibb.co/Fq3Zj8GY/f57f2d5b0d9c926b1a96adb63ae61247', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (47, 4, 'https://i.ibb.co/mCN6nYMr/event-boardgame-3.webp',
+        'https://ibb.co/SXfRk19D/ba40e4c5118f9e36c35a63e8c6a41ff4', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (48, 5, 'https://i.ibb.co/SX2dCcKh/loisir-soiree-jeux-cafe-ludique-3.webp',
+        'https://ibb.co/Fb90TXBS/eeb97e94d8655d03152b7aaf5b299b10', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (49, 5, 'https://i.ibb.co/LXCQXkTL/loisir-soiree-jeux-cafe-ludique-4.webp',
+        'https://ibb.co/4njsnmb6/5114dbde5d47cb6223484e6eb4c32e4f', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (50, 6, 'https://i.ibb.co/QZS3XnN/culture-cinema-plein-air-2.webp',
+        'https://ibb.co/4cvnJMT/03061f14b150c04322a5989cb21eb759', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (51, 6, 'https://i.ibb.co/qL1TM606/culture-cinema-plein-air-3.webp',
+        'https://ibb.co/20KG7J8J/bab5f69d61aa266226e9cc49f9df5b40', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (52, 7, 'https://i.ibb.co/HDwPcFcq/culture-exposition-art-contemporain-3.webp',
+        'https://ibb.co/d0CpNWND/4f7c948f6f021589b58e47c40df56f4b', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (53, 7, 'https://i.ibb.co/n8c1NkDH/culture-exposition-art-contemporain-4.webp',
+        'https://ibb.co/PzhWvC57/4134a7a8d3e3466635f357389778d4f1', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (54, 8, 'https://i.ibb.co/K4xFsBR/culture-concert-jazz-bord-du-lac-2.webp',
+        'https://ibb.co/X0xS56N/e006544ac883f98e705ec85dd1c5e665', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (55, 8, 'https://i.ibb.co/dJfBZ4N4/culture-concert-jazz-bord-du-lac-3.webp',
+        'https://ibb.co/jZ8htkCk/22ae3eadff2aeb87b064cf84670bec80', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (56, 9, 'https://i.ibb.co/sBFqmWQ/sport-marathon-centre-ville-2.webp',
+        'https://ibb.co/cmNQgYt/a13aac8e8340b12cec2affa9a94a72f8', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (57, 9, 'https://i.ibb.co/27F2ZVBf/sport-marathon-centre-ville-3.webp',
+        'https://ibb.co/TBwXWj5F/a9a22f254805336ef50bedaa56d68a7f', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (58, 9, 'https://i.ibb.co/ksJ7PRVZ/sport-marathon-centre-ville-4.webp',
+        'https://ibb.co/9khDdFmP/19566a13de2494c8a7fc913e1aa08963', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (59, 10, 'https://i.ibb.co/5gzRcKTP/sport-tournoi-futsal-nocturne-3.webp',
+        'https://ibb.co/W4d2KVnL/5b9bcc5a0b6c9027da229e1e0f4547a0', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (60, 11, 'https://i.ibb.co/HfVJR8m5/sport-yoga-lever-du-soleil-2.webp',
+        'https://ibb.co/0Rcw1bPH/66ffb3c10101f7afb9628a77fa64b743', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (61, 11, 'https://i.ibb.co/Dfc84L10/sport-yoga-lever-du-soleil-3.webp',
+        'https://ibb.co/chfCJxy4/c66b14e624da0f167aa96d85d7c63699', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (62, 11, 'https://i.ibb.co/mrywhRrT/sport-yoga-lever-du-soleil-4.webp',
+        'https://ibb.co/p6K8416w/3a48a56e3da55d4ce289715201de57a3', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (63, 12, 'https://i.ibb.co/bRKZqWJt/loisir-escape-game-mystere-egyptien-2.webp',
+        'https://ibb.co/tPJtkmXR/d894e7f81d31e31a0e1e09b6f7de15da', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (64, 12, 'https://i.ibb.co/fVw0SkQS/loisir-escape-game-mystere-egyptien-3.webp',
+        'https://ibb.co/Q7wmcPXc/1996fcf21361048ccf76cc119b457257', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (65, 13, 'https://i.ibb.co/cXXVxjDG/loisir-brunch-fleuri-jardin-2.webp',
+        'https://ibb.co/Vpp53s27/dd54f20e07f64e7c64c630b8a299186b', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (66, 13, 'https://i.ibb.co/6cZ2ynQC/loisir-brunch-fleuri-jardin-3.webp',
+        'https://ibb.co/Myhbg2d0/ae91b90f13c10c544a67593f770246f9', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (67, 13, 'https://i.ibb.co/fYy3VrNf/loisir-brunch-fleuri-jardin-4.webp',
+        'https://ibb.co/5WSQXsjm/66f1e326e863a8c9123cfb6cb8b91d88', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (68, 14, 'https://i.ibb.co/6JvtdWfn/loisir-atelier-poterie-2.webp',
+        'https://ibb.co/JFxphsMB/26c3f779cfd8ad04741f6e15f87db735', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (69, 14, 'https://i.ibb.co/RpFwZCpH/loisir-atelier-poterie-3.webp',
+        'https://ibb.co/8DCZTjD8/1fe63b92d445358c62a88c9705ff03e8', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (70, 15, 'https://i.ibb.co/F4BX93V4/sport-initiation-escalade-bloc-2.webp',
+        'https://ibb.co/v4JhbqY4/45119280e2917b4fb309ad6b736cad27', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (71, 15, 'https://i.ibb.co/YF8zgM4k/sport-initiation-escalade-bloc-3.webp',
+        'https://ibb.co/fzthJ5Vp/fd6065d9ea9da7e3946ea01cd0eb4c10', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (72, 15, 'https://i.ibb.co/840LfTXz/sport-initiation-escalade-bloc-4.webp',
+        'https://ibb.co/3Y79jGkf/5529bdf123a6cdcfe925255b0c97944e', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (73, 16, 'https://i.ibb.co/MykV4m9f/sport-paddle-coucher-du-soleil-2.webp',
+        'https://ibb.co/DPfCyZLY/c032a1c687b0e8b0971ca6eda2de26d9', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (74, 16, 'https://i.ibb.co/Zqj5rbK/sport-paddle-coucher-du-soleil-3.webp',
+        'https://ibb.co/h36bNTH/fd605f0559892925012e8fe37712a01f', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (75, 17, 'https://i.ibb.co/4nGTssDp/sport-initiation-tir-a-l-arc-2.webp',
+        'https://ibb.co/v6GPssrk/4e5932b1f1f6a705194f743e2fb2685a', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (76, 17, 'https://i.ibb.co/6JHzsLrv/sport-initiation-tir-a-l-arc-3.webp',
+        'https://ibb.co/sJKn3zb5/9b107aac6300aa740da69af3cab02580', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (77, 17, 'https://i.ibb.co/1Gm47bF0/sport-initiation-tir-a-l-arc-4.webp',
+        'https://ibb.co/TMgNYr9w/3ee4913974a6c466d0b251e266d91da6', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (78, 18, 'https://i.ibb.co/tphdtNp5/culture-soiree-lecture-librairie-2.webp',
+        'https://ibb.co/SwxL81wp/4c1939f8b9a0e7c54ddc6958d8547fa3', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (79, 18, 'https://i.ibb.co/zhft7zNB/culture-soiree-lecture-librairie-3.webp',
+        'https://ibb.co/C50SMfWY/01f6b9f242dab6e8f54ea98c63c7fbf4', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (80, 19, 'https://i.ibb.co/h1drgCgb/culture-festival-street-art-2.webp',
+        'https://ibb.co/rfpqQvQY/e12ef83b201a893852263e928395b8a2', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (81, 19, 'https://i.ibb.co/60rCf7W1/culture-festival-street-art-3.webp',
+        'https://ibb.co/gZmKBLRP/4f04ba31e6b5d85b52978430d060fc1d', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (82, 19, 'https://i.ibb.co/QvHv86tR/culture-festival-street-art-4.webp',
+        'https://ibb.co/RT6ThCdm/8e72c2316b845a0a3e4d201e6b4b80d8', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (83, 20, 'https://i.ibb.co/0Rx0mmm6/culture-visite-theatralisee-chateau-2.webp',
+        'https://ibb.co/wFfnBBBP/944bd55a95a056852322b9b02ce78148', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (84, 20, 'https://i.ibb.co/GfT740Bz/culture-visite-theatralisee-chateau-3.webp',
+        'https://ibb.co/HLd7fV15/5ce23b3c07e125f82cda16834bf0b9e2', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (85, 21, 'https://i.ibb.co/prPYR91q/loisir-atelier-cuisine-du-monde-2.webp',
+        'https://ibb.co/Xk4c3vWH/3da8d894f59553feec96e06fa0bf88f7', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (86, 21, 'https://i.ibb.co/bMvXKvYd/loisir-atelier-cuisine-du-monde-3.webp',
+        'https://ibb.co/xtg67gw5/03940a558c89747cecab3969b6afd951', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (87, 21, 'https://i.ibb.co/jv0TQDZY/loisir-atelier-cuisine-du-monde-4.webp',
+        'https://ibb.co/Y7n31hTS/8e221a30ff0cf607a4a6d86e7c8894a7', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (88, 22, 'https://i.ibb.co/mrtxhYYh/loisir-soiree-karaoke-retro-2.webp',
+        'https://ibb.co/7xV9rTTr/bf6fbd021fe2aca8d7592c57f28a9530', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (89, 22, 'https://i.ibb.co/mVNzZMCG/loisir-soiree-karaoke-retro-3.webp',
+        'https://ibb.co/G4HPYbv0/37df4a59ebfba1114692e6cd2930dce4', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (90, 23, 'https://i.ibb.co/hJ86tRDm/loisir-atelier-creation-terrarium-2.webp',
+        'https://ibb.co/bMd08gzK/7245425b323249102ee2a103558c518e', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (91, 23, 'https://i.ibb.co/m5PVvVcy/loisir-atelier-creation-terrarium-3.webp',
+        'https://ibb.co/23p181kM/7b8f308b5bc59f24e588874895f47966', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (92, 23, 'https://i.ibb.co/rKG15P3b/loisir-atelier-creation-terrarium-4.webp',
+        'https://ibb.co/vCxKL5hs/4dea52ca32614b7992c2074aa72b3b7d', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (93, 24, 'https://i.ibb.co/99ZRSVh8/loisir-nuit-observation-etoiles-2.webp',
+        'https://ibb.co/8DYFtdbK/6b3f33af0d2d8918e456b826f5f18f6e', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (94, 24, 'https://i.ibb.co/n8ZTnRqD/loisir-nuit-observation-etoiles-3.webp',
+        'https://ibb.co/84TJdXnj/1c682474913455e65db5bfe56e7f62e7', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (95, 25, 'https://i.ibb.co/VW6p7rQr/sport-initiation-aviron-lever-du-soleil-2.webp',
+        'https://ibb.co/8Dk4WTdT/13d98e5b1f7123239f63b1d181ba00fc', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (96, 25, 'https://i.ibb.co/PsG8b9MQ/sport-initiation-aviron-lever-du-soleil-3.webp',
+        'https://ibb.co/5XhVznkF/8c45b69c811afeb0ea5a84be09cc0a47', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (97, 25, 'https://i.ibb.co/jZyL6ZJ8/sport-initiation-aviron-lever-du-soleil-4.webp',
+        'https://ibb.co/Pzc5mzDr/8d17c2734a6de69cb4fdfd56cfe5c7f3', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (98, 26, 'https://i.ibb.co/HpR9QWKz/sport-tournoi-beach-volley-2.webp',
+        'https://ibb.co/x8wrQp2j/714cdd252d1f0a1041c911c63af7f220', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (99, 26, 'https://i.ibb.co/TxSZ8WTQ/sport-tournoi-beach-volley-3.webp',
+        'https://ibb.co/Xrg9sY4n/f615907b639c114aead8b3742b50fa68', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (100, 27, 'https://i.ibb.co/pv9MkRwP/sport-initiation-parkour-urbain-2.webp',
+        'https://ibb.co/TBF7Nb2T/45077b91d76616fe19ff0fd70d209587', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (101, 27, 'https://i.ibb.co/TdjWnqb/sport-initiation-parkour-urbain-3.webp',
+        'https://ibb.co/MQwBj5G/30f0ddfee57d451dc859c0f477c2bfa9', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (102, 27, 'https://i.ibb.co/6RDkbQh3/sport-initiation-parkour-urbain-4.webp',
+        'https://ibb.co/WWBLFC9b/ed8190ef7aa0259970cdadb5abbd1d32', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (103, 28, 'https://i.ibb.co/Y7HDtt78/culture-atelier-calligraphie-japonaise-2.webp',
+        'https://ibb.co/SXFQKKX0/ec5efc3b0dbdfdd7c9ec9973436093d9', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (104, 28, 'https://i.ibb.co/TxrhjyPV/culture-atelier-calligraphie-japonaise-3.webp',
+        'https://ibb.co/8LX8vkPW/2ba0bd4390c446d240b044a08bcbd644', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (105, 29, 'https://i.ibb.co/PZRnDfZs/culture-balade-photographique-vieux-village-2.webp',
+        'https://ibb.co/MDb4B3Dy/c520acf1b011ff1eee8f2cfb2c758b6d', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (106, 29, 'https://i.ibb.co/1fCH6sT3/culture-balade-photographique-vieux-village-3.webp',
+        'https://ibb.co/VWFXmHTd/029a7610ac3663b479969da9598dca20', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (107, 29, 'https://i.ibb.co/Kp9QWS7c/culture-balade-photographique-vieux-village-4.webp',
+        'https://ibb.co/fzCKHLtV/741d4d75b505cfb7a648359827d5df5e', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (108, 30, 'https://i.ibb.co/3Y4mHRPW/culture-fete-lanternes-bord-de-l-eau-2.webp',
+        'https://ibb.co/84NgVYQ2/37e94ad00e5d40939565214ea4444855', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (109, 30, 'https://i.ibb.co/QFMn3mDw/culture-fete-lanternes-bord-de-l-eau-3.webp',
+        'https://ibb.co/KjW7pyKv/19c9fb571a1df14f7d4f966db1ac04ef', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (110, 31, 'https://i.ibb.co/TDqBSpjK/loisir-atelier-creation-parfum-2.webp',
+        'https://ibb.co/PszZn3XT/ef78db3652180e91db3bc787cd202b53', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (111, 31, 'https://i.ibb.co/BVB01Pkn/loisir-atelier-creation-parfum-3.webp',
+        'https://ibb.co/FbzRPWpH/2d61768c643f3fedba17a2b8ccf57c7d', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (112, 31, 'https://i.ibb.co/bgHry9pd/loisir-atelier-creation-parfum-4.webp',
+        'https://ibb.co/8DzjRZF8/56a01cf96222586e0c3257fe54f27e73', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (113, 32, 'https://i.ibb.co/WWKgHk77/loisir-decouverte-apiculture-2.webp',
+        'https://ibb.co/qM1kDNhh/6480042b8fd210292c2846fafb607859', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (114, 32, 'https://i.ibb.co/271dDQbB/loisir-decouverte-apiculture-3.webp',
+        'https://ibb.co/SX4Bh8Lp/1b7403c9855e5b992166c14b61d3f95d', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (115, 33, 'https://i.ibb.co/MD1YJ70Q/loisir-atelier-bougies-parfumees-2.webp',
+        'https://ibb.co/tM271DrF/93b0d66cb9e2c1f27eadeeb2bfb248f2', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (116, 33, 'https://i.ibb.co/KjYr6D2C/loisir-atelier-bougies-parfumees-3.webp',
+        'https://ibb.co/tMSJBzqy/20ec6752799a9ec51a3c16d8db2c1ab1', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (117, 33, 'https://i.ibb.co/spR87Pny/loisir-atelier-bougies-parfumees-4.webp',
+        'https://ibb.co/BH30kPbq/b416e3ebb6174c75ff6e9b5b2554beb2', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (118, 34, 'https://i.ibb.co/zH62hJfg/loisir-soiree-quiz-pop-culture-2.webp',
+        'https://ibb.co/dJmp0gKv/eb5e3c72d5ec5ca23d0a604433e60097', FALSE);
+
+INSERT INTO images (id, event_id, url, delete_url, is_preview)
+VALUES (119, 34, 'https://i.ibb.co/MFPDYFW/loisir-soiree-quiz-pop-culture-3.webp',
+        'https://ibb.co/h32RP3h/fc7c6f1dbed66832c17e698ded69cf4c', FALSE);
+
 -- --- Commentaires de démo (COM-02) ---
 -- Auteurs : comptes ACTIFS (règle CU12 : compte actif requis) ou devenus ANONYMISÉS depuis (id 16) ;
 -- le membre en attente d'activation (id 4) n'en publie aucun.

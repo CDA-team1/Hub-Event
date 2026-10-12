@@ -4,8 +4,20 @@
       @for (image of images(); track image.id) {
         <li class="gallery__item" [class.gallery__item--preview]="image.isPreview">
           <img [src]="image.url" [alt]="'Photo ' + ($index + 1) + ' – ' + eventTitle()" />
+          @if (image.isPreview) {
+            <span class="gallery__badge">Photo principale</span>
+          }
         </li>
       }
+    </ul>
+  </section>
+} @else if (placeholderUrl(); as placeholder) {
+  <section class="gallery" aria-label="Photos de l'événement">
+    <ul class="gallery__list">
+      <li class="gallery__item gallery__item--preview">
+        <img [src]="placeholder" alt="" />
+        <span class="gallery__badge gallery__badge--soft">Photo à venir</span>
+      </li>
     </ul>
   </section>
 }
