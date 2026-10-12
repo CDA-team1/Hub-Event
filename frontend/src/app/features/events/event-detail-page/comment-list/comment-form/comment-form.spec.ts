@@ -81,6 +81,21 @@ describe('CommentForm', () => {
     expect(element.textContent).toContain('Veuillez saisir un commentaire.');
   });
 
+  it('n’affiche aucune erreur une fois le formulaire réinitialisé après une publication', async () => {
+    await typeComment('Super événement !');
+    await submitForm();
+
+    component.reset();
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const textarea = element.querySelector('textarea') as HTMLTextAreaElement;
+
+    expect(textarea.value).toBe('');
+    expect(element.querySelector('[role="alert"]')).toBeNull();
+  });
+
   it('vide la saisie lorsque l’utilisateur clique sur Annuler', async () => {
     await typeComment('Commentaire à abandonner');
 
