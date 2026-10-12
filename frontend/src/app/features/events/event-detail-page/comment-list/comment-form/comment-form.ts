@@ -45,7 +45,9 @@ export class CommentForm {
   }
 
   reset(): void {
-    this.model.set({
+    // Remet aussi le champ à « non touché » : sans cela, l'erreur « requis » s'affiche
+    // aussitôt sur le champ vidé après une publication réussie.
+    this.commentForm().reset({
       content: '',
     });
     this.blankError.set(false);

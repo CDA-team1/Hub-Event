@@ -14,6 +14,8 @@
       <div class="cgu-page__document">
         {{ cgu.content }}
       </div>
+    } @else {
+      <app-empty-state> Aucun document CGU disponible pour le moment. </app-empty-state>
     }
   </section>
 </main>

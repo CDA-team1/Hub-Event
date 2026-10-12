@@ -31,8 +31,10 @@ public class LegalDocumentController implements LegalDocumentControllerDoc {
 
     @Override
     @GetMapping("/{type}")
-    public LegalDocumentDto getByType(@PathVariable DocumentType type) {
-        return legalDocumentService.extractByType(type);
+    public ResponseEntity<LegalDocumentDto> getByType(@PathVariable DocumentType type) {
+        return legalDocumentService.extractByType(type)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @Override

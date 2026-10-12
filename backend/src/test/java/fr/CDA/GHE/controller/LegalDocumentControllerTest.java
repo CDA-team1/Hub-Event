@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Optional;
 import java.time.LocalDateTime;
 
 import static org.mockito.Mockito.when;
@@ -50,7 +51,8 @@ class LegalDocumentControllerTest {
     void getByType_shouldReturn200WithDocument_whenItExists() throws Exception {
         LegalDocumentDto dto = new LegalDocumentDto(1L, DocumentType.RGPD, "Contenu RGPD",
                 LocalDateTime.of(2026, 1, 1, 10, 0));
-        when(legalDocumentService.extractByType(DocumentType.RGPD)).thenReturn(dto);
+        when(legalDocumentService.extractByType(DocumentType.RGPD))
+                .thenReturn(Optional.of(dto));
 
         mockMvc.perform(get("/documents/RGPD"))
                 .andExpect(status().isOk())
@@ -59,13 +61,13 @@ class LegalDocumentControllerTest {
     }
 
     @Test
-    void getByType_shouldReturn404_whenDocumentDoesNotExist() throws Exception {
+    void getByType_shouldReturn204_whenDocumentDoesNotExist() throws Exception {
         when(legalDocumentService.extractByType(DocumentType.CGU))
-                .thenThrow(new NotFoundException("Aucun document enregistré pour ce type."));
+                .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/documents/CGU"))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Aucun document enregistré pour ce type."));
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
     }
 
     @Test

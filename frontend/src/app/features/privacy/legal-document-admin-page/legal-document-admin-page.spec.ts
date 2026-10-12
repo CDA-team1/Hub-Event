@@ -115,21 +115,30 @@ describe('LegalDocumentAdminPage', () => {
   });
 
   it("affiche un formulaire vide si le document n'existe pas encore", async () => {
-    legalDocumentApi.getByType.mockReturnValue(
-      throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 404,
-            statusText: 'Not Found',
-          }),
-      ),
-    );
+    legalDocumentApi.getByType.mockReturnValue(of(null));
 
     const { component, element } = await createPage();
 
     expect(component.loadErrorMessage()).toBeNull();
     expect(component.content.value).toBe('');
     expect(element.querySelector('textarea')).not.toBeNull();
+  });
+
+  it('affiche une erreur si le document ne peut pas être chargé', async () => {
+    legalDocumentApi.getByType.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 500,
+            statusText: 'Server Error',
+          }),
+      ),
+    );
+
+    const { component, element } = await createPage('RGPD');
+
+    expect(component.loadErrorMessage()).toBe('Impossible de charger la politique RGPD.');
+    expect(element.textContent).toContain('Impossible de charger la politique RGPD.');
   });
 
   it('enregistre le contenu modifié', async () => {

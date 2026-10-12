@@ -59,6 +59,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup").permitAll()
             .requestMatchers(HttpMethod.POST, "/auth/confirm-account-creation").permitAll()
             .requestMatchers(HttpMethod.GET, "/auth/activate", "/auth/confirm-password-change").permitAll()
+            .requestMatchers(HttpMethod.GET, "/events/mine").authenticated()
             .requestMatchers(HttpMethod.GET, "/events", "/events/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/pdf").permitAll()
             .requestMatchers(HttpMethod.GET, "/events/*/comments").permitAll()

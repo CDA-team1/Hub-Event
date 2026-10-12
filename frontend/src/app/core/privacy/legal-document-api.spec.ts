@@ -49,6 +49,21 @@ describe('LegalDocumentApi', () => {
     request.flush(response);
   });
 
+  it('retourne null si aucun document légal n’est disponible', () => {
+    service.getByType('RGPD').subscribe((document) => {
+      expect(document).toBeNull();
+    });
+
+    const request = httpTesting.expectOne('/api/documents/RGPD');
+
+    expect(request.request.method).toBe('GET');
+
+    request.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+  });
+
   it('enregistre un document légal', () => {
     const response: LegalDocumentDto = {
       id: 2,
