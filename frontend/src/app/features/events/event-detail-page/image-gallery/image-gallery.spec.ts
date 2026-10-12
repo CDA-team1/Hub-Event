@@ -36,6 +36,16 @@ describe('ImageGallery', () => {
     );
   });
 
+  it('affiche le badge « Photo principale » uniquement sur la preview', async () => {
+    const element = await render(images);
+
+    const badges = element.querySelectorAll('.gallery__badge');
+    expect(badges).toHaveLength(1);
+    expect(badges[0].textContent?.trim()).toBe('Photo principale');
+    const preview = element.querySelector('.gallery__item--preview');
+    expect(preview?.querySelector('.gallery__badge')).toBe(badges[0]);
+  });
+
   it("décrit chaque photo avec le titre de l'événement", async () => {
     const element = await render(images);
 

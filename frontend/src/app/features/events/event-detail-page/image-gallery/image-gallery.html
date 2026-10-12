@@ -4,6 +4,9 @@
       @for (image of images(); track image.id) {
         <li class="gallery__item" [class.gallery__item--preview]="image.isPreview">
           <img [src]="image.url" [alt]="'Photo ' + ($index + 1) + ' – ' + eventTitle()" />
+          @if (image.isPreview) {
+            <span class="gallery__badge">Photo principale</span>
+          }
         </li>
       }
     </ul>
