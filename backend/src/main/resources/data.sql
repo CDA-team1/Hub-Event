@@ -23,7 +23,7 @@
 --   14 suspended.forever.demo@ghe.local        suspendu DÉFINITIVEMENT
 --   15 suspension.expired.demo@ghe.local       suspension EXPIRÉE (peut se connecter)
 --   16 anonymized-...@ghe.local                compte ANONYMISÉ (demande validée), apparaît « SUPPRIMÉ » en commentaire
---   17 former.organizer.demo@ghe.local         ancien organisateur d'un club supprimé, redevenu simple membre
+--   17 former.organizer.demo@ghe.local         ancien organisateur du club désaffilié (5), redevenu simple membre
 --   18 admin2.demo@ghe.local                   second administrateur
 
 -- --- Club de démo (nécessaire pour affilier un ORGANIZER, règle PO) ---
@@ -51,7 +51,7 @@ VALUES (5, 'Ancien Club Escalade Grenoble', 'SPORT', '3 rue Lesdiguières, 38000
 
 -- --- Comptes utilisateurs ---
 
--- 1) Membre non affilié, actif
+-- 1) Membre actif (affilié ensuite à 2 clubs, voir plus bas)
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password,
                     status, role, suspended, activation_token)
 VALUES (1, 'Doe', 'John', '1 rue de Test, 31000 Toulouse', 'member.demo@ghe.local', NULL,
@@ -83,7 +83,7 @@ VALUES (4, 'Sacrebleu', 'Gustave', '1 rue de Test, 31000 Toulouse', 'pending.dem
         '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W',
         'INACTIVE', 'MEMBER', false, 'demo-activation-token-gustave');
 
--- Le membre non affilié (id 1) devient affilié à 2 clubs, pour démontrer qu'un membre
+-- Le membre de démo (id 1) est affilié à 2 clubs, pour démontrer qu'un membre
 -- peut être rattaché à plusieurs clubs (règle CU26 : "un membre peut être affilié à
 -- plusieurs clubs ou n'être affilié à aucun club").
 INSERT INTO affiliation (club_id, user_id) VALUES (1, 1);
@@ -132,7 +132,7 @@ VALUES (15, 'Garcia', 'Sofia', '22 rue du Faubourg, 34000 Montpellier', 'suspens
 -- 16) Compte ANONYMISÉ (demande validée) : données remplacées par des valeurs aléatoires
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
 VALUES (16, 'a3f1c9d2-7b4e-4c8a-9e15-2d6f0b7a1c43', '5e8b2a71-0c3d-4f96-8a2e-91b7d4c6e038', '9c2d7e40-3a15-4b8f-b6d1-7e0a5f3c2b19', 'anonymized-d41e6b92-8f07-4a3c-b5e2-1c9a7d3f6e80@ghe.local', NULL, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ANONYMIZED', 'MEMBER', false);
--- 17) Ancien organisateur du club supprimé (5) : redevenu membre, sans club (CU24)
+-- 17) Ancien organisateur du club désaffilié (5) : redevenu membre, sans club (CU24)
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
 VALUES (17, 'Marchand', 'Victor', '11 rue Bayard, 38000 Grenoble', 'former.organizer.demo@ghe.local', '0612348765', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
 -- 18) Second administrateur
@@ -522,7 +522,7 @@ VALUES (40, 'Vernissage de rentrée',
         'Espace des Arts, 31000 Toulouse', '2026-10-03 18:00:00', '2026-10-03 21:00:00',
         0.00, 0.00, 40, 'PUBLISHED', 'CULTURE', 3, 2);
 
--- 41) ANNULÉ à la suppression du club (5, désaffilié) : l’organisateur (17) est redevenu simple membre.
+-- 41) ANNULÉ à la fin d’affiliation du club (5, désaffilié) : l’organisateur (17) est redevenu simple membre.
 INSERT INTO events (id, title, description, location, start_date_time, end_date_time,
                      affiliated_price, non_affiliated_price, max_seats, status, category,
                      organizer_id, club_id)
@@ -689,8 +689,8 @@ VALUES (37, 10, 'https://i.ibb.co/RpXQbfrh/sport-tournoi-futsal-nocturne-2.webp'
         'https://ibb.co/1fCRQ1ys/f13b2770f663e76fc1e410415c1590bf', FALSE);
 
 -- --- Commentaires de démo (COM-02) ---
--- Auteurs limités aux comptes ACTIFS (règle CU12 : compte actif requis) : le membre en
--- attente d'activation (id 4) n'en publie donc aucun.
+-- Auteurs : comptes ACTIFS (règle CU12 : compte actif requis) ou devenus ANONYMISÉS depuis (id 16) ;
+-- le membre en attente d'activation (id 4) n'en publie aucun.
 
 -- Sur le tournoi de foot à 5 (à venir)
 INSERT INTO comments (id, content, user_id, event_id, created_at)
@@ -962,7 +962,7 @@ INSERT INTO registrations (id, user_id, event_id, status, registration_date) VAL
   (154, 7, 37, 'REGISTERED', '2026-10-06 15:49:00'),
   (155, 8, 37, 'REGISTERED', '2026-10-06 15:56:00'),
   (156, 12, 37, 'REGISTERED', '2026-10-06 19:24:00');
--- 41 · Jeu de piste (club supprimé)
+-- 41 · Jeu de piste (club désaffilié)
 INSERT INTO registrations (id, user_id, event_id, status, registration_date) VALUES
   (157, 8, 41, 'REGISTERED', '2026-10-02 12:56:00'),
   (158, 10, 41, 'REGISTERED', '2026-10-02 18:10:00');
@@ -1067,7 +1067,7 @@ VALUES (2, 6, 'PENDING', '2026-10-07 16:40:00');
 INSERT INTO anonymization_requests (id, user_id, status, request_date)
 VALUES (3, 16, 'VALIDATED', '2026-09-30 09:00:00');
 
--- --- Documents légaux (CU31) : CGU et politique RGPD, affichés dans les pages publiques ---
+-- --- Documents légaux (CU7 politique RGPD, CU8 CGU) : CGU et politique RGPD, affichés dans les pages publiques ---
 INSERT INTO legal_documents (id, type, content, updated_at)
 VALUES (1, 'CGU', 'Conditions Générales d’Utilisation du Hub évènementiel
 
