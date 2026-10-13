@@ -73,7 +73,12 @@ describe('EventRegistrationsPage', () => {
       .expectOne((req) => req.url.endsWith('/events/5/registrations'))
       .flush([
         makeRegistration(),
-        makeRegistration({ id: 2, userId: 21, userEmail: 'attente@example.com', status: 'WAITING_LIST' }),
+        makeRegistration({
+          id: 2,
+          userId: 21,
+          userEmail: 'attente@example.com',
+          status: 'WAITING_LIST',
+        }),
       ]);
     await stable();
 
@@ -82,6 +87,19 @@ describe('EventRegistrationsPage', () => {
     expect(element.textContent).toContain('Inscrit');
     expect(element.textContent).toContain('attente@example.com');
     expect(element.textContent).toContain('Liste d’attente');
+  });
+
+  it('affiche le tableau avec une grille complète', async () => {
+    const fixture = TestBed.createComponent(EventRegistrationsPage);
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/events/5/registrations'))
+      .flush([makeRegistration()]);
+    await stable();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+
+    expect(table.classList.contains('bordered')).toBe(true);
   });
 
   it('affiche le champ Motif au clic sur Désinscrire, masqué au départ', async () => {

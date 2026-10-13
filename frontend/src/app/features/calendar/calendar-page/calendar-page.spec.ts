@@ -53,6 +53,17 @@ describe('CalendarPage', () => {
     expect(element.querySelectorAll('.day--highlighted')).toHaveLength(1);
   });
 
+  it('affiche le tableau des évènements avec une grille complète', async () => {
+    const fixture = TestBed.createComponent(CalendarPage);
+    TestBed.tick();
+    http.expectOne((req) => req.url.endsWith('/calendar')).flush([todayEvent(1, 'Concert')]);
+    await stable();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+
+    expect(table.classList.contains('bordered')).toBe(true);
+  });
+
   it("affiche un état vide quand il n'y a aucun évènement sur la période", async () => {
     const fixture = TestBed.createComponent(CalendarPage);
     TestBed.tick();

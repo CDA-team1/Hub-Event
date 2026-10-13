@@ -113,6 +113,19 @@ describe('AnonymizationAdminPage', () => {
     expect(element.textContent).toContain('0600000000');
   });
 
+  it('affiche le tableau avec une grille complète', async () => {
+    const fixture = TestBed.createComponent(AnonymizationAdminPage);
+    TestBed.tick();
+    http
+      .expectOne((req) => req.url.endsWith('/admin/anonymization'))
+      .flush(pageOf([makeRequest(1)]));
+    await stable();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('app-data-table')!;
+
+    expect(table.classList.contains('bordered')).toBe(true);
+  });
+
   it('affiche Aucun pour un utilisateur sans club et un tiret sans téléphone', async () => {
     const fixture = TestBed.createComponent(AnonymizationAdminPage);
     TestBed.tick();
