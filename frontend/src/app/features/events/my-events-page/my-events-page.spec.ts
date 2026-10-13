@@ -68,6 +68,12 @@ describe('MyEventsPage', () => {
     expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Brouillon');
   });
 
+  it('affiche le tableau avec une grille complète', async () => {
+    const element = await render([makeEvent()]);
+
+    expect(element.querySelector('app-data-table')?.classList.contains('bordered')).toBe(true);
+  });
+
   it('trie par date au clic sur l’en-tête, et inverse au second clic', async () => {
     const element = await render([
       makeEvent({ id: 1, title: 'Plus tôt', startDateTime: '2026-11-01T10:00:00' }),

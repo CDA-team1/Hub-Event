@@ -13,7 +13,7 @@
     <p>Aucune inscription pour cet évènement.</p>
   </app-empty-state>
 } @else {
-  <app-data-table [columns]="columns" [rows]="content()">
+  <app-data-table [columns]="columns" [rows]="content()" [bordered]="true">
     <ng-template appColumn="email" let-registration>{{ registration.userEmail }}</ng-template>
     <ng-template appColumn="status" let-registration>
       {{ registration.status === 'REGISTERED' ? 'Inscrit' : 'Liste d’attente' }}

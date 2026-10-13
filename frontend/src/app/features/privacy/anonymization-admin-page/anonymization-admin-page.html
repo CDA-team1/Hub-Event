@@ -19,7 +19,7 @@
       <p>Aucune demande d'anonymisation en attente.</p>
     </app-empty-state>
   } @else {
-    <app-data-table [columns]="columns" [rows]="content()">
+    <app-data-table [columns]="columns" [rows]="content()" [bordered]="true">
       <ng-template appColumn="lastName" let-request>
         {{ request.user.lastName }}
         <div class="request-meta">
