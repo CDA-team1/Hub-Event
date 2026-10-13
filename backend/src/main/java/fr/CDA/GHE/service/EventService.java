@@ -86,7 +86,7 @@ public class EventService {
     /**
      * Service utilisé pour envoyer les emails transactionnels.
      */
-    private final EmailService emailService;
+    private final EventCancellationService eventCancellationService;
 
     /**
      * Service permettant de gérer les images associées aux événements.
@@ -102,7 +102,7 @@ public class EventService {
      * @param clubRepository         repository d'accès aux clubs
      * @param registrationRepository repository d'accès aux inscriptions
      * @param commentRepository      repository d'accès aux commentaires
-     * @param emailService           service d'envoi des emails transactionnels
+     * @param eventCancellationService service d'annulation d'un événement avec notification des inscrits
      * @param imageService           service de gestion des images
      */
     public EventService(
@@ -112,7 +112,7 @@ public class EventService {
             ClubRepository clubRepository,
             RegistrationRepository registrationRepository,
             CommentRepository commentRepository,
-            EmailService emailService,
+            EventCancellationService eventCancellationService,
             ImageService imageService
     ) {
         this.eventRepository = eventRepository;
@@ -121,7 +121,7 @@ public class EventService {
         this.clubRepository = clubRepository;
         this.registrationRepository = registrationRepository;
         this.commentRepository = commentRepository;
-        this.emailService = emailService;
+        this.eventCancellationService = eventCancellationService;
         this.imageService = imageService;
     }
 
@@ -753,19 +753,9 @@ public class EventService {
             );
         }
 
-        List<Registration> registrations =
-                registrationRepository.findByEvent(event);
-
-        event.cancel();
+        eventCancellationService.cancelAndNotify(event);
 
         Event savedEvent = eventRepository.save(event);
-
-        for (Registration registration : registrations) {
-            emailService.sendEventCancelledEmail(
-                    registration.getUser().getEmail(),
-                    event.getTitle()
-            );
-        }
 
         return eventMapper.toDto(savedEvent);
     }

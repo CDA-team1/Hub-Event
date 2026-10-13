@@ -160,7 +160,7 @@ public class EmailService {
     message.setText("""
         Bonjour,
         
-        L'évènement "%s" a été annulé par son organisateur.
+        L'évènement "%s" a été annulé.
         """.formatted(eventTitle));
 
     mailSender.send(message);

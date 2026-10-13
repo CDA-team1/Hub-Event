@@ -228,6 +228,42 @@ public class RegistrationService {
                 .toList();
     }
 
+    /**
+     * Retire toutes les inscriptions à venir d'un utilisateur (inscrit ou en liste d'attente),
+     * à l'usage de l'anonymisation de son compte (CU29).
+     * <p>
+     * Seules les inscriptions aux événements {@link EventStatus#PUBLISHED} qui n'ont pas encore
+     * commencé sont retirées : l'historique des événements passés ou annulés est conservé. Chaque
+     * place libérée est proposée à la première personne de la liste d'attente, qui est prévenue
+     * par email, comme pour une désinscription volontaire.
+     * </p>
+     *
+     * @param user utilisateur dont les inscriptions à venir sont retirées
+     */
+    @Transactional
+    public void removeUpcomingRegistrations(User user) {
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Registration registration : registrationRepository.findByUser(user)) {
+            Event event = registration.getEvent();
+
+            if (event.getStatus() != EventStatus.PUBLISHED || !event.getStartDateTime().isAfter(now)) {
+                continue;
+            }
+
+            Event lockedEvent = eventRepository.findByIdForUpdate(event.getId())
+                    .orElseThrow(() -> new NotFoundException("Événement introuvable"));
+
+            boolean freesASeat = registration.getStatus() == RegistrationStatus.REGISTERED;
+
+            registrationRepository.delete(registration);
+
+            if (freesASeat) {
+                promoteFirstWaitingListRegistration(lockedEvent);
+            }
+        }
+    }
+
     private void promoteFirstWaitingListRegistration(Event event) {
         registrationRepository.findFirstByEventAndStatusOrderByRegistrationDateAsc(event, RegistrationStatus.WAITING_LIST)
                 .ifPresent(waiting -> {
