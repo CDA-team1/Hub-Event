@@ -11,14 +11,24 @@ import fr.CDA.GHE.dto.AdminUserDto;
 import fr.CDA.GHE.dto.SuspendUserRequest;
 import fr.CDA.GHE.dto.UpdateUserRequest;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.entity.AnonymizationRequest;
 import fr.CDA.GHE.entity.Club;
+import fr.CDA.GHE.entity.Comment;
+import fr.CDA.GHE.entity.Event;
+import fr.CDA.GHE.entity.Registration;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.entity.enums.RegistrationStatus;
+import fr.CDA.GHE.entity.enums.RequestStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
+import fr.CDA.GHE.repository.AnonymizationRequestRepository;
 import fr.CDA.GHE.repository.ClubRepository;
+import fr.CDA.GHE.repository.CommentRepository;
+import fr.CDA.GHE.repository.EventRepository;
+import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +42,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,6 +79,18 @@ class UserServiceTest {
 
     @Autowired
     private ClubRepository clubRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private RegistrationRepository registrationRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private AnonymizationRequestRepository anonymizationRequestRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -586,7 +610,8 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
     // --- deleteUserByAdmin (CU25) ---
 
     @Test
-    void deleteUserByAdmin_shouldRemoveAffiliationsThenDeleteAccount() {
+    void deleteUserByAdmin_shouldRemoveAffiliationsThenDeleteAccount() throws FunctionalException {
+        authenticateAs(persistActiveMember("admin@test.com"));
         Club club = persistClub("Club de Test");
         User member = persistActiveMember("john.doe@test.com");
         club.getMembers().add(member);
@@ -596,6 +621,65 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
 
         assertThat(userRepository.findById(member.getId())).isEmpty();
         assertThat(clubRepository.findById(club.getId()).orElseThrow().getMembers()).isEmpty();
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenDeletingOwnAccount() {
+        User admin = persistActiveMember("admin@test.com");
+        authenticateAs(admin);
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(admin.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Vous ne pouvez pas supprimer votre propre compte.");
+        assertThat(userRepository.findById(admin.getId())).isPresent();
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountHasRegistrations() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User member = persistActiveMember("john.doe@test.com");
+        Event event = persistPublishedEvent(persistActiveMember("organizer@test.com"));
+        registrationRepository.save(new Registration(member, event, RegistrationStatus.REGISTERED, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(member.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+        assertThat(userRepository.findById(member.getId())).isPresent();
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountHasComments() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User member = persistActiveMember("john.doe@test.com");
+        Event event = persistPublishedEvent(persistActiveMember("organizer@test.com"));
+        commentRepository.save(new Comment("Super !", member, event, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(member.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountOrganizesEvents() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User organizer = persistActiveMember("organizer@test.com");
+        persistPublishedEvent(organizer);
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(organizer.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountHasAnonymizationRequest() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User member = persistActiveMember("john.doe@test.com");
+        anonymizationRequestRepository.save(
+                new AnonymizationRequest(member, RequestStatus.PENDING, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(member.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
     }
 
     @Test
@@ -682,6 +766,15 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
         user.setRole(Role.MEMBER);
         user.setActivationToken(token);
         return userRepository.save(user);
+    }
+
+    private Event persistPublishedEvent(User organizer) {
+        Club club = clubRepository.save(new Club("Club des événements", Category.SPORT,
+                "1 rue du Club", "events@test.com", "0500000000"));
+        Event event = new Event("Titre", "Description", "Lieu", LocalDateTime.now().plusDays(5), null,
+                BigDecimal.TEN, BigDecimal.TEN, 50, Category.SPORT, organizer, club);
+        event.publish();
+        return eventRepository.save(event);
     }
 
     private Club persistClub(String name) {

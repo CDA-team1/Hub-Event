@@ -151,6 +151,16 @@ describe('AccountApi', () => {
     });
   });
 
+  it('supprime un compte', () => {
+    service.deleteUser(12).subscribe();
+
+    const request = httpTesting.expectOne('/api/admin/users/12');
+
+    expect(request.request.method).toBe('DELETE');
+
+    request.flush(null);
+  });
+
   it('suspend un compte avec un motif et une date de fin', () => {
     const body = { reason: 'Propos injurieux', endDate: '2026-12-31' };
 

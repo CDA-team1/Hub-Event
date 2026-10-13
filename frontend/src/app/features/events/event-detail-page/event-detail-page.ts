@@ -13,6 +13,7 @@ import { defaultEventImage } from '../../../domain/default-event-image';
 import { CommentForm } from './comment-list/comment-form/comment-form';
 import { CommentList } from './comment-list/comment-list';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { EventStatusBadge } from '../../../shared/ui/event-status-badge/event-status-badge';
 import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
 import { NotFoundPage } from '../../not-found/not-found-page/not-found-page';
 import { ImageGallery } from './image-gallery/image-gallery';
@@ -55,6 +56,7 @@ function ownerActionErrorMessage(error: unknown): string {
     CommentForm,
     CommentList,
     ErrorState,
+    EventStatusBadge,
     ImageGallery,
     LoadingState,
     NotFoundPage,

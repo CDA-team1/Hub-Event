@@ -10,6 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDate;
 
@@ -116,6 +117,23 @@ class JwtAuthenticationFilterTest {
 
         filter.doFilterInternal(request, response, chain);
 
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_shouldNotAuthenticateNorFail_whenAccountNoLongerExists() throws Exception {
+        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+        when(jwtService.extractEmail("valid-token")).thenReturn("old.email@test.com");
+        when(userDetailsService.loadUserByUsername("old.email@test.com"))
+                .thenThrow(new UsernameNotFoundException("Utilisateur introuvable."));
+
+        FilterChain chain = chainMock();
+        HttpServletRequest request = request();
+        HttpServletResponse response = response();
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(chain).doFilter(request, response);
     }
 

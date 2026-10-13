@@ -83,13 +83,18 @@ public interface UserControllerDoc {
     ) throws FunctionalException;
 
     @Operation(summary = "Supprime un utilisateur",
-            description = "Réservé à l'administrateur (CU25, SFG §2.28).")
+            description = "Réservé à l'administrateur (CU25, SFG §2.28). Refusé pour son propre compte et "
+                    + "pour un compte ayant un historique (inscriptions, commentaires, événements organisés, "
+                    + "demande d'anonymisation) : il faut alors l'anonymiser.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Utilisateur supprimé", content = @Content),
+            @ApiResponse(responseCode = "400",
+                    description = "Compte de l'administrateur connecté, ou compte ayant un historique",
+                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Aucun utilisateur pour cet identifiant",
                     content = @Content)
     })
-    void delete(@Parameter(description = "Identifiant de l'utilisateur") Long id);
+    void delete(@Parameter(description = "Identifiant de l'utilisateur") Long id) throws FunctionalException;
 
     @Operation(summary = "Gère les affiliations club d'un membre ou d'un organisateur",
             description = "Remplace l'ensemble des clubs auxquels l'utilisateur est rattaché par la liste "

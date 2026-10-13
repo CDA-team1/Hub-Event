@@ -5,6 +5,7 @@ import fr.CDA.GHE.entity.enums.AccountStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -75,10 +76,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       if (jwtService.isTokenValid(token)) {
         String email = jwtService.extractEmail(token);
 
-        UserDetails userDetails =
-            userDetailsService.loadUserByUsername(email);
+        UserDetails userDetails = findUser(email);
 
-        if (isAccountUsable(userDetails)) {
+        if (userDetails != null && isAccountUsable(userDetails)) {
           UsernamePasswordAuthenticationToken authentication =
               new UsernamePasswordAuthenticationToken(
                   userDetails,
@@ -93,6 +93,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  /**
+   * Charge le compte désigné par le jeton. Un jeton encore valide peut pointer vers un compte qui
+   * n'existe plus sous cet email (typiquement un compte anonymisé : son email a été remplacé) :
+   * la requête est alors traitée comme anonyme, ce qui donne un 401 sur les routes protégées —
+   * et non une 500, l'exception ne pouvant pas être traitée par le contrôleur à ce stade.
+   *
+   * @param email email lu dans le jeton
+   * @return le compte, {@code null} s'il n'existe pas
+   */
+  private UserDetails findUser(String email) {
+    try {
+      return userDetailsService.loadUserByUsername(email);
+    } catch (UsernameNotFoundException exception) {
+      log.info("REFUS authentification JWT (compte introuvable) : email={}", email);
+      return null;
+    }
   }
 
   /**

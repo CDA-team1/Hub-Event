@@ -3,7 +3,6 @@ package fr.CDA.GHE.service;
 import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.entity.Club;
-import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Role;
@@ -37,13 +36,15 @@ public class ClubService {
     private final ClubMapper clubMapper;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventCancellationService eventCancellationService;
 
     public ClubService(ClubRepository clubRepository, ClubMapper clubMapper, EventRepository eventRepository,
-                        UserRepository userRepository){
+                        UserRepository userRepository, EventCancellationService eventCancellationService){
         this.clubRepository = clubRepository;
         this.clubMapper = clubMapper;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.eventCancellationService = eventCancellationService;
     }
 
     /**
@@ -179,7 +180,7 @@ public class ClubService {
         eventRepository.findByClub_Id(id).stream()
                 .filter(event -> event.getStatus() == EventStatus.PUBLISHED
                         && event.getStartDateTime().isAfter(now))
-                .forEach(Event::cancel);
+                .forEach(eventCancellationService::cancelAndNotify);
 
         for (User member : new HashSet<>(club.getMembers())) {
             club.removeMember(member);

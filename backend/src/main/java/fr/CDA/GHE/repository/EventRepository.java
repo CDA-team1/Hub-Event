@@ -4,10 +4,15 @@ import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository JPA pour l'entité {@link Event}.
@@ -19,6 +24,24 @@ import java.util.List;
  */
 public interface EventRepository
     extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
+
+  /**
+   * Charge un événement en posant un verrou en écriture sur sa ligne jusqu'à la fin de la
+   * transaction courante.
+   * <p>
+   * À utiliser pour toute opération qui lit puis modifie le nombre de places occupées
+   * (inscription, désinscription, promotion depuis la liste d'attente) : deux requêtes
+   * simultanées sur le même événement s'exécutent alors l'une après l'autre, au lieu de lire
+   * toutes deux « il reste une place » et de dépasser la capacité.
+   * </p>
+   *
+   * @param id identifiant de l'événement
+   * @return l'événement verrouillé, vide s'il n'existe pas
+   */
+  // PESSIMISTIC_WRITE = SELECT ... FOR UPDATE : les autres requêtes sur cet événement attendent la fin de la transaction.
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT e FROM Event e WHERE e.id = :id")
+  Optional<Event> findByIdForUpdate(@Param("id") Long id);
 
   /**
    * Recherche les événements possédant un statut donné.

@@ -44,13 +44,17 @@ public class AnonymizationRequestService {
     private final UserService userService;
     private final AnonymizationRequestMapper anonymizationRequestMapper;
     private final PasswordEncoder passwordEncoder;
+    private final EventCancellationService eventCancellationService;
+    private final RegistrationService registrationService;
 
     public AnonymizationRequestService(AnonymizationRequestRepository anonymizationRequestRepository,
                                         UserRepository userRepository,
                                         EventRepository eventRepository,
                                         AnonymizationRequestMapper anonymizationRequestMapper,
                                         PasswordEncoder passwordEncoder,
-                                        UserService userService
+                                        UserService userService,
+                                        EventCancellationService eventCancellationService,
+                                        RegistrationService registrationService
 ) {
         this.anonymizationRequestRepository = anonymizationRequestRepository;
         this.userRepository = userRepository;
@@ -58,6 +62,8 @@ public class AnonymizationRequestService {
         this.anonymizationRequestMapper = anonymizationRequestMapper;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
+        this.eventCancellationService = eventCancellationService;
+        this.registrationService = registrationService;
     }
 
     /**
@@ -158,6 +164,10 @@ public class AnonymizationRequestService {
             cancelUpcomingPublishedEvents(user);
         }
 
+        // Le compte ne pourra plus se connecter : ses inscriptions à venir libèrent leurs places
+        // (liste d'attente promue) au lieu de les occuper indéfiniment sous un nom anonymisé.
+        registrationService.removeUpcomingRegistrations(user);
+
         request.setStatus(RequestStatus.VALIDATED);
 
         log.info("VALIDATION demande d'anonymisation : id={} userId={}", request.getId(), user.getId());
@@ -173,6 +183,6 @@ public class AnonymizationRequestService {
                 .filter(event -> event.getStartDateTime().isAfter(now))
                 .toList();
 
-        upcomingPublishedEvents.forEach(Event::cancel);
+        upcomingPublishedEvents.forEach(eventCancellationService::cancelAndNotify);
     }
 }

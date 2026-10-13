@@ -86,7 +86,7 @@ public class EventService {
     /**
      * Service utilisé pour envoyer les emails transactionnels.
      */
-    private final EmailService emailService;
+    private final EventCancellationService eventCancellationService;
 
     /**
      * Service permettant de gérer les images associées aux événements.
@@ -102,7 +102,7 @@ public class EventService {
      * @param clubRepository         repository d'accès aux clubs
      * @param registrationRepository repository d'accès aux inscriptions
      * @param commentRepository      repository d'accès aux commentaires
-     * @param emailService           service d'envoi des emails transactionnels
+     * @param eventCancellationService service d'annulation d'un événement avec notification des inscrits
      * @param imageService           service de gestion des images
      */
     public EventService(
@@ -112,7 +112,7 @@ public class EventService {
             ClubRepository clubRepository,
             RegistrationRepository registrationRepository,
             CommentRepository commentRepository,
-            EmailService emailService,
+            EventCancellationService eventCancellationService,
             ImageService imageService
     ) {
         this.eventRepository = eventRepository;
@@ -121,7 +121,7 @@ public class EventService {
         this.clubRepository = clubRepository;
         this.registrationRepository = registrationRepository;
         this.commentRepository = commentRepository;
-        this.emailService = emailService;
+        this.eventCancellationService = eventCancellationService;
         this.imageService = imageService;
     }
 
@@ -259,9 +259,8 @@ public class EventService {
     /**
      * Retourne le détail d'un événement accessible à l'utilisateur courant.
      * <p>
-     * Les événements publiés et terminés sont accessibles publiquement.
+     * Les événements publiés, terminés et annulés sont accessibles publiquement (par leur lien).
      * Un événement brouillon est accessible uniquement à son organisateur.
-     * Les autres événements sont considérés comme non accessibles.
      * </p>
      *
      * @param id identifiant de l'événement recherché
@@ -553,8 +552,12 @@ public class EventService {
      */
     static boolean isEventAccessible(Event event) {
 
+        // Un événement annulé reste consultable : ses inscrits et son organisateur doivent pouvoir
+        // retrouver sa fiche (lien de l'email d'annulation, calendrier). Il n'apparaît pas pour
+        // autant dans les listes et recherches publiques, limitées aux événements PUBLISHED.
         if (event.getStatus() == EventStatus.PUBLISHED
-                || event.getStatus() == EventStatus.FINISHED) {
+                || event.getStatus() == EventStatus.FINISHED
+                || event.getStatus() == EventStatus.CANCELLED) {
             return true;
         }
 
@@ -750,19 +753,9 @@ public class EventService {
             );
         }
 
-        List<Registration> registrations =
-                registrationRepository.findByEvent(event);
-
-        event.cancel();
+        eventCancellationService.cancelAndNotify(event);
 
         Event savedEvent = eventRepository.save(event);
-
-        for (Registration registration : registrations) {
-            emailService.sendEventCancelledEmail(
-                    registration.getUser().getEmail(),
-                    event.getTitle()
-            );
-        }
 
         return eventMapper.toDto(savedEvent);
     }

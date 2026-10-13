@@ -116,6 +116,71 @@ class RegistrationServiceTest {
     }
 
     @Test
+    void register_shouldThrow_whenEventHasAlreadyStarted() {
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        Event event = persistEvent(persistActiveUser("organizer@test.com", "Smith", "Ana"),
+                LocalDateTime.now().minusHours(1), 50);
+        event.publish();
+        eventRepository.save(event);
+        authenticateAs(member);
+
+        assertThatThrownBy(() -> registrationService.register(event.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Les inscriptions sont closes : cet événement a déjà commencé.");
+        assertThat(registrationRepository.findByUser(member)).isEmpty();
+    }
+
+    @Test
+    void register_shouldPutOnWaitingList_whenEventIsFull() throws FunctionalException {
+        User first = persistActiveUser("first@test.com", "Doe", "John");
+        User second = persistActiveUser("second@test.com", "Roe", "Jane");
+        Event event = persistEvent(persistActiveUser("organizer@test.com", "Smith", "Ana"),
+                LocalDateTime.now().plusDays(1), 1);
+        event.publish();
+        eventRepository.save(event);
+
+        authenticateAs(first);
+        RegistrationDto firstRegistration = registrationService.register(event.getId());
+        authenticateAs(second);
+        RegistrationDto secondRegistration = registrationService.register(event.getId());
+
+        assertThat(firstRegistration.status()).isEqualTo(RegistrationStatus.REGISTERED);
+        assertThat(secondRegistration.status()).isEqualTo(RegistrationStatus.WAITING_LIST);
+    }
+
+    @Test
+    void register_shouldThrow_whenOverlappingAnotherRegistration() throws FunctionalException {
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
+        LocalDateTime start = LocalDateTime.now().plusDays(2);
+        Event first = persistPublishedEvent(organizer, start, start.plusHours(3));
+        Event second = persistPublishedEvent(organizer, start.plusHours(1), start.plusHours(4));
+        authenticateAs(member);
+        registrationService.register(first.getId());
+
+        assertThatThrownBy(() -> registrationService.register(second.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Vous êtes déjà inscrit à un autre événement sur ce créneau horaire.");
+    }
+
+    @Test
+    void register_shouldAllow_whenOverlappingRegistrationIsOnACancelledEvent() throws FunctionalException {
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
+        LocalDateTime start = LocalDateTime.now().plusDays(2);
+        Event cancelled = persistPublishedEvent(organizer, start, start.plusHours(3));
+        Event other = persistPublishedEvent(organizer, start.plusHours(1), start.plusHours(4));
+        authenticateAs(member);
+        registrationService.register(cancelled.getId());
+        cancelled.cancel();
+        eventRepository.save(cancelled);
+
+        RegistrationDto dto = registrationService.register(other.getId());
+
+        assertThat(dto.status()).isEqualTo(RegistrationStatus.REGISTERED);
+    }
+
+    @Test
     void getRegistrationsForEvent_shouldReturnRegistrations_whenOrganizerIsOwner() throws FunctionalException {
         User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
         User member = persistActiveUser("member@test.com", "Doe", "John");
@@ -157,17 +222,31 @@ class RegistrationServiceTest {
     }
 
     private Event persistEvent(User organizer) {
+        return persistEvent(organizer, LocalDateTime.now().plusDays(1), 50);
+    }
+
+    private Event persistEvent(User organizer, LocalDateTime start, int maxSeats) {
+        return persistEvent(organizer, start, null, maxSeats);
+    }
+
+    private Event persistEvent(User organizer, LocalDateTime start, LocalDateTime end, int maxSeats) {
         Club club = clubRepository.save(new Club("Club de Test", Category.SPORT,
                 "1 rue du Club", "club@test.com", "0500000000"));
 
         Event event = new Event("Titre", "Description", "Lieu",
-                LocalDateTime.now().plusDays(1), null,
-                BigDecimal.TEN, BigDecimal.TEN, 50, Category.SPORT, organizer, club);
+                start, end,
+                BigDecimal.TEN, BigDecimal.TEN, maxSeats, Category.SPORT, organizer, club);
         return eventRepository.save(event);
     }
 
     private Event persistPublishedEvent(User organizer) {
         Event event = persistEvent(organizer);
+        event.publish();
+        return eventRepository.save(event);
+    }
+
+    private Event persistPublishedEvent(User organizer, LocalDateTime start, LocalDateTime end) {
+        Event event = persistEvent(organizer, start, end, 50);
         event.publish();
         return eventRepository.save(event);
     }

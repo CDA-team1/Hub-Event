@@ -63,6 +63,14 @@ export class AccountApi {
     return this.http.put<AccountDto>(`${this.apiUrl}/admin/users/${id}`, request);
   }
 
+  /**
+   * Supprime un compte. Le back refuse son propre compte et tout compte ayant un historique
+   * (inscriptions, commentaires, évènements, demande d'anonymisation) : 400 avec un message.
+   */
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/admin/users/${id}`);
+  }
+
   /** Suspend un compte (SUSP-01) : sans date de fin, la suspension est définitive. */
   suspendUser(id: number, request: SuspendUserRequest): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/admin/users/${id}/suspension`, request);

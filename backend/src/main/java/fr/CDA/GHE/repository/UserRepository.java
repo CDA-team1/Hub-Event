@@ -5,6 +5,8 @@ import fr.CDA.GHE.entity.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -65,4 +67,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return un {@link Optional} contenant l'utilisateur s'il existe
      */
     Optional<User> findByPasswordChangeToken(String passwordChangeToken);
+
+  /**
+   * Indique si un compte est référencé ailleurs dans la base : inscriptions, commentaires,
+   * événements organisés ou demande d'anonymisation.
+   * <p>
+   * Un tel compte ne peut pas être supprimé physiquement (clés étrangères, et son historique doit
+   * être conservé) : seule son anonymisation est possible.
+   * </p>
+   *
+   * @param user compte à examiner
+   * @return {@code true} si au moins une de ces données existe
+   */
+  @Query("SELECT COUNT(u) > 0 FROM User u WHERE u = :user AND ("
+      + "EXISTS (SELECT r FROM Registration r WHERE r.user = u) "
+      + "OR EXISTS (SELECT c FROM Comment c WHERE c.user = u) "
+      + "OR EXISTS (SELECT e FROM Event e WHERE e.organizer = u) "
+      + "OR EXISTS (SELECT a FROM AnonymizationRequest a WHERE a.user = u))")
+  boolean hasHistory(@Param("user") User user);
 }

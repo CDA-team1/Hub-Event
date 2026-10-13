@@ -56,6 +56,11 @@
   flex-wrap: wrap;
 }
 
+.users-list-page__error {
+  margin: 0 0 1rem;
+  color: #d33f3f;
+}
+
 .user-meta {
   display: none;
 }

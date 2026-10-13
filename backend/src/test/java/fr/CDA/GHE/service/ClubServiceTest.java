@@ -4,6 +4,9 @@ import fr.CDA.GHE.dto.ClubDto;
 import fr.CDA.GHE.dto.PageDto;
 import fr.CDA.GHE.entity.Club;
 import fr.CDA.GHE.entity.Event;
+import fr.CDA.GHE.entity.Registration;
+import fr.CDA.GHE.entity.enums.RegistrationStatus;
+import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Category;
@@ -22,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -30,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 /**
@@ -55,6 +60,12 @@ class ClubServiceTest {
 
     @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private RegistrationRepository registrationRepository;
+
+    @MockitoBean
+    private EmailService emailService;
 
     @AfterEach
     void clearSecurityContext() {
@@ -287,6 +298,26 @@ class ClubServiceTest {
         assertThat(reloadedEvent.getStatus()).isEqualTo(EventStatus.CANCELLED);
         assertThat(clubRepository.findById(club.getId()).orElseThrow().getValidityEndDate())
                 .isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    void delete_shouldNotifyRegistrantsAndWaitingListOfCancelledEvents() throws FunctionalException {
+        Club club = persistClub("Club à supprimer", Category.SPORT);
+        User organizer = persistUser("organizer@test.com", Role.ORGANIZER);
+        club.addMember(organizer);
+        User registered = persistUser("registered@test.com", Role.MEMBER);
+        User waiting = persistUser("waiting@test.com", Role.MEMBER);
+
+        Event event = persistEvent(club, organizer, LocalDateTime.now().plusDays(5));
+        event.publish();
+        eventRepository.save(event);
+        registrationRepository.save(new Registration(registered, event, RegistrationStatus.REGISTERED, LocalDateTime.now()));
+        registrationRepository.save(new Registration(waiting, event, RegistrationStatus.WAITING_LIST, LocalDateTime.now()));
+
+        clubService.delete(club.getId());
+
+        verify(emailService).sendEventCancelledEmail("registered@test.com", "Titre");
+        verify(emailService).sendEventCancelledEmail("waiting@test.com", "Titre");
     }
 
     // --- delete : événements que le club garde en référence (historique préservé) ---

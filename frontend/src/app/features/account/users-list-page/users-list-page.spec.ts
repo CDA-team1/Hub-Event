@@ -1,9 +1,11 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 
 import { AccountApi } from '../../../core/accounts/account-api';
+import { Confirmation } from '../../../core/dialog/confirmation';
 import { AccountDto } from '../../../domain/account.model';
 import { PageDto } from '../../../domain/page.model';
 import { UsersListPage } from './users-list-page';
@@ -32,7 +34,9 @@ describe('UsersListPage', () => {
 
   let accountApi: {
     getUsers: ReturnType<typeof vi.fn>;
+    deleteUser: ReturnType<typeof vi.fn>;
   };
+  let confirmation: { confirm: ReturnType<typeof vi.fn> };
 
   const stable = async () => {
     await TestBed.inject(ApplicationRef).whenStable();
@@ -41,7 +45,9 @@ describe('UsersListPage', () => {
   beforeEach(() => {
     accountApi = {
       getUsers: vi.fn().mockReturnValue(of(page)),
+      deleteUser: vi.fn().mockReturnValue(of(undefined)),
     };
+    confirmation = { confirm: vi.fn().mockResolvedValue(true) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -50,6 +56,7 @@ describe('UsersListPage', () => {
           provide: AccountApi,
           useValue: accountApi,
         },
+        { provide: Confirmation, useValue: confirmation },
       ],
     });
   });
@@ -162,6 +169,67 @@ describe('UsersListPage', () => {
     const link = element.querySelector<HTMLAnchorElement>('a[aria-label="Suspendre"]');
 
     expect(link?.getAttribute('href')).toBe('/admin/comptes/1/suspension');
+  });
+
+  describe('suppression d’un compte', () => {
+    const macrotask = () => new Promise((resolve) => setTimeout(resolve));
+
+    async function clickDelete(): Promise<HTMLElement> {
+      const fixture = TestBed.createComponent(UsersListPage);
+      await stable();
+
+      const element = fixture.nativeElement as HTMLElement;
+      element.querySelector<HTMLButtonElement>('button[aria-label="Supprimer"]')!.click();
+      await macrotask();
+      await stable();
+
+      return element;
+    }
+
+    it('demande confirmation, supprime le compte puis recharge la liste', async () => {
+      await clickDelete();
+
+      expect(confirmation.confirm).toHaveBeenCalledTimes(1);
+      expect(accountApi.deleteUser).toHaveBeenCalledWith(1);
+      expect(accountApi.getUsers).toHaveBeenCalledTimes(2);
+    });
+
+    it('ne supprime rien quand la confirmation est refusée', async () => {
+      confirmation.confirm.mockResolvedValue(false);
+
+      await clickDelete();
+
+      expect(accountApi.deleteUser).not.toHaveBeenCalled();
+    });
+
+    it('affiche le message du back quand la suppression est refusée', async () => {
+      accountApi.deleteUser.mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: 'Ce compte possède un historique : utilisez l’anonymisation.',
+            }),
+        ),
+      );
+
+      const element = await clickDelete();
+
+      expect(element.querySelector('[role="alert"]')?.textContent).toContain(
+        'utilisez l’anonymisation',
+      );
+      expect(accountApi.getUsers).toHaveBeenCalledTimes(1);
+    });
+
+    it('affiche un message générique quand la suppression échoue sans message', async () => {
+      accountApi.deleteUser.mockReturnValue(throwError(() => new Error('réseau')));
+
+      const element = await clickDelete();
+
+      expect(element.querySelector('[role="alert"]')?.textContent).toContain(
+        'La suppression a échoué, réessayez.',
+      );
+    });
   });
 
   it('reprend le prénom, l’email et le statut sous le nom', async () => {
