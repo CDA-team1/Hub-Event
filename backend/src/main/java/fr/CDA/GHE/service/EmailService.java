@@ -2,15 +2,30 @@ package fr.CDA.GHE.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 /**
  * Envoie les emails transactionnels de l'application (SMTP).
+ * <p>
+ * Deux familles d'emails :
+ * </p>
+ * <ul>
+ *   <li><b>indispensables</b> (activation, création de compte par un admin, confirmation de
+ *   changement de mot de passe) : envoyés immédiatement, une panne SMTP remonte en exception pour
+ *   que l'action échoue franchement plutôt que de laisser un compte sans lien d'activation ;</li>
+ *   <li><b>notifications</b> (liste d'attente, annulations, suspension) : envoyées en tâche de fond
+ *   et « au mieux ». Une panne SMTP est seulement journalisée : elle ne doit ni bloquer la requête
+ *   qui attendrait chaque envoi, ni annuler l'action métier déjà faite (annulation d'un évènement
+ *   avec cent inscrits, suspension, etc.).</li>
+ * </ul>
  */
 @Service
 public class EmailService {
@@ -110,6 +125,7 @@ public class EmailService {
    * @param to         adresse email du destinataire
    * @param eventTitle titre de l'évènement concerné
    */
+  @Async
   public void sendWaitingListPromotionEmail(String to, String eventTitle) {
     SimpleMailMessage message = new SimpleMailMessage();
     message.setTo(to);
@@ -120,8 +136,9 @@ public class EmailService {
         Une place s'est libérée pour l'évènement "%s" et vous étiez le premier \
         sur la liste d'attente : vous êtes désormais inscrit !""".formatted(eventTitle));
 
-    mailSender.send(message);
-    log.info("Email de promotion (liste d'attente) envoyé à {} pour l'évènement {}", to, eventTitle);
+    if (trySend(message)) {
+      log.info("Email de promotion (liste d'attente) envoyé à {} pour l'évènement {}", to, eventTitle);
+    }
   }
 
   /**
@@ -131,6 +148,7 @@ public class EmailService {
    * @param eventTitle titre de l'évènement concerné
    * @param reason     motif de l'annulation, saisi par l'organisateur
    */
+  @Async
   public void sendRegistrationCancelledEmail(String to, String eventTitle, String reason) {
     SimpleMailMessage message = new SimpleMailMessage();
     message.setTo(to);
@@ -142,8 +160,9 @@ public class EmailService {
         
         Motif : %s""".formatted(eventTitle, reason));
 
-    mailSender.send(message);
-    log.info("Email d'annulation d'inscription (organisateur) envoyé à {} pour l'évènement {}", to, eventTitle);
+    if (trySend(message)) {
+      log.info("Email d'annulation d'inscription (organisateur) envoyé à {} pour l'évènement {}", to, eventTitle);
+    }
   }
 
   /**
@@ -153,6 +172,7 @@ public class EmailService {
    * @param to         adresse email du destinataire
    * @param eventTitle titre de l'évènement annulé
    */
+  @Async
   public void sendEventCancelledEmail(String to, String eventTitle) {
     SimpleMailMessage message = new SimpleMailMessage();
     message.setTo(to);
@@ -163,12 +183,13 @@ public class EmailService {
         L'évènement "%s" a été annulé.
         """.formatted(eventTitle));
 
-    mailSender.send(message);
-    log.info(
-        "Email d'annulation d'évènement envoyé à {} pour l'évènement {}",
-        to,
-        eventTitle
-    );
+    if (trySend(message)) {
+      log.info(
+          "Email d'annulation d'évènement envoyé à {} pour l'évènement {}",
+          to,
+          eventTitle
+      );
+    }
   }
 
   /**
@@ -179,6 +200,7 @@ public class EmailService {
    * @param reason  motif de la suspension
    * @param endDate date de fin de la suspension, {@code null} si définitive
    */
+  @Async
   public void sendAccountSuspendedEmail(String to, String reason, LocalDate endDate) {
     String duration = endDate == null
         ? "de manière définitive"
@@ -194,7 +216,25 @@ public class EmailService {
 
         Motif : %s""".formatted(duration, reason));
 
-    mailSender.send(message);
-    log.info("Email de suspension de compte envoyé à {}", to);
+    if (trySend(message)) {
+      log.info("Email de suspension de compte envoyé à {}", to);
+    }
+  }
+
+  /**
+   * Envoie un email de notification sans jamais propager d'échec : une panne SMTP est journalisée.
+   *
+   * @param message email à envoyer
+   * @return {@code true} si l'email a été remis au serveur SMTP, {@code false} sinon
+   */
+  private boolean trySend(SimpleMailMessage message) {
+    try {
+      mailSender.send(message);
+      return true;
+    } catch (MailException exception) {
+      log.warn("Échec de l'envoi de l'email « {} » à {}", message.getSubject(),
+          Arrays.toString(message.getTo()), exception);
+      return false;
+    }
   }
 }
