@@ -1,59 +1,68 @@
-# HubEvent
+# 🎨 Hub-Event : front-end Angular
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.0.
+Interface web de la plateforme Hub-Event (voir le [README du dépôt](../README.md) pour la présentation du projet et l'installation complète).
 
-## Development server
+**Stack** : Angular 22 · composants autonomes · signaux · Vitest · Prettier.
 
-To start a local development server, run:
+## 🚀 Démarrage
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Prérequis : Node.js `^22.22.3`, `^24.15.0` ou `>=26`, et npm 11. Le back doit tourner sur `http://localhost:8080` (voir le README du dépôt).
 
 ```bash
-ng generate component component-name
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+L'application est servie sur **http://localhost:4200**. Le serveur de développement redirige tous les appels `/api/*` vers le back grâce à `proxy.conf.json`. L'adresse de l'API (`/api`) est définie dans `src/environments/` et injectée par le jeton `API_URL`.
 
-```bash
-ng generate --help
+## 🧪 Commandes utiles
+
+| Commande | Rôle |
+|---|---|
+| `npm start` | Serveur de développement avec rechargement automatique |
+| `npm test` | Tests Vitest en mode surveillance |
+| `npx ng test --watch=false` | Tests, une seule exécution |
+| `npm run build` | Build de production dans `dist/` |
+| `npx prettier --check "src/**/*.{ts,html,css}"` | Vérifie le formatage |
+
+## 📁 Structure de `src/app`
+
+```text
+src/app/
+├── core/        accès à l'API, authentification, intercepteurs HTTP, stockage de session
+├── domain/      modèles et règles métier pures (sans Angular), avec leurs tests
+├── features/    une page = un dossier : account, auth, calendar, clubs, events,
+│                not-found, privacy
+└── shared/ui/   composants réutilisables : tableau, carte, badge, pagination,
+                 boîte de confirmation, états vide / erreur / chargement…
 ```
 
-## Building
+Règles d'organisation :
 
-To build the project run:
+- **Un composant utilisé par une seule page vit dans le dossier de cette page** (ex. `event-detail-page/image-gallery/`). Il ne passe dans `shared/ui` que s'il sert à plusieurs pages.
+- **Les pages décident**, les composants d'affichage reçoivent des entrées et n'émettent que des évènements. Ce sont les pages qui appellent les services.
+- **Les services** (`core/`) portent les appels HTTP, un par domaine (`event-api`, `account-api`, `club-api`…). Les données sont exposées en signaux.
+- **L'authentification** : `core/auth` (jeton JWT conservé dans le `sessionStorage`), `authGuard` et `roleGuard('ADMIN' | 'ORGANIZER'…)` sur les routes sensibles, et deux intercepteurs : `jwt-interceptor` ajoute le jeton, `error-interceptor` renvoie vers la connexion quand la session expire (401).
 
-```bash
-ng build
-```
+Les notes de conception (arbre des composants, un fichier par domaine) sont dans [`../conception/frontend/`](../conception/frontend/).
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 🧱 Composants partagés à connaître
 
-## Running unit tests
+- **`DataTable`** : tableau générique dont l'appelant définit les cellules avec `appColumn`. Options : colonne `sortable` (le tri reste à la charge de la page), `hideOnSmall` (masque la colonne en dessous de 640 px) et l'entrée `bordered` (cadre arrondi, en-tête grisé, traits entre les cellules).
+- **`EventCard`** : carte d'un évènement. Sans photo, elle affiche l'illustration de sa catégorie (`domain/default-event-image.ts`, fichiers dans `public/placeholders/`).
+- **`ActionButton`** : bouton d'action à icône, avec libellé accessible et niveau de couleur.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## ✍️ Conventions
 
-```bash
-ng test
-```
+- **Formatage** : Prettier (largeur 100, guillemets simples, indentation de 2 espaces), configuré dans `.prettierrc` et `.editorconfig`.
+- **Style** : CSS par composant, point de rupture mobile à **640 px**. Le fond de l'application est un beige uniforme défini dans `src/styles.css`.
+- **Tests** : un fichier `*.spec.ts` à côté de chaque composant, service ou règle de domaine. Les noms de tests sont écrits en français et décrivent le comportement (« affiche… », « refuse… »). Les appels HTTP sont simulés avec `HttpTestingController`.
+- **Accessibilité** : libellés `aria-label` sur les boutons à icône, rôles sur les messages d'erreur (`role="alert"`).
 
-## Running end-to-end tests
+## 🔧 Dépannage
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+| Symptôme | Cause et solution |
+|---|---|
+| Erreur de version de Node au `npm install` | Utilise Node 22.22+, 24.15+ ou 26+. |
+| Les appels `/api/...` échouent (404 ou erreur réseau) | Le back n'est pas lancé sur le port 8080, ou le front n'a pas été démarré avec `npm start` (c'est lui qui applique le proxy). |
+| Une image de placeholder ne s'affiche pas | Après avoir ajouté un fichier dans `public/`, relance `npm start` : le serveur ne détecte pas toujours les nouveaux dossiers. |
