@@ -116,6 +116,39 @@ class RegistrationServiceTest {
     }
 
     @Test
+    void register_shouldThrow_whenEventHasAlreadyStarted() {
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        Event event = persistEvent(persistActiveUser("organizer@test.com", "Smith", "Ana"),
+                LocalDateTime.now().minusHours(1), 50);
+        event.publish();
+        eventRepository.save(event);
+        authenticateAs(member);
+
+        assertThatThrownBy(() -> registrationService.register(event.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Les inscriptions sont closes : cet événement a déjà commencé.");
+        assertThat(registrationRepository.findByUser(member)).isEmpty();
+    }
+
+    @Test
+    void register_shouldPutOnWaitingList_whenEventIsFull() throws FunctionalException {
+        User first = persistActiveUser("first@test.com", "Doe", "John");
+        User second = persistActiveUser("second@test.com", "Roe", "Jane");
+        Event event = persistEvent(persistActiveUser("organizer@test.com", "Smith", "Ana"),
+                LocalDateTime.now().plusDays(1), 1);
+        event.publish();
+        eventRepository.save(event);
+
+        authenticateAs(first);
+        RegistrationDto firstRegistration = registrationService.register(event.getId());
+        authenticateAs(second);
+        RegistrationDto secondRegistration = registrationService.register(event.getId());
+
+        assertThat(firstRegistration.status()).isEqualTo(RegistrationStatus.REGISTERED);
+        assertThat(secondRegistration.status()).isEqualTo(RegistrationStatus.WAITING_LIST);
+    }
+
+    @Test
     void getRegistrationsForEvent_shouldReturnRegistrations_whenOrganizerIsOwner() throws FunctionalException {
         User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
         User member = persistActiveUser("member@test.com", "Doe", "John");
@@ -157,12 +190,16 @@ class RegistrationServiceTest {
     }
 
     private Event persistEvent(User organizer) {
+        return persistEvent(organizer, LocalDateTime.now().plusDays(1), 50);
+    }
+
+    private Event persistEvent(User organizer, LocalDateTime start, int maxSeats) {
         Club club = clubRepository.save(new Club("Club de Test", Category.SPORT,
                 "1 rue du Club", "club@test.com", "0500000000"));
 
         Event event = new Event("Titre", "Description", "Lieu",
-                LocalDateTime.now().plusDays(1), null,
-                BigDecimal.TEN, BigDecimal.TEN, 50, Category.SPORT, organizer, club);
+                start, null,
+                BigDecimal.TEN, BigDecimal.TEN, maxSeats, Category.SPORT, organizer, club);
         return eventRepository.save(event);
     }
 

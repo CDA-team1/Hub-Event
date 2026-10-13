@@ -51,11 +51,17 @@ public class RegistrationService {
      * <p>
      * Règles vérifiées, dans l'ordre : le compte doit être {@link AccountStatus#ACTIVE},
      * l'événement doit être {@link EventStatus#PUBLISHED} (un brouillon, un événement annulé
-     * ou déjà terminé n'accepte pas de nouvelles inscriptions), l'utilisateur ne doit pas déjà
+     * ou déjà terminé n'accepte pas de nouvelles inscriptions) et ne pas avoir déjà commencé
+     * (les inscriptions sont closes à l'heure de début), l'utilisateur ne doit pas déjà
      * être inscrit à cet événement, et il ne doit pas avoir d'inscription sur un événement se
      * déroulant sur un créneau qui chevauche celui-ci. Le statut de la nouvelle inscription
      * dépend ensuite des places restantes : {@link RegistrationStatus#REGISTERED} s'il reste
      * de la place, sinon {@link RegistrationStatus#WAITING_LIST}.
+     * </p>
+     * <p>
+     * L'événement est chargé avec un verrou en écriture ({@code findByIdForUpdate}) : le calcul
+     * « reste-t-il une place ? » et l'insertion de l'inscription se font donc sans qu'une autre
+     * inscription simultanée puisse prendre la dernière place entre les deux.
      * </p>
      * <p>
      * Voir Dossier des spécifications générales, cas d'utilisation n°9 « S'inscrire à un
@@ -78,11 +84,15 @@ public class RegistrationService {
             throw new FunctionalException("Votre compte doit être actif pour vous inscrire à un événement.");
         }
 
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
         if (event.getStatus() != EventStatus.PUBLISHED) {
             throw new FunctionalException("Cet événement n'est pas ouvert aux inscriptions.");
+        }
+
+        if (!event.getStartDateTime().isAfter(LocalDateTime.now())) {
+            throw new FunctionalException("Les inscriptions sont closes : cet événement a déjà commencé.");
         }
 
         if (registrationRepository.existsByUserAndEvent(user, event)) {
@@ -127,7 +137,7 @@ public class RegistrationService {
         User user = userRepository.findByEmail(CurrentUser.email())
                 .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
 
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
         Registration registration = registrationRepository.findByUserAndEvent(user, event)
@@ -163,7 +173,7 @@ public class RegistrationService {
         User currentUser = userRepository.findByEmail(CurrentUser.email())
                 .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
 
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new NotFoundException("Événement introuvable"));
 
         if (!event.getOrganizer().getId().equals(currentUser.getId())){
