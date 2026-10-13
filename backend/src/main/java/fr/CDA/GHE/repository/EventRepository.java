@@ -4,10 +4,8 @@ import fr.CDA.GHE.entity.Event;
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.Category;
 import fr.CDA.GHE.entity.enums.EventStatus;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -38,9 +36,11 @@ public interface EventRepository
    * @param id identifiant de l'événement
    * @return l'événement verrouillé, vide s'il n'existe pas
    */
-  // PESSIMISTIC_WRITE = SELECT ... FOR UPDATE : les autres requêtes sur cet événement attendent la fin de la transaction.
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT e FROM Event e WHERE e.id = :id")
+  // Requête native pour conserver le verrou FOR UPDATE sans générer la syntaxe incompatible "FOR UPDATE OF".
+  @Query(
+    value = "SELECT * FROM events WHERE id = :id FOR UPDATE",
+    nativeQuery = true
+)
   Optional<Event> findByIdForUpdate(@Param("id") Long id);
 
   /**
