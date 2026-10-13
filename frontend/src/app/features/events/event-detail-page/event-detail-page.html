@@ -11,6 +11,10 @@
   <article class="event">
     <h1>{{ current.title }}</h1>
 
+    @if (current.status !== 'PUBLISHED') {
+      <app-event-status-badge [status]="current.status" />
+    }
+
     <dl class="facts">
       <div class="fact">
         <dt>Début</dt>

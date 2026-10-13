@@ -274,6 +274,29 @@ class EventServiceTest {
   }
 
   /**
+   * Vérifie que le détail d'un événement annulé reste accessible : ses inscrits, prévenus par
+   * email, doivent pouvoir retrouver sa fiche.
+   */
+  @Test
+  void shouldReturnCancelledEventDetail() {
+
+    Event event = createEvent(
+        "Course annulée",
+        Category.SPORT,
+        EventStatus.CANCELLED,
+        LocalDateTime.of(2026, 11, 22, 9, 0)
+    );
+
+    when(eventRepository.findById(20L))
+        .thenReturn(Optional.of(event));
+
+    EventDetailResponse result = eventService.getEventDetail(20L);
+
+    assertEquals("Course annulée", result.title());
+    assertEquals(EventStatus.CANCELLED, result.status());
+  }
+
+  /**
    * Vérifie qu'un événement inexistant provoque une NotFoundException.
    */
   @Test

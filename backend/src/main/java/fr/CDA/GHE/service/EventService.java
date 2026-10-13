@@ -259,9 +259,8 @@ public class EventService {
     /**
      * Retourne le détail d'un événement accessible à l'utilisateur courant.
      * <p>
-     * Les événements publiés et terminés sont accessibles publiquement.
+     * Les événements publiés, terminés et annulés sont accessibles publiquement (par leur lien).
      * Un événement brouillon est accessible uniquement à son organisateur.
-     * Les autres événements sont considérés comme non accessibles.
      * </p>
      *
      * @param id identifiant de l'événement recherché
@@ -553,8 +552,12 @@ public class EventService {
      */
     static boolean isEventAccessible(Event event) {
 
+        // Un événement annulé reste consultable : ses inscrits et son organisateur doivent pouvoir
+        // retrouver sa fiche (lien de l'email d'annulation, calendrier). Il n'apparaît pas pour
+        // autant dans les listes et recherches publiques, limitées aux événements PUBLISHED.
         if (event.getStatus() == EventStatus.PUBLISHED
-                || event.getStatus() == EventStatus.FINISHED) {
+                || event.getStatus() == EventStatus.FINISHED
+                || event.getStatus() == EventStatus.CANCELLED) {
             return true;
         }
 

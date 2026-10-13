@@ -102,6 +102,21 @@ describe('EventDetailPage', () => {
     expect(element.querySelectorAll('.comment')).toHaveLength(1);
   });
 
+  it("indique le statut quand l'évènement n'est pas publié", async () => {
+    const element = await open('/evenements/5');
+    http.expectOne('/api/events/5').flush({ ...DETAIL, status: 'CANCELLED' });
+    http.expectOne('/api/events/5/comments').flush([]);
+    await stable();
+
+    expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Annulé');
+  });
+
+  it("n'affiche pas de badge de statut pour un évènement publié", async () => {
+    const element = await openLoadedEvent();
+
+    expect(element.querySelector('app-event-status-badge')).toBeNull();
+  });
+
   it("affiche l'illustration de la catégorie quand l'évènement n'a aucune photo", async () => {
     const element = await open('/evenements/5');
     http.expectOne('/api/events/5').flush({ ...DETAIL, gallery: [] });

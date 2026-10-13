@@ -149,6 +149,38 @@ class RegistrationServiceTest {
     }
 
     @Test
+    void register_shouldThrow_whenOverlappingAnotherRegistration() throws FunctionalException {
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
+        LocalDateTime start = LocalDateTime.now().plusDays(2);
+        Event first = persistPublishedEvent(organizer, start, start.plusHours(3));
+        Event second = persistPublishedEvent(organizer, start.plusHours(1), start.plusHours(4));
+        authenticateAs(member);
+        registrationService.register(first.getId());
+
+        assertThatThrownBy(() -> registrationService.register(second.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Vous êtes déjà inscrit à un autre événement sur ce créneau horaire.");
+    }
+
+    @Test
+    void register_shouldAllow_whenOverlappingRegistrationIsOnACancelledEvent() throws FunctionalException {
+        User member = persistActiveUser("member@test.com", "Doe", "John");
+        User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
+        LocalDateTime start = LocalDateTime.now().plusDays(2);
+        Event cancelled = persistPublishedEvent(organizer, start, start.plusHours(3));
+        Event other = persistPublishedEvent(organizer, start.plusHours(1), start.plusHours(4));
+        authenticateAs(member);
+        registrationService.register(cancelled.getId());
+        cancelled.cancel();
+        eventRepository.save(cancelled);
+
+        RegistrationDto dto = registrationService.register(other.getId());
+
+        assertThat(dto.status()).isEqualTo(RegistrationStatus.REGISTERED);
+    }
+
+    @Test
     void getRegistrationsForEvent_shouldReturnRegistrations_whenOrganizerIsOwner() throws FunctionalException {
         User organizer = persistActiveUser("organizer@test.com", "Smith", "Ana");
         User member = persistActiveUser("member@test.com", "Doe", "John");
@@ -194,17 +226,27 @@ class RegistrationServiceTest {
     }
 
     private Event persistEvent(User organizer, LocalDateTime start, int maxSeats) {
+        return persistEvent(organizer, start, null, maxSeats);
+    }
+
+    private Event persistEvent(User organizer, LocalDateTime start, LocalDateTime end, int maxSeats) {
         Club club = clubRepository.save(new Club("Club de Test", Category.SPORT,
                 "1 rue du Club", "club@test.com", "0500000000"));
 
         Event event = new Event("Titre", "Description", "Lieu",
-                start, null,
+                start, end,
                 BigDecimal.TEN, BigDecimal.TEN, maxSeats, Category.SPORT, organizer, club);
         return eventRepository.save(event);
     }
 
     private Event persistPublishedEvent(User organizer) {
         Event event = persistEvent(organizer);
+        event.publish();
+        return eventRepository.save(event);
+    }
+
+    private Event persistPublishedEvent(User organizer, LocalDateTime start, LocalDateTime end) {
+        Event event = persistEvent(organizer, start, end, 50);
         event.publish();
         return eventRepository.save(event);
     }

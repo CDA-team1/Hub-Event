@@ -245,6 +245,12 @@ public class RegistrationService {
 
         for (Registration existing : existingRegistrations) {
             Event existingEvent = existing.getEvent();
+
+            // Une inscription sur un événement annulé (conservée en base) n'occupe plus le créneau.
+            if (existingEvent.getStatus() == EventStatus.CANCELLED) {
+                continue;
+            }
+
             LocalDateTime existingStart = existingEvent.getStartDateTime();
             LocalDateTime existingEnd = existingEvent.getEndDateTime() != null
                     ? existingEvent.getEndDateTime()
