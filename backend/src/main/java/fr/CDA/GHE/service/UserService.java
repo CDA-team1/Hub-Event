@@ -221,6 +221,10 @@ public class UserService {
             throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
         }
 
+        if (!EMAIL_PATTERN.matcher(request.email()).matches()) {
+            throw new FunctionalException("Veuillez renseigner une adresse email valide.");
+}
+
         boolean emailChanged = !request.email().equalsIgnoreCase(user.getEmail());
         if (emailChanged && userRepository.existsByEmailAndIdNot(request.email(), user.getId())) {
             throw new FunctionalException("Cette adresse email est déjà utilisée.");
@@ -600,6 +604,9 @@ public class UserService {
             || isBlank(request.postalAddress()) || isBlank(request.email())
             || isBlank(request.phone()) || request.role() == null) {
                 throw new FunctionalException("Veuillez renseigner tous les champs obligatoires.");
+}
+        if (!EMAIL_PATTERN.matcher(request.email()).matches()) {
+                throw new FunctionalException("Veuillez renseigner une adresse email valide.");
 }
 
         // Règle PO (dossier de conception) : un organisateur est forcément rattaché à un club.

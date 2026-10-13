@@ -245,6 +245,25 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
     }
 
     @Test
+    void updateOwnAccount_shouldThrow_whenEmailFormatIsInvalid() {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                "Doe",
+                "John",
+                "1 rue de Test",
+                "bonjour",
+                "0600000000",
+                 null
+        );
+
+        assertThatThrownBy(() -> userService.updateOwnAccount(request))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Veuillez renseigner une adresse email valide.");
+    }
+
+    @Test
     void updateOwnAccount_shouldThrow_whenAccountNotActive() {
         User user = persistInactiveMemberWithToken("john.doe@test.com", "some-token");
         authenticateAs(user);
@@ -393,6 +412,23 @@ void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
             .isInstanceOf(FunctionalException.class)
             .hasMessage("Veuillez renseigner tous les champs obligatoires.");
     }
+
+    @Test
+    void createUserByAdmin_shouldThrow_whenEmailFormatIsInvalid() {
+        AdminUserRequest request = new AdminUserRequest(
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "bonjour",
+            "0600000000",
+            Role.MEMBER,
+            null
+        );
+
+        assertThatThrownBy(() -> userService.createUserByAdmin(request))
+            .isInstanceOf(FunctionalException.class)
+            .hasMessage("Veuillez renseigner une adresse email valide.");
+}
 
     @Test
     void createUserByAdmin_shouldThrow_whenEmailAlreadyUsed() throws FunctionalException {
