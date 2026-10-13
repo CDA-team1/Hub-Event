@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AccountApi } from '../../../core/accounts/account-api';
+import { Confirmation } from '../../../core/dialog/confirmation';
 import { AccountDto } from '../../../domain/account.model';
 import { Role } from '../../../domain/role';
 import { ActionButton } from '../../../shared/ui/action-button/action-button';
@@ -43,6 +45,7 @@ export class UsersListPage {
   private readonly accountApi = inject(AccountApi);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly confirmation = inject(Confirmation);
 
   protected readonly users = signal<AccountDto[]>([]);
   protected readonly selectedRole = signal<Role | null>(null);
@@ -52,6 +55,7 @@ export class UsersListPage {
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+  protected readonly deleteError = signal('');
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'lastName', header: 'Nom' },
@@ -102,6 +106,30 @@ export class UsersListPage {
 
   protected reload(): void {
     this.loadUsers();
+  }
+
+  protected async deleteUser(user: AccountDto): Promise<void> {
+    this.deleteError.set('');
+    const confirmed = await this.confirmation.confirm(
+      `Supprimer définitivement le compte de ${user.firstName} ${user.lastName} (${user.email}) ? ` +
+        'Cette action est irréversible. Un compte qui a un historique (inscriptions, ' +
+        "commentaires, évènements) ne peut pas être supprimé : il faut l'anonymiser.",
+      'Supprimer',
+      'Annuler',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.accountApi.deleteUser(user.id).subscribe({
+      next: () => this.loadUsers(),
+      error: (error: unknown) =>
+        this.deleteError.set(
+          error instanceof HttpErrorResponse && typeof error.error === 'string'
+            ? error.error
+            : 'La suppression a échoué, réessayez.',
+        ),
+    });
   }
 
   private loadUsers(): void {

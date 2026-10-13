@@ -28,7 +28,8 @@ MyAccountPage                      features/account · entrée : — (utilisateu
 └── AccountForm                    features/account · sortie : submitted(UpdateUserRequest)
 
 UsersListPage                      features/account (admin) · entrée : query params (rôle, page)
-├── DataTable                      shared/ui · actions « Modifier » et « Suspendre » (ActionButton, liens)
+├── DataTable                      shared/ui · actions « Modifier », « Suspendre » (ActionButton, liens) et « Supprimer »
+│                                  (ActionButton + confirmation ; le back refuse un compte avec historique ou le sien)
 └── Pagination                     shared/ui
 
 UserFormPage                       features/account (admin) · entrée : id (optionnel), rôle cible

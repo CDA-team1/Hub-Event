@@ -508,15 +508,35 @@ public class UserService {
     /**
      * Supprime un compte (CU25, SFG §2.28).
      * <p>
+     * Deux refus : un administrateur ne peut pas supprimer son propre compte, et un compte qui a
+     * un historique (inscriptions, commentaires, événements organisés, demande d'anonymisation)
+     * ne peut pas être supprimé physiquement — il faut l'anonymiser, ce qui conserve cet historique.
+     * La suppression ne concerne donc en pratique que des comptes sans activité (jamais activés,
+     * créés par erreur).
+     * </p>
+     * <p>
      * Retire d'abord le compte de ses clubs d'affiliation : sinon la contrainte de clé
      * étrangère de la table {@code affiliation} empêcherait la suppression.
+     * </p>
      *
      * @param id identifiant du compte à supprimer
-     * @throws NotFoundException si aucun compte ne correspond à l'identifiant
+     * @throws NotFoundException   si aucun compte ne correspond à l'identifiant
+     * @throws FunctionalException si c'est le compte de l'administrateur connecté, ou si le compte
+     *                             a un historique
      */
     @Transactional
-    public void deleteUserByAdmin(Long id) {
+    public void deleteUserByAdmin(Long id) throws FunctionalException {
         User user = findUserOrThrow(id);
+
+        if (user.getEmail().equals(CurrentUser.email())) {
+            throw new FunctionalException("Vous ne pouvez pas supprimer votre propre compte.");
+        }
+
+        if (userRepository.hasHistory(user)) {
+            throw new FunctionalException("Ce compte possède un historique (inscriptions, commentaires, "
+                    + "événements ou demande d'anonymisation) : il ne peut pas être supprimé, "
+                    + "utilisez l'anonymisation.");
+        }
 
         clubRepository.findByMembers_Id(id).forEach(club -> club.getMembers().remove(user));
         userRepository.delete(user);
