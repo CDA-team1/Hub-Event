@@ -1128,6 +1128,27 @@ class EventControllerTest {
   }
 
   /**
+   * Vérifie qu'un fichier refusé par la validation des images (type, taille ou nombre)
+   * donne une erreur 400 avec le message expliquant le refus.
+   *
+   * @throws Exception si l'exécution de la requête HTTP échoue
+   */
+  @Test
+  void shouldReturn400WhenImageValidationFails() throws Exception {
+
+    MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "pas une image".getBytes());
+
+    when(imageService.addImages(eq(100L), any()))
+        .thenThrow(new FunctionalException("Chaque fichier doit être une image JPEG, PNG, WebP ou GIF."));
+
+    mockMvc.perform(multipart("/events/100/images")
+            .file(file)
+            .with(user("organizer@test.fr").roles("ORGANIZER")))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("Chaque fichier doit être une image JPEG, PNG, WebP ou GIF."));
+  }
+
+  /**
    * Vérifie qu'un membre authentifié
    * ne peut pas ajouter d'image à un événement.
    *

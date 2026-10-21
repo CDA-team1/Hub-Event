@@ -15,9 +15,13 @@ import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.util.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,9 +45,23 @@ public class ImageService {
     private final UserRepository userRepository;
     private final ImageMapper imageMapper;
     private final ImgbbClient imgbbClient;
+    private final int maxFilesPerRequest;
+    private final DataSize maxFileSize;
 
+    /**
+     * @param maxFilesPerRequest nombre maximal de fichiers acceptés dans un même envoi
+     *                           ({@code app.images.max-files-per-request}) ; ne limite pas le total
+     *                           d'images d'un événement, seulement la taille d'un envoi
+     * @param maxFileSize        taille maximale d'un fichier : la même valeur que la limite
+     *                           {@code spring.servlet.multipart.max-file-size}, pour n'avoir qu'un
+     *                           seul réglage
+     */
     public ImageService(ImageRepository imageRepository, EventRepository eventRepository,
-                         UserRepository userRepository, ImageMapper imageMapper, ImgbbClient imgbbClient) {
+                         UserRepository userRepository, ImageMapper imageMapper, ImgbbClient imgbbClient,
+                         @Value("${app.images.max-files-per-request:20}") int maxFilesPerRequest,
+                         @Value("${spring.servlet.multipart.max-file-size:5MB}") String maxFileSize) {
+        this.maxFilesPerRequest = maxFilesPerRequest;
+        this.maxFileSize = DataSize.parse(maxFileSize);
         this.imageRepository = imageRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
@@ -62,7 +80,9 @@ public class ImageService {
      * @param eventId identifiant de l'événement concerné
      * @param files   fichiers image envoyés
      * @return les images créées
-     * @throws FunctionalException si aucun fichier n'est fourni, ou si un fichier n'est pas une image
+     * @throws FunctionalException si aucun fichier n'est fourni, si l'envoi dépasse le nombre de
+     *                             fichiers autorisé, ou si un fichier est trop volumineux ou n'est
+     *                             pas une image JPEG, PNG, WebP ou GIF
      */
     @Transactional
     public List<ImageDto> addImages(Long eventId, List<MultipartFile> files) throws FunctionalException {
@@ -74,11 +94,14 @@ public class ImageService {
         }
 
         List<MultipartFile> nonEmptyFiles = files.stream().filter(file -> !file.isEmpty()).toList();
+
+        if (nonEmptyFiles.size() > maxFilesPerRequest) {
+            throw new FunctionalException(
+                    "Vous pouvez envoyer " + maxFilesPerRequest + " images au maximum à la fois.");
+        }
+
         for (MultipartFile file : nonEmptyFiles) {
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                throw new FunctionalException("Chaque fichier doit être une image.");
-            }
+            validateImage(file);
         }
 
         boolean eventHasPreview = imageRepository.existsByEvent_IdAndIsPreviewTrue(eventId);
@@ -123,6 +146,66 @@ public class ImageService {
         }
 
         log.info("SUPPRESSION image : eventId={} imageId={}", eventId, imageId);
+    }
+
+    /**
+     * Contrôle un fichier avant son envoi à l'hébergeur : taille, puis type réel.
+     * <p>
+     * Le type réel est lu dans les premiers octets du fichier (sa « signature »). L'en-tête
+     * {@code Content-Type} et l'extension du nom sont fournis par le client et ne prouvent rien :
+     * un fichier HTML ou SVG peut s'annoncer comme {@code image/png}.
+     * </p>
+     */
+    private void validateImage(MultipartFile file) throws FunctionalException {
+        if (file.getSize() > maxFileSize.toBytes()) {
+            throw new FunctionalException(
+                    "Chaque image doit faire " + maxFileSize.toMegabytes() + " Mo maximum.");
+        }
+
+        if (!hasSupportedImageSignature(file)) {
+            throw new FunctionalException("Chaque fichier doit être une image JPEG, PNG, WebP ou GIF.");
+        }
+    }
+
+    private static boolean hasSupportedImageSignature(MultipartFile file) throws FunctionalException {
+        byte[] header;
+        try (InputStream input = file.getInputStream()) {
+            header = input.readNBytes(12);
+        } catch (IOException exception) {
+            throw new FunctionalException("Le fichier envoyé est illisible.");
+        }
+
+        return isJpeg(header) || isPng(header) || isGif(header) || isWebp(header);
+    }
+
+    private static boolean isJpeg(byte[] header) {
+        return startsWith(header, 0, 0xFF, 0xD8, 0xFF);
+    }
+
+    private static boolean isPng(byte[] header) {
+        return startsWith(header, 0, 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A);
+    }
+
+    private static boolean isGif(byte[] header) {
+        return startsWith(header, 0, 'G', 'I', 'F', '8', '7', 'a')
+                || startsWith(header, 0, 'G', 'I', 'F', '8', '9', 'a');
+    }
+
+    /** WebP est un conteneur RIFF : « RIFF », 4 octets de taille, puis « WEBP ». */
+    private static boolean isWebp(byte[] header) {
+        return startsWith(header, 0, 'R', 'I', 'F', 'F') && startsWith(header, 8, 'W', 'E', 'B', 'P');
+    }
+
+    private static boolean startsWith(byte[] data, int offset, int... expected) {
+        if (data.length < offset + expected.length) {
+            return false;
+        }
+        for (int i = 0; i < expected.length; i++) {
+            if ((data[offset + i] & 0xFF) != expected[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Image uploadAndPersist(Event event, MultipartFile file, boolean isPreview) {

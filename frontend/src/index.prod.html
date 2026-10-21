@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HubEvent</title>
+  <base href="/">
+  <!--
+    Variante de index.html utilisée par la build de production (voir angular.json) : seule la
+    balise CSP change, le reste doit rester identique à index.html. Absente en développement, où
+    elle bloquerait le rechargement automatique de `ng serve`.
+    - script-src 'self'      : aucun script en ligne, aucun eval
+    - style-src 'unsafe-inline' : Angular injecte les styles des composants en <style> (le nonce
+                               qui permettrait de s'en passer exige un serveur qui en génère un)
+    - img-src                : photos hébergées sur imgbb, aperçus de fichiers (blob:) du formulaire d'images
+    - connect-src 'self'     : l'API est appelée en /api, sur le même domaine que le front. Si le back est
+                               hébergé ailleurs, ajouter son origine ici
+    frame-ancestors (anti-clickjacking) n'est pas pris en compte dans une balise <meta> : à envoyer
+    en en-tête HTTP par l'hébergeur (voir README du front).
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://i.ibb.co; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
