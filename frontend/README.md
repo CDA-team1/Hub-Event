@@ -59,6 +59,13 @@ Les notes de conception (arbre des composants, un fichier par domaine) sont dans
 - **Tests** : un fichier `*.spec.ts` à côté de chaque composant, service ou règle de domaine. Les noms de tests sont écrits en français et décrivent le comportement (« affiche… », « refuse… »). Les appels HTTP sont simulés avec `HttpTestingController`.
 - **Accessibilité** : libellés `aria-label` sur les boutons à icône, rôles sur les messages d'erreur (`role="alert"`).
 
+## 🔒 Sécurité : XSS et CSP
+
+- **Pas d'injection HTML** : tout texte saisi ou reçu du back (commentaires, titre, description…) est affiché par interpolation `{{ }}`, qu'Angular échappe. Le code n'utilise ni `[innerHTML]` ni `bypassSecurityTrust…` : ne pas en introduire pour des données saisies. Des tests (`comment-list`, `event-detail-page`) vérifient qu'un `<img onerror=…>` ou un `<script>` injecté reste du texte.
+- **Content Security Policy** : la balise est dans `src/index.prod.html`, utilisée uniquement par la build de production (`angular.json`, option `index`). Elle est absente en développement, où elle bloquerait le rechargement automatique. À mettre à jour si on ajoute un hébergeur d'images (`img-src`) ou si le back est servi depuis un autre domaine (`connect-src`). Le reste de `index.prod.html` doit rester identique à `index.html`.
+- **En-têtes HTTP à demander à l'hébergeur** : une balise `<meta>` ne peut pas porter `frame-ancestors` (anti-clickjacking). Envoyer `Content-Security-Policy: frame-ancestors 'none'` et `X-Content-Type-Options: nosniff` avec les pages du front.
+- **Vérifier après un `npm run build`** : `dist/hub-event/browser/index.html` contient la balise CSP et aucun attribut `onload`, et l'application ne produit aucune erreur de CSP dans la console.
+
 ## 🔧 Dépannage
 
 | Symptôme | Cause et solution |

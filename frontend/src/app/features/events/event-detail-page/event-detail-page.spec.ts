@@ -102,6 +102,19 @@ describe('EventDetailPage', () => {
     expect(element.querySelectorAll('.comment')).toHaveLength(1);
   });
 
+  it('affiche du HTML saisi dans le titre ou la description comme du texte, sans jamais l’interpréter', async () => {
+    const payload = '<img src="x" onerror="window.__xss = true"><script>window.__xss = true</script>';
+    const element = await open('/evenements/5');
+    http.expectOne('/api/events/5').flush({ ...DETAIL, title: payload, description: payload });
+    http.expectOne('/api/events/5/comments').flush([]);
+    await stable();
+
+    expect(element.querySelector('h1')?.textContent).toBe(payload);
+    expect(element.textContent).toContain(payload);
+    expect(element.querySelector('img[src="x"], script')).toBeNull();
+    expect((window as unknown as Record<string, unknown>)['__xss']).toBeUndefined();
+  });
+
   it("indique le statut quand l'évènement n'est pas publié", async () => {
     const element = await open('/evenements/5');
     http.expectOne('/api/events/5').flush({ ...DETAIL, status: 'CANCELLED' });

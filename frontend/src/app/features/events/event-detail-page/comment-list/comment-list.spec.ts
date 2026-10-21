@@ -37,6 +37,21 @@ describe('CommentList', () => {
     expect(first.querySelector('.comment__content')?.textContent).toBe('Super initiative !');
   });
 
+  it('affiche du HTML saisi dans un commentaire comme du texte, sans jamais l’interpréter', async () => {
+    const payload =
+      '<img src="x" onerror="window.__xss = true"><script>window.__xss = true</script><b>gras</b>';
+    const element = await render([
+      { ...comments[0], authorDisplayName: '<b>Pirate</b>', content: payload },
+    ]);
+
+    const content = element.querySelector('.comment__content')!;
+    expect(content.textContent).toBe(payload);
+    expect(content.children).toHaveLength(0);
+    expect(element.querySelector('.comment__author')?.children).toHaveLength(0);
+    expect(element.querySelector('img, script, b')).toBeNull();
+    expect((window as unknown as Record<string, unknown>)['__xss']).toBeUndefined();
+  });
+
   it("garde l'ordre reçu", async () => {
     const element = await render(comments);
 
