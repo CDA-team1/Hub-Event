@@ -1,0 +1,103 @@
+services:
+  - type: pserv
+    name: hub-event-mysql
+    runtime: docker
+    dockerfilePath: ./backend/docs/database/Dockerfile
+    dockerContext: ./backend/docs/database
+    plan: 0.5c-512mb
+    envVars:
+      - key: MYSQL_DATABASE
+        value: hub_event
+      - key: MYSQL_USER
+        value: hub_event
+      - key: MYSQL_PASSWORD
+        generateValue: true
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 10
+
+  - type: web
+    name: hub-event-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      - key: DB_HOST
+        fromService:
+          name: hub-event-mysql
+          type: pserv
+          property: host
+
+      - key: DB_PORT
+        fromService:
+          name: hub-event-mysql
+          type: pserv
+          property: port
+
+      - key: DB_NAME
+        fromService:
+          name: hub-event-mysql
+          type: pserv
+          envVarKey: MYSQL_DATABASE
+
+      - key: DB_USER
+        fromService:
+          name: hub-event-mysql
+          type: pserv
+          envVarKey: MYSQL_USER
+
+      - key: DB_PASSWORD
+        fromService:
+          name: hub-event-mysql
+          type: pserv
+          envVarKey: MYSQL_PASSWORD
+
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: MAIL_HOST
+        sync: false
+
+      - key: MAIL_PORT
+        sync: false
+
+      - key: MAIL_USERNAME
+        sync: false
+
+      - key: MAIL_PASSWORD
+        sync: false
+
+      - key: APP_BASE_URL
+        sync: false
+
+      - key: APP_FRONTEND_URL
+        sync: false
+
+      - key: IMGBB_API_KEY
+        sync: false
+
+  - type: web
+    name: hub-event-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NGINX_ENVSUBST_FILTER
+        value: BACKEND_
+
+      - key: BACKEND_SCHEME
+        value: https
+
+      - key: BACKEND_HOST
+        fromService:
+          name: hub-event-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME

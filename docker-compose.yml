@@ -22,7 +22,9 @@ services:
     container_name: hub-event-backend
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: jdbc:mysql://mysql:3306/hub_event
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-hub_event}
       DB_USER: ${MYSQL_USER:-hub_event}
       DB_PASSWORD: ${MYSQL_PASSWORD:-hub_event}
       JWT_SECRET: ${JWT_SECRET}
@@ -43,6 +45,10 @@ services:
     build:
       context: ./frontend
     container_name: hub-event-frontend
+    environment:
+      NGINX_ENVSUBST_FILTER: BACKEND_
+      BACKEND_SCHEME: http
+      BACKEND_HOST: backend:8080
     ports:
       - "4200:80"
     depends_on:
