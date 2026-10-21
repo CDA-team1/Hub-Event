@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
@@ -28,11 +29,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +50,12 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @Transactional
 class ImageServiceTest {
+
+    /** En-tête d'un vrai fichier PNG : seule la signature compte pour la validation. */
+    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0};
+    private static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private static final byte[] GIF = {'G', 'I', 'F', '8', '9', 'a', 0, 0, 0, 0, 0, 0};
+    private static final byte[] WEBP = {'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E', 'B', 'P'};
 
     @Autowired
     private ImageService imageService;
@@ -76,7 +86,7 @@ class ImageServiceTest {
         Event event = persistEvent(organizer);
         authenticateAs(organizer);
 
-        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", PNG);
         when(imgbbClient.upload(any()))
                 .thenReturn(new ImgbbClient.UploadedImage("https://i.ibb.co/abc/photo.png", "https://ibb.co/delete/abc"));
 
@@ -113,13 +123,97 @@ class ImageServiceTest {
     }
 
     @Test
+    void addImages_shouldAcceptJpegPngGifAndWebp() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        stubUploads();
+
+        List<ImageDto> created = imageService.addImages(event.getId(), List.of(
+                new MockMultipartFile("files", "a.jpg", "image/jpeg", JPEG),
+                new MockMultipartFile("files", "b.png", "image/png", PNG),
+                new MockMultipartFile("files", "c.gif", "image/gif", GIF),
+                new MockMultipartFile("files", "d.webp", "image/webp", WEBP)));
+
+        assertThat(created).hasSize(4);
+    }
+
+    @Test
+    void addImages_shouldThrow_whenContentIsNotAnImageDespiteImageContentType() {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        MockMultipartFile disguisedHtml = new MockMultipartFile("files", "photo.png", "image/png",
+                "<html><script>alert(1)</script></html>".getBytes());
+
+        assertThatThrownBy(() -> imageService.addImages(event.getId(), List.of(disguisedHtml)))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Chaque fichier doit être une image JPEG, PNG, WebP ou GIF.");
+        verify(imgbbClient, never()).upload(any());
+    }
+
+    @Test
+    void addImages_shouldThrow_whenFileIsSvg() {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        MockMultipartFile svg = new MockMultipartFile("files", "logo.svg", "image/svg+xml",
+                "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>".getBytes());
+
+        assertThatThrownBy(() -> imageService.addImages(event.getId(), List.of(svg)))
+                .isInstanceOf(FunctionalException.class);
+        verify(imgbbClient, never()).upload(any());
+    }
+
+    @Test
+    void addImages_shouldThrow_whenFileIsTooLarge() {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        byte[] tooLarge = new byte[5 * 1024 * 1024 + 1];
+        System.arraycopy(PNG, 0, tooLarge, 0, PNG.length);
+        MockMultipartFile file = new MockMultipartFile("files", "big.png", "image/png", tooLarge);
+
+        assertThatThrownBy(() -> imageService.addImages(event.getId(), List.of(file)))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Chaque image doit faire 5 Mo maximum.");
+        verify(imgbbClient, never()).upload(any());
+    }
+
+    @Test
+    void addImages_shouldThrow_whenTooManyFilesInOneRequest() {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        List<MultipartFile> files = Collections.nCopies(21, photo());
+
+        assertThatThrownBy(() -> imageService.addImages(event.getId(), files))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Vous pouvez envoyer 20 images au maximum à la fois.");
+        verify(imgbbClient, never()).upload(any());
+    }
+
+    @Test
+    void addImages_shouldNotLimitTheTotalNumberOfImagesOfAnEvent() throws FunctionalException {
+        User organizer = persistOrganizer("organizer@test.com");
+        Event event = persistEvent(organizer);
+        authenticateAs(organizer);
+        stubUploads();
+
+        imageService.addImages(event.getId(), Collections.nCopies(20, photo()));
+        imageService.addImages(event.getId(), Collections.nCopies(20, photo()));
+
+        assertThat(imageRepository.findByEvent_Id(event.getId())).hasSize(40);
+    }
+
+    @Test
     void addImages_shouldThrow_whenCallerIsNotTheOwner() {
         User organizer = persistOrganizer("organizer@test.com");
         Event event = persistEvent(organizer);
         User otherOrganizer = persistOrganizer("other@test.com");
         authenticateAs(otherOrganizer);
 
-        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", PNG);
 
         assertThatThrownBy(() -> imageService.addImages(event.getId(), List.of(file)))
                 .isInstanceOf(ForbiddenException.class);
@@ -131,7 +225,7 @@ class ImageServiceTest {
         Event event = persistEvent(organizer);
         authenticateAs(organizer);
 
-        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", PNG);
         when(imgbbClient.upload(any()))
                 .thenReturn(new ImgbbClient.UploadedImage("https://i.ibb.co/abc/photo.png", "https://ibb.co/delete/abc"));
         Long imageId = imageService.addImages(event.getId(), List.of(file)).get(0).id();
@@ -149,7 +243,7 @@ class ImageServiceTest {
         Event otherEvent = persistEvent(organizer);
         authenticateAs(organizer);
 
-        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+        MockMultipartFile file = new MockMultipartFile("files", "photo.png", "image/png", PNG);
         when(imgbbClient.upload(any()))
                 .thenReturn(new ImgbbClient.UploadedImage("https://i.ibb.co/abc/photo.png", "https://ibb.co/delete/abc"));
         Long imageId = imageService.addImages(event.getId(), List.of(file)).get(0).id();
@@ -256,8 +350,14 @@ class ImageServiceTest {
         assertThat(gallery.get(0).isPreview()).isTrue();
     }
 
+    private void stubUploads() {
+        when(imgbbClient.upload(any())).thenAnswer(invocation ->
+                new ImgbbClient.UploadedImage("https://i.ibb.co/" + UUID.randomUUID() + ".png",
+                        "https://ibb.co/delete/" + UUID.randomUUID()));
+    }
+
     private MockMultipartFile photo() {
-        return new MockMultipartFile("files", "photo.png", "image/png", "fake-bytes".getBytes());
+        return new MockMultipartFile("files", "photo.png", "image/png", PNG);
     }
     
     private User persistOrganizer(String email) {
