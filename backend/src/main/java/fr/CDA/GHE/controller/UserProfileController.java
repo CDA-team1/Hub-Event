@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import jakarta.validation.Valid;
+
 /**
  * SEC-02 — Autorisations des routes du profil de l'utilisateur connecté (CU13).
  * <p>
@@ -36,7 +38,7 @@ public class UserProfileController implements UserProfileControllerDoc {
 
     @Override
     @PutMapping
-    public UserDto update(@RequestBody UpdateUserRequest request) throws FunctionalException {
+    public UserDto update(@Valid @RequestBody UpdateUserRequest request) throws FunctionalException {
         return userService.updateOwnAccount(request);
     }
 }

@@ -4,9 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
@@ -30,6 +34,21 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     protected ResponseEntity<String> handleNotFound(NotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    /**
+     * Gère les paramètres d'URL absents ou impossibles à convertir
+     * et retourne un 400 Bad Request.
+     *
+     * @param ex l'exception liée au paramètre de requête
+     * @return la réponse HTTP indiquant que la requête est invalide
+     */
+    @ExceptionHandler({
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class
+    })
+    protected ResponseEntity<String> handleRequestParameterException(Exception ex) {
+        return ResponseEntity.badRequest().body("Requête invalide");
     }
 
     /**
@@ -87,6 +106,36 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     protected ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Accès refusé");
+    }
+
+    /**
+    * Gère les erreurs de validation des corps de requête et retourne un 400 Bad Request.
+    *
+    * @param ex l'exception de validation levée
+    * @return la réponse HTTP avec le premier message de validation disponible
+    */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<String> handleValidationException(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(error -> error.getDefaultMessage())
+                .orElse("Requête invalide");
+
+        return ResponseEntity.badRequest().body(message);
+    }
+
+    /**
+    * Gère les corps de requête JSON illisibles ou incompatibles avec le DTO
+    * et retourne un 400 Bad Request.
+    *
+    * @param ex l'exception de désérialisation levée
+    * @return la réponse HTTP indiquant que la requête est invalide
+    */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    protected ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body("Requête invalide");
     }
 
     /**

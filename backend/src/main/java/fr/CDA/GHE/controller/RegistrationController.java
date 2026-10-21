@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 /**
@@ -58,8 +60,8 @@ public class RegistrationController implements RegistrationControllerDoc {
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> cancelRegistrationByOrganizer(@PathVariable Long eventId,
                                                   @PathVariable Long userId,
-                                                  @RequestBody CancelRegistrationRequest request)
-            throws FunctionalException{
+                                                  @Valid @RequestBody CancelRegistrationRequest request)
+            throws FunctionalException {
         registrationService.cancelRegistrationByOrganizer(eventId, userId, request.reason());
         return ResponseEntity.noContent().build();
     }

@@ -1,5 +1,8 @@
 package fr.CDA.GHE.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.util.List;
 
 /**
@@ -11,5 +14,8 @@ import java.util.List;
  *
  * @param clubIds identifiants des clubs auxquels le membre doit être affilié
  */
-public record ClubAffiliationRequest(List<Long> clubIds) {
+public record ClubAffiliationRequest(
+        @NotNull
+        List<@Positive Long> clubIds
+) {
 }

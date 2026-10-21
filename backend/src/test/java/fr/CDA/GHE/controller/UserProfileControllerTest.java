@@ -21,6 +21,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -95,6 +97,19 @@ class UserProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("Jonathan"));
     }
+
+    @Test
+    void update_shouldReturn400_whenEmailIsInvalid() throws Exception {
+        mockMvc.perform(put("/users/me")
+                        .with(user("john.doe@test.com").roles("MEMBER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
+                                "email":"invalid-email"}"""))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).updateOwnAccount(any(UpdateUserRequest.class));
+     }
 
     @Test
     void update_shouldReturn400_whenEmailAlreadyUsed() throws Exception {

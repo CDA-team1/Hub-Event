@@ -1,6 +1,11 @@
 package fr.CDA.GHE.dto;
 
 import fr.CDA.GHE.entity.enums.Role;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -22,12 +27,29 @@ import java.util.List;
  *                      facultatif pour un MEMBER, ignoré pour un ADMIN)
  */
 public record AdminUserRequest(
+        @NotBlank
+        @Size(max = 255)
         String lastName,
+
+        @NotBlank
+        @Size(max = 255)
         String firstName,
+
+        @NotBlank
+        @Size(max = 255)
         String postalAddress,
+
+        @NotBlank
+        @Email
+        @Size(max = 255)
         String email,
+
+        @Size(max = 255)
         String phone,
+
+        @NotNull
         Role role,
-        List<Long> clubIds
+
+        List<@Positive Long> clubIds
 ) {
 }

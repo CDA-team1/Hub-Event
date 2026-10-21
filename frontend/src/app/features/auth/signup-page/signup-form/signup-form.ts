@@ -76,11 +76,7 @@ export class SignupForm {
       return;
     }
 
-    const {
-      passwordConfirmation: _passwordConfirmation,
-      termsAccepted: _termsAccepted,
-      ...request
-    } = this.form.getRawValue();
+    const { passwordConfirmation: _passwordConfirmation, ...request } = this.form.getRawValue();
 
     this.submitted.emit(request);
   }

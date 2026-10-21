@@ -1,5 +1,7 @@
 package fr.CDA.GHE.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 /**
  * Données saisies pour finaliser un compte créé par un administrateur (CU25/CPT-06, CdC §
  * « Validation de la création d'un compte »).
@@ -12,8 +14,13 @@ package fr.CDA.GHE.dto;
  * @param confirmPassword   confirmation du nouveau mot de passe (doit être identique)
  */
 public record ActivateAdminAccountRequest(
+        @NotBlank
         String temporaryPassword,
+
+        @NotBlank
         String newPassword,
+
+        @NotBlank
         String confirmPassword
 ) {
 }
