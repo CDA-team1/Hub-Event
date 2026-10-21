@@ -1,24 +1,4 @@
 services:
-  - type: pserv
-    name: hub-event-mysql
-    runtime: docker
-    dockerfilePath: ./backend/docs/database/Dockerfile
-    dockerContext: ./backend/docs/database
-    plan: 0.5c-512mb
-    envVars:
-      - key: MYSQL_DATABASE
-        value: hub_event
-      - key: MYSQL_USER
-        value: hub_event
-      - key: MYSQL_PASSWORD
-        generateValue: true
-      - key: MYSQL_ROOT_PASSWORD
-        generateValue: true
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 10
-
   - type: web
     name: hub-event-backend
     runtime: docker
@@ -30,37 +10,22 @@ services:
         value: prod
 
       - key: DB_HOST
-        fromService:
-          name: hub-event-mysql
-          type: pserv
-          property: host
+        sync: false
 
       - key: DB_PORT
-        fromService:
-          name: hub-event-mysql
-          type: pserv
-          property: port
+        sync: false
 
       - key: DB_NAME
-        fromService:
-          name: hub-event-mysql
-          type: pserv
-          envVarKey: MYSQL_DATABASE
+        sync: false
 
       - key: DB_USER
-        fromService:
-          name: hub-event-mysql
-          type: pserv
-          envVarKey: MYSQL_USER
+        sync: false
 
       - key: DB_PASSWORD
-        fromService:
-          name: hub-event-mysql
-          type: pserv
-          envVarKey: MYSQL_PASSWORD
+        sync: false
 
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
 
       - key: MAIL_HOST
         sync: false
