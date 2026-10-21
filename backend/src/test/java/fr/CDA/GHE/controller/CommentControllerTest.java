@@ -1,7 +1,6 @@
 package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.CommentDto;
-import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
 import fr.CDA.GHE.service.CommentService;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -61,16 +59,14 @@ class CommentControllerTest {
 
     @Test
     void create_shouldReturn400_whenContentIsBlank() throws Exception {
-        when(commentService.createComment(any()))
-                .thenThrow(new FunctionalException("Veuillez saisir un commentaire."));
-
         mockMvc.perform(post("/comments")
                         .with(user("john.doe@test.fr").roles("MEMBER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"eventId\":100,\"content\":\"\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Veuillez saisir un commentaire."));
-    }
+                .andExpect(status().isBadRequest());
+
+        verify(commentService, never()).createComment(any());
+        }          
 
     @Test
     void create_shouldReturn404_whenEventDoesNotExist() throws Exception {

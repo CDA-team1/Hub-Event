@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 /**
@@ -55,13 +57,13 @@ public class ClubController implements ClubControllerDoc {
     @Override
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ClubDto create(@RequestBody ClubDto clubDto) throws FunctionalException {
+    public ClubDto create(@Valid @RequestBody ClubDto clubDto) throws FunctionalException {
        return clubService.create(clubDto);
     }
 
     @Override
     @PutMapping("/{id}")
-    public ClubDto update(@PathVariable Long id, @RequestBody ClubDto clubDto) throws FunctionalException {
+    public ClubDto update(@PathVariable Long id, @Valid @RequestBody ClubDto clubDto) throws FunctionalException {
         return clubService.update(id, clubDto);
     }
 

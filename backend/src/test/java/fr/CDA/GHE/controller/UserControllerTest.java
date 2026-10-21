@@ -149,6 +149,25 @@ void getById_shouldReturn200WithClubs_whenAdmin() throws Exception {
     }
 
     @Test
+    void create_shouldReturn400_whenEmailIsInvalid() throws Exception {
+        mockMvc.perform(post("/admin/users")
+                        .with(user("admin@test.fr").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "lastName":"Doe",
+                                "firstName":"John",
+                                "postalAddress":"1 rue de Test",
+                                "email":"email-invalide",
+                                "phone":null,
+                                "role":"MEMBER",
+                                "clubIds":[]
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void create_shouldReturn400_whenEmailAlreadyUsed() throws Exception {
         when(userService.createUserByAdmin(any(AdminUserRequest.class)))
                 .thenThrow(new FunctionalException("Cette adresse email est déjà utilisée."));
@@ -209,6 +228,15 @@ void getById_shouldReturn200WithClubs_whenAdmin() throws Exception {
     }
 
     @Test
+    void updateAffiliations_shouldReturn400_whenClubIdIsInvalid() throws Exception {
+        mockMvc.perform(put("/admin/users/1/clubs")
+                        .with(user("admin@test.fr").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clubIds\":[0]}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void updateAffiliations_shouldReturn400_whenTargetIsAdmin() throws Exception {
         when(userService.updateMemberAffiliations(eq(1L), any(ClubAffiliationRequest.class)))
                 .thenThrow(new FunctionalException("Cette action ne s'applique pas aux administrateurs."));
@@ -219,4 +247,18 @@ void getById_shouldReturn200WithClubs_whenAdmin() throws Exception {
                         .content("{\"clubIds\":[]}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void suspend_shouldReturn400_whenReasonIsBlank() throws Exception {
+        mockMvc.perform(post("/admin/users/1/suspension")
+                        .with(user("admin@test.fr").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "reason":"",
+                                "endDate":null
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+   }
 }

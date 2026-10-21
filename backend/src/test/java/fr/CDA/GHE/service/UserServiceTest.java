@@ -110,7 +110,7 @@ class UserServiceTest {
     @Test
     void createUser_shouldCreateInactiveMember_whenRequestIsValid() throws FunctionalException {
         CreateUserRequest request = new CreateUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, STRONG_PASSWORD);
+                "john.doe@test.com", null, STRONG_PASSWORD, true);
 
         UserDto dto = userService.createUser(request);
 
@@ -122,7 +122,7 @@ class UserServiceTest {
     @Test
     void createUser_shouldThrow_whenRequiredFieldIsBlank() {
         CreateUserRequest request = new CreateUserRequest("", "John", "1 rue de Test",
-                "john.doe@test.com", null, STRONG_PASSWORD);
+                "john.doe@test.com", null, STRONG_PASSWORD, true);
 
         assertThatThrownBy(() -> userService.createUser(request)).isInstanceOf(FunctionalException.class);
     }
@@ -130,10 +130,10 @@ class UserServiceTest {
     @Test
     void createUser_shouldThrow_whenEmailAlreadyUsed() throws FunctionalException {
         userService.createUser(new CreateUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, STRONG_PASSWORD));
+                "john.doe@test.com", null, STRONG_PASSWORD, true));
 
         CreateUserRequest duplicate = new CreateUserRequest("Autre", "Personne", "2 rue de Test",
-                "john.doe@test.com", null, STRONG_PASSWORD);
+                "john.doe@test.com", null, STRONG_PASSWORD, true);
 
         assertThatThrownBy(() -> userService.createUser(duplicate)).isInstanceOf(FunctionalException.class);
     }
@@ -141,7 +141,7 @@ class UserServiceTest {
     @Test
     void createUser_shouldThrow_whenPasswordIsWeak() {
         CreateUserRequest request = new CreateUserRequest("Doe", "John", "1 rue de Test",
-                "john.doe@test.com", null, "faible");
+                "john.doe@test.com", null, "faible", true);
 
         assertThatThrownBy(() -> userService.createUser(request)).isInstanceOf(FunctionalException.class);
     }

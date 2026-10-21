@@ -1,5 +1,7 @@
 package fr.CDA.GHE.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 /**
  * Données saisies par un administrateur pour enregistrer ou mettre à jour un document légal
  * (CU31, CU32). Le type est porté par l'URL ({@code PUT /admin/documents/{type}}), pas par
@@ -7,5 +9,8 @@ package fr.CDA.GHE.dto;
  *
  * @param content contenu du document
  */
-public record LegalDocumentRequest(String content) {
+public record LegalDocumentRequest(
+        @NotBlank
+        String content
+) {
 }

@@ -5,6 +5,13 @@ import fr.CDA.GHE.entity.enums.Category;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
 /**
  * Données saisies par un organisateur pour créer un événement.
  * <p>
@@ -30,15 +37,40 @@ import java.time.LocalDateTime;
  * @param clubId             identifiant du club organisateur, obligatoire
  */
 public record CreateEventRequest(
-    String title,
-    String description,
-    String location,
-    LocalDateTime startDateTime,
-    LocalDateTime endDateTime,
-    BigDecimal affiliatedPrice,
-    BigDecimal nonAffiliatedPrice,
-    Integer maxSeats,
-    Category category,
-    Long clubId
+        @NotBlank
+        @Size(max = 255)
+        String title,
+
+        @NotBlank
+        String description,
+
+        @NotBlank
+        @Size(max = 255)
+        String location,
+
+        @NotNull
+        @Future
+        LocalDateTime startDateTime,
+
+        LocalDateTime endDateTime,
+
+        @NotNull
+        @DecimalMin(value = "0.0", inclusive = true)
+        BigDecimal affiliatedPrice,
+
+        @NotNull
+        @DecimalMin(value = "0.0", inclusive = true)
+        BigDecimal nonAffiliatedPrice,
+
+        @NotNull
+        @Positive
+        Integer maxSeats,
+
+        @NotNull
+        Category category,
+
+        @NotNull
+        @Positive
+        Long clubId
 ) {
 }

@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 /**
  * Tests de {@link RegistrationController}, centrés sur {@code register} (CdC, CU9 : « membre
@@ -115,5 +116,17 @@ class RegistrationControllerTest {
                 .andExpect(status().isUnauthorized());
 
         verify(registrationService, never()).getRegistrationsForEvent(any());
+    }
+
+    @Test
+    void cancelRegistrationByOrganizer_shouldReturn400_whenReasonIsBlank() throws Exception {
+        mockMvc.perform(delete("/events/100/registrations/10")
+                        .with(user("organizer@test.fr").roles("ORGANIZER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(registrationService, never())
+                .cancelRegistrationByOrganizer(any(), any(), any());
     }
 }

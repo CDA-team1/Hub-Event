@@ -2,6 +2,7 @@ package fr.CDA.GHE.controller;
 
 import fr.CDA.GHE.dto.LoginResponse;
 import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.dto.CreateUserRequest;
 import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.entity.enums.Role;
 import fr.CDA.GHE.exception.FunctionalException;
@@ -19,7 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -65,6 +68,24 @@ class AuthControllerTest {
     }
 
     @Test
+    void login_shouldReturn400_whenEmailIsInvalid() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"email-invalide","password":"secret"}"""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void login_shouldReturn400_whenPasswordIsBlank() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"john.doe@test.com","password":""}"""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void login_shouldReturn401_whenCredentialsAreInvalid() throws Exception {
         when(authService.login(any()))
                 .thenThrow(new UnauthorizedException("Email ou mot de passe invalide"));
@@ -98,11 +119,60 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
-                                "email":"john.doe@test.com","password":"StrOng!Passw0rd"}"""))
+                                "email":"john.doe@test.com","password":"StrOng!Passw0rd","termsAccepted":true}"""))                
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("john.doe@test.com"))
                 .andExpect(jsonPath("$.status").value("INACTIVE"))
                 .andExpect(jsonPath("$.role").value("MEMBER"));
+    }
+
+    @Test
+    void signup_shouldReturn400_whenTermsAreNotAccepted() throws Exception {
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
+                                "email":"john.doe@test.com","password":"StrOng!Passw0rd","termsAccepted":false}"""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void signup_shouldReturn400_whenTermsAcceptedIsMissing() throws Exception {
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "lastName": "Doe",
+                                "firstName": "John",
+                                "postalAddress": "1 rue de Test",
+                                "email": "john.doe@test.com",
+                                "phone": "0600000000",
+                                "password": "StrongPassword1!"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).createUser(any(CreateUserRequest.class));
+   }
+
+    @Test
+    void signup_shouldReturn400_whenEmailIsInvalid() throws Exception {
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
+                                "email":"email-invalide","password":"StrOng!Passw0rd","termsAccepted":true}"""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void signup_shouldReturn400_whenRequiredFieldIsBlank() throws Exception {
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lastName":"","firstName":"John","postalAddress":"1 rue de Test",
+                                "email":"john.doe@test.com","password":"StrOng!Passw0rd","termsAccepted":true}"""))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -114,7 +184,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"lastName":"Doe","firstName":"John","postalAddress":"1 rue de Test",
-                                "email":"john.doe@test.com","password":"StrOng!Passw0rd"}"""))
+                                "email":"john.doe@test.com","password":"StrOng!Passw0rd","termsAccepted":true}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Cette adresse email est déjà utilisée."));
     }
@@ -175,6 +245,17 @@ class AuthControllerTest {
                                 "confirmPassword":"NewStr0ng!Pass"}"""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void confirmAccountCreation_shouldReturn400_whenPasswordFieldIsBlank() throws Exception {
+        mockMvc.perform(post("/auth/confirm-account-creation")
+                        .param("token", "valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"temporaryPassword":"","newPassword":"NewStr0ng!Pass",
+                                "confirmPassword":"NewStr0ng!Pass"}"""))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

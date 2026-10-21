@@ -1,5 +1,6 @@
 package fr.CDA.GHE.controller;
 
+import jakarta.validation.Valid;
 
 import fr.CDA.GHE.dto.ActivateAdminAccountRequest;
 import fr.CDA.GHE.dto.CreateUserRequest;
@@ -46,7 +47,7 @@ public class AuthController {
      *                                                     si le compte n'est pas actif/est suspendu
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
@@ -61,7 +62,7 @@ public class AuthController {
      */
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto signup(@RequestBody CreateUserRequest request) throws FunctionalException {
+    public UserDto signup(@Valid @RequestBody CreateUserRequest request) throws FunctionalException {
         return userService.createUser(request);
     }
 
@@ -106,7 +107,7 @@ public class AuthController {
      */
     @PostMapping("/confirm-account-creation")
     public UserDto confirmAccountCreation(@RequestParam String token,
-                                           @RequestBody ActivateAdminAccountRequest request) throws FunctionalException {
+                                          @Valid @RequestBody ActivateAdminAccountRequest request) throws FunctionalException {
         return userService.confirmAccountCreation(token, request);
     }
 

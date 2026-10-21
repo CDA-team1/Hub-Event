@@ -1,5 +1,7 @@
 package fr.CDA.GHE.controller;
 
+import jakarta.validation.Valid;
+
 import fr.CDA.GHE.dto.AdminUserRequest;
 import fr.CDA.GHE.dto.ClubAffiliationRequest;
 import fr.CDA.GHE.dto.ClubDto;
@@ -57,14 +59,14 @@ public class UserController implements UserControllerDoc {
     @Secured("ROLE_ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto create(@RequestBody AdminUserRequest request) throws FunctionalException {
+    public UserDto create(@Valid @RequestBody AdminUserRequest request) throws FunctionalException {
         return userService.createUserByAdmin(request);
     }
 
     @Override
     @Secured("ROLE_ADMIN")
     @PutMapping("/{id}")
-    public UserDto update(@PathVariable Long id, @RequestBody AdminUserRequest request)
+    public UserDto update(@PathVariable Long id, @Valid @RequestBody AdminUserRequest request)
             throws FunctionalException {
         return userService.updateUserByAdmin(id, request);
     }
@@ -82,7 +84,7 @@ public class UserController implements UserControllerDoc {
     @PutMapping("/{id}/clubs")
     public List<ClubDto> updateAffiliations(
             @PathVariable Long id,
-            @RequestBody ClubAffiliationRequest request
+            @Valid @RequestBody ClubAffiliationRequest request
     ) throws FunctionalException {
         return userService.updateMemberAffiliations(id, request);
     }
@@ -92,7 +94,7 @@ public class UserController implements UserControllerDoc {
     @PostMapping("/{id}/suspension")
     public void suspend(
             @PathVariable Long id,
-            @RequestBody SuspendUserRequest request
+            @Valid @RequestBody SuspendUserRequest request
     ) throws FunctionalException {
         userService.suspendUser(id, request);
     }

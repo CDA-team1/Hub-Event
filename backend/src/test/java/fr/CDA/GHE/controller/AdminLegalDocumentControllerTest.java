@@ -67,16 +67,14 @@ class AdminLegalDocumentControllerTest {
 
     @Test
     void upsert_shouldReturn400_whenContentIsInvalid() throws Exception {
-        when(legalDocumentService.upsert(eq(DocumentType.CGU), any(LegalDocumentRequest.class)))
-                .thenThrow(new FunctionalException("Le contenu du document ne peut pas être vide."));
-
         mockMvc.perform(put("/admin/documents/CGU")
                         .with(user("admin@test.fr").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Le contenu du document ne peut pas être vide."));
-    }
+                .andExpect(status().isBadRequest());
+
+        verify(legalDocumentService, never()).upsert(any(), any());
+     }
 
     @Test
     void upsert_shouldReturn403_whenCalledByMember() throws Exception {

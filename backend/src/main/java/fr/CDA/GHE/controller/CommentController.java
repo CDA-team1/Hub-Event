@@ -7,6 +7,8 @@ import fr.CDA.GHE.service.CommentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 /**
  * SEC-02 — Autorisations des routes commentaires (voir {@link ClubController} pour les règles générales).
  * <p>
@@ -31,7 +33,7 @@ public class CommentController implements CommentControllerDoc {
     @Override
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto create(@RequestBody CreateCommentRequest request) throws FunctionalException {
+    public CommentDto create(@Valid @RequestBody CreateCommentRequest request) throws FunctionalException {
         return commentService.createComment(request);
     }
 }

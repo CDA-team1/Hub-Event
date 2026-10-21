@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 /**
  * SEC-02 — Autorisations des routes documents légaux.
  * <p>
@@ -34,7 +36,7 @@ public class AdminLegalDocumentController implements AdminLegalDocumentControlle
     @Override
     @Secured("ROLE_ADMIN")
     @PutMapping("/{type}")
-    public LegalDocumentDto upsert(@PathVariable DocumentType type, @RequestBody LegalDocumentRequest request)
+    public LegalDocumentDto upsert(@PathVariable DocumentType type, @Valid @RequestBody LegalDocumentRequest request)
             throws FunctionalException {
         return legalDocumentService.upsert(type, request);
     }

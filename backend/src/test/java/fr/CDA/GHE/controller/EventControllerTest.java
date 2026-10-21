@@ -11,6 +11,7 @@ import fr.CDA.GHE.dto.UpdateEventRequest;
 import fr.CDA.GHE.dto.EventDetailResponse;
 import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.dto.EventSearchCriteria;
 import fr.CDA.GHE.exception.ForbiddenException;
 import fr.CDA.GHE.exception.FunctionalException;
 import fr.CDA.GHE.exception.NotFoundException;
@@ -377,6 +378,33 @@ class EventControllerTest {
     verify(eventService).createEvent(any(CreateEventRequest.class));
   }
 
+  @Test
+  void shouldReturn400WhenCreatingEventWithInvalidMaxSeats() throws Exception {
+    String requestBody = """
+        {
+          "title": "Tournoi de tennis",
+          "description": "Tournoi ouvert aux membres",
+          "location": "Montpellier",
+          "startDateTime": "2026-11-20T18:00:00",
+          "endDateTime": "2026-11-20T20:00:00",
+          "affiliatedPrice": 10,
+          "nonAffiliatedPrice": 15,
+          "maxSeats": 0,
+          "category": "SPORT",
+          "clubId": 10
+        }
+        """;
+
+    mockMvc.perform(post("/events")
+            .with(user("organizer@test.fr").roles("ORGANIZER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+        .andExpect(status().isBadRequest());
+
+    verify(eventService, never())
+        .createEvent(any(CreateEventRequest.class));
+    }   
+
   /**
    * Vérifie qu'un utilisateur non authentifié
    * ne peut pas créer un événement.
@@ -511,6 +539,35 @@ class EventControllerTest {
         any(UpdateEventRequest.class)
     );
   }
+
+  @Test
+    void shouldReturn400WhenUpdatingEventWithInvalidMaxSeats() throws Exception {
+        String requestBody = """
+            {
+            "title": "Nouveau titre",
+            "description": "Nouvelle description",
+            "location": "Nîmes",
+            "startDateTime": "2026-11-25T18:00:00",
+            "endDateTime": "2026-11-25T20:00:00",
+            "affiliatedPrice": 0,
+            "nonAffiliatedPrice": 20,
+            "maxSeats": 0,
+            "category": "SPORT"
+            }
+        """;
+
+        mockMvc.perform(put("/events/100")
+                .with(user("organizer@test.fr").roles("ORGANIZER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isBadRequest());
+
+        verify(eventService, never())
+            .updateEvent(
+                eq(100L),
+                any(UpdateEventRequest.class)
+            );
+    }
 
   /**
    * Vérifie qu'un membre authentifié
@@ -1256,5 +1313,14 @@ class EventControllerTest {
                     .with(user("organizer@test.fr").roles("ORGANIZER")))
             .andExpect(status().isBadRequest())
             .andExpect(content().string(containsString("trop volumineuses")));
+  }
+
+  @Test
+  void search_shouldReturn400_whenCategoryIsInvalid() throws Exception {
+    mockMvc.perform(get("/events/search")
+                        .param("category", "INVALID_CATEGORY"))
+                .andExpect(status().isBadRequest());
+
+        verify(eventService, never()).searchEvents(any(EventSearchCriteria.class));
   }
 }
