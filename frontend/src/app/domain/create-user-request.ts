@@ -5,4 +5,5 @@ export interface CreateUserRequest {
   email: string;
   phone: string | null;
   password: string;
+  termsAccepted: boolean;
 }

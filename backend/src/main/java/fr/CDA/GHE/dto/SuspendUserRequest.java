@@ -1,5 +1,7 @@
 package fr.CDA.GHE.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 import java.time.LocalDate;
 
 /**
@@ -12,5 +14,10 @@ import java.time.LocalDate;
  * @param reason  motif de la suspension, obligatoire
  * @param endDate date de fin de la suspension, {@code null} si définitive
  */
-public record SuspendUserRequest(String reason, LocalDate endDate) {
+public record SuspendUserRequest(
+        @NotBlank
+        String reason,
+
+        LocalDate endDate
+) {
 }

@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -20,6 +21,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -104,4 +107,53 @@ class ClubControllerTest {
 
         verify(clubService, never()).extractMine();
     }
+
+    @Test
+    void create_shouldReturn400_whenEmailIsInvalid() throws Exception {
+        mockMvc.perform(post("/clubs")
+                        .with(user("admin@test.fr").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "name": "Club de boxe",
+                                "category": "SPORT",
+                                "postalAddress": "1 rue de Test",
+                                "email": "invalid-email",
+                                "phone": "0600000000"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verify(clubService, never()).create(any(ClubDto.class));
+     }
+
+     @Test
+     void update_shouldReturn400_whenNameIsBlank() throws Exception {
+        mockMvc.perform(put("/clubs/1")
+                        .with(user("admin@test.fr").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "name": "",
+                                "category": "SPORT",
+                                "postalAddress": "1 rue de Test",
+                                "email": "club@test.fr",
+                                "phone": "0600000000"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verify(clubService, never()).update(any(), any(ClubDto.class));
+        }
+
+        @Test
+        void create_shouldReturn400_whenJsonIsMalformed() throws Exception {
+        mockMvc.perform(post("/clubs")
+                        .with(user("admin@test.fr").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{"))
+                .andExpect(status().isBadRequest());
+
+        verify(clubService, never()).create(any(ClubDto.class));
+        }
 }

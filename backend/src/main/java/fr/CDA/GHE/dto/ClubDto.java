@@ -5,6 +5,10 @@ import fr.CDA.GHE.entity.enums.Category;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 /**
  * Représentation d'un club exposée par l'API.
  * <p>
@@ -25,11 +29,23 @@ import java.util.List;
  */
 public record ClubDto(
         Long id,
+
+        @NotBlank
         String name,
+
+        @NotNull
         Category category,
+
+        @NotBlank
         String postalAddress,
+
+        @NotBlank
+        @Email
         String email,
+
+        @NotBlank
         String phone,
+
         LocalDate validityEndDate,
         List<MemberSummaryDto> members
 ) {

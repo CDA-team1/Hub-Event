@@ -29,6 +29,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 /**
  * SEC-02 — Autorisations des routes évènements (voir {@link ClubController} pour les règles générales).
  * <p>
@@ -192,7 +194,7 @@ public class EventController implements EventControllerDoc {
   @Secured("ROLE_ORGANIZER")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public EventDto create(@RequestBody CreateEventRequest request)
+  public EventDto create(@Valid @RequestBody CreateEventRequest request)
       throws FunctionalException {
 
     return eventService.createEvent(request);
@@ -203,7 +205,7 @@ public class EventController implements EventControllerDoc {
   @PutMapping("/{id}")
   public EventDto update(
       @PathVariable Long id,
-      @RequestBody UpdateEventRequest request
+      @Valid @RequestBody UpdateEventRequest request
   ) throws FunctionalException {
 
     return eventService.updateEvent(id, request);
