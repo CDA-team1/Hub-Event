@@ -17,7 +17,8 @@
   gap: 0.35rem;
 }
 
-.account-form label {
+.account-form label,
+.account-form__label {
   font-size: 0.875rem;
 }
 
