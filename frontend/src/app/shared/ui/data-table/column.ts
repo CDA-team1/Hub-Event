@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, input } from '@angular/core';
+import { Directive, TemplateRef, inject, input } from '@angular/core';
 
 /**
  * Marque un `<ng-template>` comme le contenu d'une colonne de `DataTable`, repéré par sa clé.
@@ -8,5 +8,5 @@ import { Directive, TemplateRef, input } from '@angular/core';
 export class Column<T> {
   readonly appColumn = input.required<string>();
 
-  constructor(readonly templateRef: TemplateRef<{ $implicit: T }>) {}
+  readonly templateRef = inject<TemplateRef<{ $implicit: T }>>(TemplateRef);
 }

@@ -18,7 +18,7 @@ describe('roleGuard', () => {
     sessionStorage.setItem('hub-event.session.v1', JSON.stringify({ token: 'jwt-de-test', role }));
   }
 
-  const run = (...roles: Array<'MEMBER' | 'ORGANIZER' | 'ADMIN'>) =>
+  const run = (...roles: ('MEMBER' | 'ORGANIZER' | 'ADMIN')[]) =>
     TestBed.runInInjectionContext(() =>
       roleGuard(...roles)({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
     );

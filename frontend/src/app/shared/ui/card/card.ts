@@ -9,7 +9,7 @@ export interface CardData {
   category?: Category;
   information: string[];
   actionLabel?: string;
-  link?: string | any[];
+  link?: string | unknown[];
 }
 
 @Component({
