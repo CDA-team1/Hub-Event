@@ -207,7 +207,6 @@ Hub-Event/
 |---|---|
 | ❌ `Unknown database 'ghe_db_dev'` au démarrage du back | La base n'existe pas : voir l'étape 2. |
 | ❌ `Could not resolve placeholder '...'` | Une variable manque dans `backend/.env.properties` (ou le back est lancé hors du dossier `backend`). |
-| ❌ Les tests du back échouent avec `APP_FRONTEND_URL` | Le profil de test lit `.env.properties` pour cette valeur : vérifie que le fichier existe et contient `APP_FRONTEND_URL`. |
 | 🔒 Swagger UI répond 401 | L'accès à la documentation de l'API nécessite pour l'instant un jeton JWT. |
 | 🟢 Erreur de version de Node au `npm install` | Utilise Node 22.22+, 24.15+ ou 26+ (voir Prérequis). |
 | 📧 La création d'un compte échoue (délai de 5 s puis erreur) | L'e-mail d'activation est indispensable : vérifie les variables `MAIL_*` et le mot de passe d'application Gmail. En développement, utilise les comptes de démo déjà actifs. |
