@@ -80,8 +80,7 @@ cp .env.properties.example .env.properties
 |---|---|---|
 | `DB_USER` / `DB_PASSWORD` | Accès à MySQL | ton utilisateur MySQL |
 | `JWT_SECRET` | Clé de signature des jetons, **encodée en Base64** (32 octets minimum) | voir ci-dessous |
-| `APP_BASE_URL` | URL de l'API, **contexte `/api` compris** (liens de confirmation) | `http://localhost:8080/api` |
-| `APP_FRONTEND_URL` | URL du front (liens d'activation) | `http://localhost:4200` |
+| `APP_FRONTEND_URL` | URL du front (liens des e-mails : activation, confirmation de compte et de mot de passe) | `http://localhost:4200` |
 | `MAIL_HOST` / `MAIL_PORT` | Serveur SMTP | `smtp.gmail.com` / `587` |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | Compte e-mail et [mot de passe d'application](https://myaccount.google.com/apppasswords) | ton compte Gmail |
 | `IMGBB_API_KEY` | Clé de l'hébergeur d'images, créée sur [api.imgbb.com](https://api.imgbb.com/) | ta clé |

@@ -22,6 +22,7 @@ import fr.CDA.GHE.mapper.ClubMapper;
 import fr.CDA.GHE.mapper.UserMapper;
 import fr.CDA.GHE.repository.ClubRepository;
 import fr.CDA.GHE.repository.UserRepository;
+import fr.CDA.GHE.util.AccountTokens;
 import fr.CDA.GHE.util.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,12 +34,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -60,18 +62,29 @@ public class UserService {
     private static final String PWD_SPECIAL = "!@#$%^&*";
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    // Durée de validité des liens reçus par email (SEC-10). Un changement de mot de passe se
+    // confirme tout de suite et se refait en un clic, donc court ; un compte créé par un
+    // administrateur peut attendre que la personne lise ses emails, donc plus long.
+    private static final Duration ACTIVATION_VALIDITY = Duration.ofHours(24);
+    private static final Duration ADMIN_ACCOUNT_VALIDITY = Duration.ofHours(72);
+    private static final Duration PASSWORD_CHANGE_VALIDITY = Duration.ofHours(1);
+
+    private static final String EXPIRED_ACCOUNT_LINK_MESSAGE =
+            "Ce lien a expiré. Recommencez l'inscription pour en recevoir un nouveau, "
+                    + "ou demandez à un administrateur de recréer votre compte.";
+    private static final String EXPIRED_PASSWORD_LINK_MESSAGE =
+            "Ce lien a expiré. Refaites la modification du mot de passe depuis votre compte.";
+
     private final UserRepository userRepository;
     private final ClubRepository clubRepository;
     private final UserMapper userMapper;
     private final ClubMapper clubMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private final String baseUrl;
     private final String frontendUrl;
 
     public UserService(UserRepository userRepository, ClubRepository clubRepository, UserMapper userMapper,
                    ClubMapper clubMapper, PasswordEncoder passwordEncoder, EmailService emailService,
-                   @Value("${app.base-url}") String baseUrl,
                    @Value("${app.frontend-url}") String frontendUrl) {
     this.userRepository = userRepository;
     this.clubRepository = clubRepository;
@@ -79,7 +92,6 @@ public class UserService {
     this.clubMapper = clubMapper;
     this.passwordEncoder = passwordEncoder;
     this.emailService = emailService;
-    this.baseUrl = baseUrl;
     this.frontendUrl = frontendUrl;
 }
 
@@ -108,13 +120,14 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setStatus(AccountStatus.INACTIVE);
         user.setRole(Role.MEMBER);
-        user.setActivationToken(UUID.randomUUID().toString());
+        String activationToken = AccountTokens.generate();
+        user.startActivation(AccountTokens.hash(activationToken), LocalDateTime.now().plus(ACTIVATION_VALIDITY));
 
         User created = userRepository.save(user);
         log.info("CREATION compte non affilié : id={} email={}", created.getId(), created.getEmail());
 
-        // CU5 règle métier n°10 / CU6 : email d'activation (lien à usage unique).
-        String activationLink = frontendUrl + "/activation-compte?token=" + created.getActivationToken();
+        // CU5 règle métier n°10 / CU6 : email d'activation (lien à usage unique, expirant).
+        String activationLink = frontendUrl + "/activation-compte?token=" + activationToken;
         emailService.sendActivationEmail(created.getEmail(), activationLink);
 
         return userMapper.toDto(created);
@@ -129,15 +142,19 @@ public class UserService {
      */
     @Transactional
     public UserDto activateAccount(String token) throws FunctionalException {
-        User user = userRepository.findByActivationToken(token)
+        User user = userRepository.findByActivationTokenHash(AccountTokens.hash(token))
                 .orElseThrow(() -> new FunctionalException("Le compte associé à ce lien n'existe pas."));
+
+        if (user.isActivationTokenExpired(LocalDateTime.now())) {
+            throw new FunctionalException(EXPIRED_ACCOUNT_LINK_MESSAGE);
+        }
 
         if (user.getStatus() != AccountStatus.INACTIVE) {
             throw new FunctionalException("Ce compte est déjà actif ou ne peut plus être activé.");
         }
 
         user.setStatus(AccountStatus.ACTIVE);
-        user.setActivationToken(null); // jeton à usage unique
+        user.clearActivationToken(); // jeton à usage unique
 
         log.info("ACTIVATION compte : id={} email={}", user.getId(), user.getEmail());
 
@@ -241,15 +258,17 @@ public class UserService {
         user.setEmail(request.email());
         user.setPhone(request.phone());
 
+        String passwordChangeToken = null;
         if (passwordChanged) {
-            user.setPendingPassword(passwordEncoder.encode(request.password()));
-            user.setPasswordChangeToken(UUID.randomUUID().toString());
+            passwordChangeToken = AccountTokens.generate();
+            user.startPasswordChange(passwordEncoder.encode(request.password()),
+                    AccountTokens.hash(passwordChangeToken), LocalDateTime.now().plus(PASSWORD_CHANGE_VALIDITY));
         }
 
         log.info("MODIFICATION compte (self-service) : id={} email={}", user.getId(), user.getEmail());
 
         if (passwordChanged) {
-            String confirmationLink = baseUrl + "/auth/confirm-password-change?token=" + user.getPasswordChangeToken();
+            String confirmationLink = frontendUrl + "/confirmation-mot-de-passe?token=" + passwordChangeToken;
             emailService.sendPasswordChangeConfirmationEmail(user.getEmail(), confirmationLink);
         }
 
@@ -270,12 +289,15 @@ public class UserService {
      */
     @Transactional
     public UserDto confirmPasswordChange(String token) throws FunctionalException {
-        User user = userRepository.findByPasswordChangeToken(token)
+        User user = userRepository.findByPasswordChangeTokenHash(AccountTokens.hash(token))
                 .orElseThrow(() -> new FunctionalException("Le lien de confirmation est invalide."));
 
+        if (user.isPasswordChangeTokenExpired(LocalDateTime.now())) {
+            throw new FunctionalException(EXPIRED_PASSWORD_LINK_MESSAGE);
+        }
+
         user.setPassword(user.getPendingPassword());
-        user.setPendingPassword(null);
-        user.setPasswordChangeToken(null); // jeton à usage unique
+        user.clearPasswordChange(); // jeton à usage unique
 
         log.info("CONFIRMATION changement de mot de passe : id={} email={}", user.getId(), user.getEmail());
 
@@ -349,6 +371,8 @@ public class UserService {
     public UserDto createUserByAdmin(AdminUserRequest request) throws FunctionalException {
         validateAdminRequest(request);
 
+        releaseEmailOfAbandonedAccount(request.email());
+
         if (userRepository.existsByEmail(request.email())) {
             throw new FunctionalException("Cette adresse email est déjà utilisée.");
         }
@@ -364,7 +388,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setStatus(AccountStatus.INACTIVE);
         user.setRole(request.role());
-        user.setActivationToken(UUID.randomUUID().toString());
+        String activationToken = AccountTokens.generate();
+        user.startActivation(AccountTokens.hash(activationToken), LocalDateTime.now().plus(ADMIN_ACCOUNT_VALIDITY));
 
         User created = userRepository.save(user);
         if (request.role() != Role.ADMIN) {
@@ -373,7 +398,7 @@ public class UserService {
         log.info("CREATION compte (admin) : id={} email={} role={}",
                 created.getId(), created.getEmail(), created.getRole());
 
-        String confirmationLink = frontendUrl + "/confirmation-compte?token=" + created.getActivationToken();
+        String confirmationLink = frontendUrl + "/confirmation-compte?token=" + activationToken;
         emailService.sendAdminCreatedAccountEmail(created.getEmail(), temporaryPassword, confirmationLink);
 
         return userMapper.toDto(created);
@@ -398,8 +423,12 @@ public class UserService {
      */
     @Transactional
     public UserDto confirmAccountCreation(String token, ActivateAdminAccountRequest request) throws FunctionalException {
-        User user = userRepository.findByActivationToken(token)
+        User user = userRepository.findByActivationTokenHash(AccountTokens.hash(token))
                 .orElseThrow(() -> new FunctionalException("Le compte associé à ce lien n'existe pas."));
+
+        if (user.isActivationTokenExpired(LocalDateTime.now())) {
+            throw new FunctionalException(EXPIRED_ACCOUNT_LINK_MESSAGE);
+        }
 
         if (user.getStatus() != AccountStatus.INACTIVE) {
             throw new FunctionalException("Ce compte est déjà actif ou ne peut plus être activé.");
@@ -419,7 +448,7 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         user.setStatus(AccountStatus.ACTIVE);
-        user.setActivationToken(null); // jeton à usage unique
+        user.clearActivationToken(); // jeton à usage unique
 
         log.info("VALIDATION création compte (admin) : id={} email={}", user.getId(), user.getEmail());
 
@@ -542,10 +571,38 @@ public class UserService {
                     + "utilisez l'anonymisation.");
         }
 
-        clubRepository.findByMembers_Id(id).forEach(club -> club.getMembers().remove(user));
-        userRepository.delete(user);
+        removeFromClubsAndDelete(user);
 
         log.info("SUPPRESSION compte (admin) : id={} email={}", id, user.getEmail());
+    }
+
+    private void removeFromClubsAndDelete(User user) {
+        clubRepository.findByMembers_Id(user.getId()).forEach(club -> club.getMembers().remove(user));
+        userRepository.delete(user);
+    }
+
+    /**
+     * Libère l'adresse email d'un compte jamais activé dont le lien a expiré.
+     * <p>
+     * Sans cela, l'expiration du lien (SEC-10) laisserait la personne coincée : le compte n'est
+     * ni activable, ni recréable (« adresse déjà utilisée »). Un compte jamais activé n'a aucune
+     * activité (il ne peut ni s'inscrire ni commenter) : le supprimer ne perd rien. Les comptes
+     * actifs, anonymisés, ou dont le lien est encore valable ne sont jamais touchés.
+     * </p>
+     */
+    private void releaseEmailOfAbandonedAccount(String email) {
+        userRepository.findByEmail(email)
+                .filter(existing -> existing.getStatus() == AccountStatus.INACTIVE
+                        && existing.getActivationTokenHash() != null
+                        && existing.isActivationTokenExpired(LocalDateTime.now()))
+                .ifPresent(abandoned -> {
+                    removeFromClubsAndDelete(abandoned);
+                    // Sans flush, Hibernate exécuterait l'INSERT du nouveau compte avant ce DELETE
+                    // et l'unicité de l'email serait violée.
+                    userRepository.flush();
+                    log.info("SUPPRESSION compte jamais activé (lien expiré) : id={} email={}",
+                            abandoned.getId(), abandoned.getEmail());
+                });
     }
 
     /**
@@ -700,6 +757,8 @@ public class UserService {
         if (!EMAIL_PATTERN.matcher(request.email()).matches()) {
             throw new FunctionalException("Veuillez renseigner une adresse email valide.");
         }
+
+        releaseEmailOfAbandonedAccount(request.email());
 
         if (userRepository.existsByEmail(request.email())) {
             throw new FunctionalException("Cette adresse email est déjà utilisée.");

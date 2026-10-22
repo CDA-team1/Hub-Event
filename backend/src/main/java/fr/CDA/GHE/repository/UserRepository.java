@@ -52,21 +52,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmailAndIdNot(String email, Long id);
 
     /**
-     * Recherche un utilisateur par son jeton d'activation (CU6).
+     * Recherche un utilisateur par l'empreinte de son jeton d'activation (CU6).
      *
-     * @param activationToken le jeton reçu dans le lien d'activation
+     * @param activationTokenHash empreinte SHA-256 du jeton reçu dans le lien d'activation
      * @return un {@link Optional} contenant l'utilisateur s'il existe
      */
-    Optional<User> findByActivationToken(String activationToken);
+    Optional<User> findByActivationTokenHash(String activationTokenHash);
 
     /**
-     * Recherche un utilisateur par son jeton de confirmation de changement de mot de passe
-     * (CU13).
+     * Recherche un utilisateur par l'empreinte de son jeton de confirmation de changement de mot
+     * de passe (CU13).
      *
-     * @param passwordChangeToken le jeton reçu dans le lien de confirmation
+     * @param passwordChangeTokenHash empreinte SHA-256 du jeton reçu dans le lien de confirmation
      * @return un {@link Optional} contenant l'utilisateur s'il existe
      */
-    Optional<User> findByPasswordChangeToken(String passwordChangeToken);
+    Optional<User> findByPasswordChangeTokenHash(String passwordChangeTokenHash);
 
   /**
    * Indique si un compte est référencé ailleurs dans la base : inscriptions, commentaires,

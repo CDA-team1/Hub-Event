@@ -36,6 +36,9 @@ UserFormPage                       features/account (admin) · entrée : id (opt
 └── UserForm                       features/account · sortie : submitted(AdminUserRequest)
     └── ClubAffiliationPicker      features/account · entrées : clubs, selected · sortie : selectionChanged
 
+ConfirmPasswordChangePage          features/account · entrée : token (query param du lien reçu par email, CU13) · appelle
+                                   l'API au chargement ; message du back si le lien est expiré ou déjà utilisé
+
 SuspendUserPage                    features/account (admin) · entrée : id (route) · formulaire motif + date de fin
                                    (vide = définitive) intégré à la page, maquette 21
 ```

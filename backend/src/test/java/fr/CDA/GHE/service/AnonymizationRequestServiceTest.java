@@ -8,6 +8,7 @@ import fr.CDA.GHE.entity.Registration;
 import fr.CDA.GHE.entity.enums.EventStatus;
 import fr.CDA.GHE.entity.enums.RegistrationStatus;
 import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.util.AccountTokens;
 import fr.CDA.GHE.repository.EventRepository;
 import fr.CDA.GHE.repository.RegistrationRepository;
 import fr.CDA.GHE.entity.User;
@@ -195,6 +196,23 @@ class AnonymizationRequestServiceTest {
         assertThat(registrationRepository.findByUserAndEvent(waiting, event).orElseThrow().getStatus())
                 .isEqualTo(RegistrationStatus.REGISTERED);
         verify(emailService).sendWaitingListPromotionEmail("waiting@test.com", "Titre");
+    }
+
+    @Test
+    void validateRequest_shouldInvalidatePendingEmailLinks() throws FunctionalException {
+        User member = persistUser("member@test.com");
+        member.startPasswordChange("encoded-new-password", AccountTokens.hash("password-link"),
+                LocalDateTime.now().plusHours(1));
+        member.startActivation(AccountTokens.hash("activation-link"), LocalDateTime.now().plusHours(1));
+        userRepository.save(member);
+        AnonymizationRequest request = persistPendingRequest(member);
+
+        anonymizationRequestService.validateRequest(request.getId());
+
+        User anonymized = userRepository.findById(member.getId()).orElseThrow();
+        assertThat(anonymized.getPendingPassword()).isNull();
+        assertThat(anonymized.getPasswordChangeTokenHash()).isNull();
+        assertThat(anonymized.getActivationTokenHash()).isNull();
     }
 
     @Test

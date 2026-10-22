@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.HashSet;
@@ -119,11 +120,17 @@ import java.util.Set;
         private AnonymizationRequest anonymizationRequest;
 
         /**
-         * Jeton d'activation envoyé par email à la création du compte (CU5/CU6).
-         * {@code null} une fois le compte activé (jeton à usage unique).
+         * Empreinte SHA-256 du jeton d'activation envoyé par email à la création du compte
+         * (CU5/CU6) ; le jeton en clair n'est jamais stocké. {@code null} une fois le compte activé
+         * (jeton à usage unique).
          */
-        @Column(name = "activation_token", unique = true)
-        private String activationToken;
+        @Column(name = "activation_token_hash", unique = true, length = 64)
+        private String activationTokenHash;
+        /**
+         * Date limite de validité du jeton d'activation. Absente = jeton considéré comme expiré.
+         */
+        @Column(name = "activation_token_expires_at")
+        private LocalDateTime activationTokenExpiresAt;
         /**
          * Nouveau mot de passe (déjà hashé), en attente de confirmation par email (CU13).
          * {@code null} tant qu'aucun changement de mot de passe n'est en cours.
@@ -131,12 +138,17 @@ import java.util.Set;
         @Column(name = "pending_password")
         private String pendingPassword;
         /**
-         * Jeton de confirmation du changement de mot de passe, envoyé par email (CU13, CdC :
-         * « Si je ne confirme pas en cliquant sur le lien, mon mot de passe n'est pas modifié »).
-         * {@code null} tant qu'aucun changement de mot de passe n'est en cours.
+         * Empreinte SHA-256 du jeton de confirmation du changement de mot de passe, envoyé par email
+         * (CU13, CdC : « Si je ne confirme pas en cliquant sur le lien, mon mot de passe n'est pas
+         * modifié »). {@code null} tant qu'aucun changement de mot de passe n'est en cours.
          */
-        @Column(name = "password_change_token", unique = true)
-        private String passwordChangeToken;
+        @Column(name = "password_change_token_hash", unique = true, length = 64)
+        private String passwordChangeTokenHash;
+        /**
+         * Date limite de validité du jeton de confirmation du changement de mot de passe.
+         */
+        @Column(name = "password_change_token_expires_at")
+        private LocalDateTime passwordChangeTokenExpiresAt;
 
         /**
          * Constructeur vide requis par JPA.
@@ -534,21 +546,52 @@ import java.util.Set;
         }
 
         /**
-         * Retourne le jeton d'activation du compte.
+         * Retourne l'empreinte du jeton d'activation du compte.
          *
-         * @return le jeton d'activation, ou {@code null} si le compte est déjà activé
+         * @return l'empreinte SHA-256, ou {@code null} si le compte est déjà activé
          */
-        public String getActivationToken() {
-            return activationToken;
+        public String getActivationTokenHash() {
+            return activationTokenHash;
         }
 
         /**
-         * Modifie le jeton d'activation du compte.
+         * Retourne la date limite de validité du jeton d'activation.
          *
-         * @param activationToken nouveau jeton, éventuellement {@code null}
+         * @return la date limite, ou {@code null} s'il n'y a pas de jeton
          */
-        public void setActivationToken(String activationToken) {
-            this.activationToken = activationToken;
+        public LocalDateTime getActivationTokenExpiresAt() {
+            return activationTokenExpiresAt;
+        }
+
+        /**
+         * Enregistre un nouveau jeton d'activation. L'éventuel jeton précédent est remplacé, donc
+         * invalidé.
+         *
+         * @param tokenHash empreinte SHA-256 du jeton envoyé par email
+         * @param expiresAt date limite de validité
+         */
+        public void startActivation(String tokenHash, LocalDateTime expiresAt) {
+            this.activationTokenHash = tokenHash;
+            this.activationTokenExpiresAt = expiresAt;
+        }
+
+        /**
+         * Invalide le jeton d'activation (usage unique : appelé dès qu'il a servi).
+         */
+        public void clearActivationToken() {
+            this.activationTokenHash = null;
+            this.activationTokenExpiresAt = null;
+        }
+
+        /**
+         * Indique si le jeton d'activation n'est plus valable. Un jeton sans date limite est
+         * traité comme expiré.
+         *
+         * @param now instant de référence
+         * @return {@code true} si la date limite est dépassée ou absente
+         */
+        public boolean isActivationTokenExpired(LocalDateTime now) {
+            return activationTokenExpiresAt == null || !now.isBefore(activationTokenExpiresAt);
         }
 
         /**
@@ -561,30 +604,55 @@ import java.util.Set;
         }
 
         /**
-         * Modifie le mot de passe en attente de confirmation.
+         * Retourne l'empreinte du jeton de confirmation du changement de mot de passe.
          *
-         * @param pendingPassword nouveau mot de passe en attente, déjà encodé, éventuellement {@code null}
+         * @return l'empreinte SHA-256, ou {@code null} si aucun changement n'est en cours
          */
-        public void setPendingPassword(String pendingPassword) {
+        public String getPasswordChangeTokenHash() {
+            return passwordChangeTokenHash;
+        }
+
+        /**
+         * Retourne la date limite de validité du jeton de confirmation du mot de passe.
+         *
+         * @return la date limite, ou {@code null} si aucun changement n'est en cours
+         */
+        public LocalDateTime getPasswordChangeTokenExpiresAt() {
+            return passwordChangeTokenExpiresAt;
+        }
+
+        /**
+         * Démarre un changement de mot de passe à confirmer par email. Un changement déjà en
+         * attente est remplacé, et son lien invalidé.
+         *
+         * @param pendingPassword nouveau mot de passe, déjà encodé
+         * @param tokenHash       empreinte SHA-256 du jeton envoyé par email
+         * @param expiresAt       date limite de validité
+         */
+        public void startPasswordChange(String pendingPassword, String tokenHash, LocalDateTime expiresAt) {
             this.pendingPassword = pendingPassword;
+            this.passwordChangeTokenHash = tokenHash;
+            this.passwordChangeTokenExpiresAt = expiresAt;
         }
 
         /**
-         * Retourne le jeton de confirmation du changement de mot de passe.
-         *
-         * @return le jeton de confirmation, ou {@code null} si aucun changement n'est en cours
+         * Abandonne le changement de mot de passe en cours (jeton à usage unique, ou compte fermé).
          */
-        public String getPasswordChangeToken() {
-            return passwordChangeToken;
+        public void clearPasswordChange() {
+            this.pendingPassword = null;
+            this.passwordChangeTokenHash = null;
+            this.passwordChangeTokenExpiresAt = null;
         }
 
         /**
-         * Modifie le jeton de confirmation du changement de mot de passe.
+         * Indique si le jeton de changement de mot de passe n'est plus valable. Un jeton sans date
+         * limite est traité comme expiré.
          *
-         * @param passwordChangeToken nouveau jeton, éventuellement {@code null}
+         * @param now instant de référence
+         * @return {@code true} si la date limite est dépassée ou absente
          */
-        public void setPasswordChangeToken(String passwordChangeToken) {
-            this.passwordChangeToken = passwordChangeToken;
+        public boolean isPasswordChangeTokenExpired(LocalDateTime now) {
+            return passwordChangeTokenExpiresAt == null || !now.isBefore(passwordChangeTokenExpiresAt);
         }
 
         // --- Implémentation UserDetails ---

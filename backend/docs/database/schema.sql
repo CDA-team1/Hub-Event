@@ -18,14 +18,16 @@ CREATE TABLE users (
                        suspended BIT NOT NULL,
                        suspension_end_date DATE,
                        suspension_reason VARCHAR(255),
-                       activation_token VARCHAR(255),
+                       activation_token_hash VARCHAR(64),
+                       activation_token_expires_at DATETIME(6),
                        pending_password VARCHAR(255),
-                       password_change_token VARCHAR(255),
+                       password_change_token_hash VARCHAR(64),
+                       password_change_token_expires_at DATETIME(6),
 
                        PRIMARY KEY (id),
                        UNIQUE (email),
-                       UNIQUE (activation_token),
-                       UNIQUE (password_change_token)
+                       UNIQUE (activation_token_hash),
+                       UNIQUE (password_change_token_hash)
 ) ENGINE=InnoDB;
 
 
