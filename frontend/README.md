@@ -23,6 +23,7 @@ L'application est servie sur **http://localhost:4200**. Le serveur de développe
 | `npm test` | Tests Vitest en mode surveillance |
 | `npx ng test --watch=false` | Tests, une seule exécution |
 | `npm run build` | Build de production dans `dist/` |
+| `npm run lint` | Vérifie le code avec ESLint |
 | `npx prettier --check "src/**/*.{ts,html,css}"` | Vérifie le formatage |
 
 ## 📁 Structure de `src/app`
