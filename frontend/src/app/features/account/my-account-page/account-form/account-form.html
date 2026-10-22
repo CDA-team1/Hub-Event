@@ -68,8 +68,8 @@
     }
   </div>
 
-  <div class="account-form__field">
-    <label>Clubs affiliés (non modifiable ici)</label>
+  <div class="account-form__field" role="group" aria-labelledby="clubs-label">
+    <span id="clubs-label" class="account-form__label">Clubs affiliés (non modifiable ici)</span>
 
     <div class="account-form__clubs">
       @if (profile().clubs.length === 0) {
