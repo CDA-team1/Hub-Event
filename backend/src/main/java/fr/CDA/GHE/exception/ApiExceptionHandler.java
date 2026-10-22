@@ -3,8 +3,13 @@ package fr.CDA.GHE.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -136,6 +141,33 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     protected ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         return ResponseEntity.badRequest().body("Requête invalide");
+    }
+
+    /**
+     * Gère les requêtes que l'API ne sait pas traiter : URL inconnue (404), méthode HTTP non prévue
+     * pour cette URL (405) ou type de contenu non supporté (415).
+     * <p>
+     * Sans ce handler, le filet de sécurité ci-dessous les transformerait en 500 et journaliserait
+     * une erreur avec stack trace à chaque URL inconnue testée par un robot ou un scanner.
+     * </p>
+     *
+     * @param ex l'exception levée par Spring MVC (elle porte son propre code HTTP)
+     * @return la réponse HTTP avec le code d'origine, sans détail technique
+     */
+    @ExceptionHandler({
+            NoResourceFoundException.class,
+            HttpRequestMethodNotSupportedException.class,
+            HttpMediaTypeNotSupportedException.class
+    })
+    protected ResponseEntity<String> handleUnsupportedRequest(Exception ex) {
+        ErrorResponse errorResponse = (ErrorResponse) ex;
+        HttpStatusCode status = errorResponse.getStatusCode();
+        String message = status.value() == HttpStatus.NOT_FOUND.value()
+                ? "Ressource introuvable"
+                : "Requête non supportée";
+
+        // Les en-têtes d'origine sont conservés (ex. « Allow » listant les méthodes d'un 405).
+        return ResponseEntity.status(status).headers(errorResponse.getHeaders()).body(message);
     }
 
     /**
