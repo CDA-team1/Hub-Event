@@ -36,6 +36,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           message = 'La ressource demandée est introuvable.';
           break;
 
+        case 429:
+          message =
+            typeof error.error === 'string'
+              ? error.error
+              : 'Trop de requêtes, réessayez dans quelques instants.';
+          break;
+
         case 500:
           message = 'Une erreur interne est survenue.';
           break;

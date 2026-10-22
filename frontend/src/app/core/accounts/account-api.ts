@@ -22,6 +22,13 @@ export class AccountApi {
     return this.http.get<void>(`${this.apiUrl}/auth/activate`, { params });
   }
 
+  /** Confirme un changement de mot de passe avec le jeton du lien reçu par email (CU13). */
+  confirmPasswordChange(token: string): Observable<AccountDto> {
+    const params = new HttpParams().set('token', token);
+
+    return this.http.get<AccountDto>(`${this.apiUrl}/auth/confirm-password-change`, { params });
+  }
+
   confirmAccountCreation(
     token: string,
     request: ConfirmAccountCreationRequest,

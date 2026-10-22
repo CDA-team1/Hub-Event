@@ -53,35 +53,36 @@ VALUES (5, 'Ancien Club Escalade Grenoble', 'SPORT', '3 rue Lesdiguières, 38000
 
 -- 1) Membre actif (affilié ensuite à 2 clubs, voir plus bas)
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password,
-                    status, role, suspended, activation_token)
+                    status, role, suspended, activation_token_hash)
 VALUES (1, 'Doe', 'John', '1 rue de Test, 31000 Toulouse', 'member.demo@ghe.local', NULL,
         '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W',
         'ACTIVE', 'MEMBER', false, NULL);
 
 -- 2) Administrateur, actif
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password,
-                    status, role, suspended, activation_token)
+                    status, role, suspended, activation_token_hash)
 VALUES (2, 'Alderson', 'Elliot', '1 rue de Test, 31000 Toulouse', 'admin.demo@ghe.local', NULL,
         '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W',
         'ACTIVE', 'ADMIN', false, NULL);
 
 -- 3) Organisateur, actif, affilié au club de démo (obligatoire, règle PO)
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password,
-                    status, role, suspended, activation_token)
+                    status, role, suspended, activation_token_hash)
 VALUES (3, 'Renoir', 'Pierre-Auguste', '1 rue de Test, 31000 Toulouse', 'organizer.demo@ghe.local', NULL,
         '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W',
         'ACTIVE', 'ORGANIZER', false, NULL);
 
 INSERT INTO affiliation (club_id, user_id) VALUES (1, 3);
 
--- 4) Membre en attente d'activation (statut INACTIF, jeton connu pour tester le lien
---    d'activation manuellement, sans repasser par un vrai signup + email) :
---    GET http://localhost:8080/auth/activate?token=demo-activation-token-gustave
+-- 4) Membre en attente d'activation (statut INACTIF). La base ne garde que l'empreinte SHA-256 du
+--    jeton ; le jeton en clair est connu pour tester le lien d'activation sans repasser par un
+--    vrai signup + email, et le lien n'expire qu'en 2099 :
+--    http://localhost:4200/activation-compte?token=demo-activation-token-gustave
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password,
-                    status, role, suspended, activation_token)
+                    status, role, suspended, activation_token_hash, activation_token_expires_at)
 VALUES (4, 'Sacrebleu', 'Gustave', '1 rue de Test, 31000 Toulouse', 'pending.demo@ghe.local', NULL,
         '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W',
-        'INACTIVE', 'MEMBER', false, 'demo-activation-token-gustave');
+        'INACTIVE', 'MEMBER', false, '6d4deb46b1eeb8fc4f414205369ed668a88927435ddddabd26b23cda45aab7c0', '2099-12-31 23:59:59');
 
 -- Le membre de démo (id 1) est affilié à 2 clubs, pour démontrer qu'un membre
 -- peut être rattaché à plusieurs clubs (règle CU26 : "un membre peut être affilié à
@@ -114,9 +115,9 @@ VALUES (9, 'Roux', 'Inès', '2 place Bellecour, 69002 Lyon', 'member4.demo@ghe.l
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
 VALUES (10, 'Fournier', 'Lucas', '8 rue Nationale, 59800 Lille', 'nonaffilie.demo@ghe.local', NULL, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);
 -- 11) Changement de mot de passe demandé, en attente de confirmation par email :
---     GET http://localhost:8080/auth/confirm-password-change?token=demo-password-change-token-manon
-INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended, pending_password, password_change_token)
-VALUES (11, 'Girard', 'Manon', '31 cours Mirabeau, 13100 Aix-en-Provence', 'password.pending.demo@ghe.local', '0667890123', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'demo-password-change-token-manon');
+--     http://localhost:4200/confirmation-mot-de-passe?token=demo-password-change-token-manon (la base ne contient que l'empreinte du jeton)
+INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended, pending_password, password_change_token_hash, password_change_token_expires_at)
+VALUES (11, 'Girard', 'Manon', '31 cours Mirabeau, 13100 Aix-en-Provence', 'password.pending.demo@ghe.local', '0667890123', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false, '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'e21f5b23c5b4a3f217d655cbb9d55619a457dc62bed00398cabba80e5030e18c', '2099-12-31 23:59:59');
 -- 12) Membre actif ayant demandé son anonymisation (demande en attente, voir plus bas)
 INSERT INTO users (id, lastname, firstname, postal_address, email, phone, password, status, role, suspended)
 VALUES (12, 'Muller', 'Théo', '4 rue des Tanneurs, 35000 Rennes', 'anonymization.pending.demo@ghe.local', '0678901234', '$2a$10$Pi.OYCuDOiy9mLhmzcI/zeUQMM452QHMH5iFQm1HWNSp3KlvDZ57W', 'ACTIVE', 'MEMBER', false);

@@ -82,6 +82,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'confirmation-mot-de-passe',
+    title: 'Confirmation du mot de passe',
+    loadComponent: () =>
+      import('./features/account/confirm-password-change-page/confirm-password-change-page').then(
+        (m) => m.ConfirmPasswordChangePage,
+      ),
+  },
+  {
     path: 'mon-calendrier',
     title: 'Mon calendrier',
     canActivate: [authGuard],

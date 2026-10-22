@@ -159,6 +159,9 @@ public class AnonymizationRequestService {
         AnonymizationUtils.anonymize(user);
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setStatus(AccountStatus.ANONYMIZED);
+        // Un lien reçu avant l'anonymisation ne doit plus pouvoir servir.
+        user.clearActivationToken();
+        user.clearPasswordChange();
 
         if (user.getRole() == Role.ORGANIZER) {
             cancelUpcomingPublishedEvents(user);

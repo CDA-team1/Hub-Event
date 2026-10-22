@@ -46,6 +46,27 @@ describe('errorInterceptor', () => {
     expect(await message).toBe('Message métier du back.');
   });
 
+  it('garde le message du back sur une 429 (limite de requêtes dépassée)', async () => {
+    const message = expectErrorMessage();
+    controller
+      .expectOne('/api/quelque-chose')
+      .flush('Trop de requêtes, réessayez dans 30 seconde(s).', {
+        status: 429,
+        statusText: 'Too Many Requests',
+      });
+
+    expect(await message).toBe('Trop de requêtes, réessayez dans 30 seconde(s).');
+  });
+
+  it('propose un message générique pour une 429 sans corps texte', async () => {
+    const message = expectErrorMessage();
+    controller
+      .expectOne('/api/quelque-chose')
+      .flush({ some: 'json' }, { status: 429, statusText: 'Too Many Requests' });
+
+    expect(await message).toBe('Trop de requêtes, réessayez dans quelques instants.');
+  });
+
   it("propose un message générique pour une 400 sans corps texte", async () => {
     const message = expectErrorMessage();
     controller

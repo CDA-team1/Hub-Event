@@ -1,6 +1,7 @@
 package fr.CDA.GHE.config;
 
 import fr.CDA.GHE.security.JwtAuthenticationFilter;
+import fr.CDA.GHE.security.RateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,7 +48,8 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
-      JwtAuthenticationFilter jwtAuthenticationFilter
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      RateLimitFilter rateLimitFilter
   ) throws Exception {
 
     http.csrf(csrf -> csrf.disable())
@@ -74,7 +76,9 @@ public class SecurityConfig {
         .addFilterBefore(
             jwtAuthenticationFilter,
             UsernamePasswordAuthenticationFilter.class
-        );
+        )
+        // Après le filtre JWT : le quota des routes protégées s'applique par utilisateur (SEC-09).
+        .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
 
     return http.build();
 
