@@ -35,7 +35,8 @@
         <a routerLink="/mes-evenements" routerLinkActive="active">Mes évènements</a>
       }
       @if (isAdmin()) {
-        <details class="admin-menu" #adminMenu>
+        <!-- routerLinkActive sur le conteneur : « active » dès qu'un des liens du menu est la page courante. -->
+        <details class="admin-menu" routerLinkActive="active" #adminMenu>
           <summary>Administration</summary>
           <div class="admin-menu__items">
             <a routerLink="/admin/comptes" routerLinkActive="active">Comptes</a>

@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { Header } from './header';
 
 function signIn(role: 'MEMBER' | 'ADMIN' | 'ORGANIZER'): void {
@@ -12,7 +12,11 @@ describe('Header', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: '**', children: [] }]),
+      ],
     });
   });
 
@@ -45,6 +49,39 @@ describe('Header', () => {
     expect(element.querySelector('a[href="/admin/rgpd"]')).not.toBeNull();
     expect(element.querySelector('a[href="/admin/cgu"]')).not.toBeNull();
     expect(element.querySelector('a[href="/admin/comptes"]')).not.toBeNull();
+  });
+
+  describe('menu Administration souligné', () => {
+    async function renderAt(url: string): Promise<HTMLElement> {
+      await TestBed.inject(Router).navigateByUrl(url);
+      return render();
+    }
+
+    const isUnderlined = (element: HTMLElement) =>
+      element.querySelector('details.admin-menu')?.classList.contains('active');
+
+    it.each([
+      '/admin/comptes',
+      '/admin/comptes/12',
+      '/clubs',
+      '/clubs/nouveau',
+      '/admin/anonymisation',
+      '/admin/rgpd',
+      '/admin/cgu',
+    ])("est souligné sur la page d'administration %s", async (url) => {
+      signIn('ADMIN');
+
+      expect(isUnderlined(await renderAt(url))).toBe(true);
+    });
+
+    it.each(['/', '/recherche', '/mon-compte'])(
+      "n'est pas souligné sur la page %s",
+      async (url) => {
+        signIn('ADMIN');
+
+        expect(isUnderlined(await renderAt(url))).toBe(false);
+      },
+    );
   });
 
   it('ne montre pas le lien Mes évènements à un membre', async () => {
