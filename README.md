@@ -269,7 +269,8 @@ Hub-Event/
 
 - [`conception/`](conception/) : cahier des charges, dossier de spécifications, dossier de conception, diagrammes (classes, cas d'usage, entités-relations) et maquettes desktop et mobile.
 - [`conception/frontend/`](conception/frontend/) : notes de conception du front (arbre des composants, un fichier par domaine).
-- **API** : documentation OpenAPI via Swagger UI sur `http://localhost:8080/api/swagger-ui/index.html`.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) : règles Trello et Git de l'équipe.
+- **API** : documentation OpenAPI via Swagger UI sur `http://localhost:8080/api/swagger-ui/index.html` (désactivée avec le profil `prod`).
 - [`backend/docs/database/schema.sql`](backend/docs/database/schema.sql) : structure SQL de la base (MySQL 8).
 
 ## 🤝 Contribuer
@@ -278,6 +279,8 @@ Hub-Event/
 - 📝 **Commits** : `type(scope): description` courte, en anglais, sans numéro de carte (ex. `feat(evt): add event images component`). Types : `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`.
 - 🔀 **Pull requests** vers `dev`, avec un titre et une description courts. Avant de pousser : les tests du back et du front doivent passer.
 - 🎨 **Formatage du front** : Prettier (`frontend/.prettierrc`).
+
+Les règles complètes (colonnes Trello, étiquettes, identifiants de carte, cycle d'une tâche) sont dans [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## 🔧 Dépannage
 
