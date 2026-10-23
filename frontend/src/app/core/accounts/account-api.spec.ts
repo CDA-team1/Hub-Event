@@ -154,9 +154,7 @@ describe('AccountApi', () => {
   it('confirme un changement de mot de passe avec le jeton du lien', () => {
     service.confirmPasswordChange('jeton-du-lien').subscribe();
 
-    const request = httpTesting.expectOne(
-      (req) => req.url === '/api/auth/confirm-password-change',
-    );
+    const request = httpTesting.expectOne((req) => req.url === '/api/auth/confirm-password-change');
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('token')).toBe('jeton-du-lien');

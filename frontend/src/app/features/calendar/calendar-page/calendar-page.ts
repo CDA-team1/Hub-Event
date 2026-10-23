@@ -141,7 +141,10 @@ export class CalendarPage {
     const range = this.range();
 
     try {
-      downloadBlob(await this.calendarApi.exportExcel(range), `calendrier-${range.from}-${range.to}.xlsx`);
+      downloadBlob(
+        await this.calendarApi.exportExcel(range),
+        `calendrier-${range.from}-${range.to}.xlsx`,
+      );
     } catch {
       this.exportError.set("L'export Excel a échoué, réessayez.");
     } finally {

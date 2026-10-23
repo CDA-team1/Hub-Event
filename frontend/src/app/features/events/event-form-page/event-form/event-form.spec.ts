@@ -185,7 +185,7 @@ describe('EventForm', () => {
     expect(element.querySelector<HTMLInputElement>('#title')?.disabled).toBe(true);
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
     expect(element.textContent).toContain(
-      "Cet évènement est terminé : ses informations ne sont plus modifiables.",
+      'Cet évènement est terminé : ses informations ne sont plus modifiables.',
     );
   });
 

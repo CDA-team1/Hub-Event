@@ -96,7 +96,9 @@ describe('ClubsListPage', () => {
 
     const request = http.expectOne((req) => req.url.endsWith('/clubs'));
     expect(request.request.params.get('page')).toBe('1');
-    request.flush(pageOf([makeClub(2, 'Club Bravo')], { page: 1, totalElements: 25, totalPages: 2 }));
+    request.flush(
+      pageOf([makeClub(2, 'Club Bravo')], { page: 1, totalElements: 25, totalPages: 2 }),
+    );
     await stable();
 
     expect(element.textContent).toContain('Club Bravo');

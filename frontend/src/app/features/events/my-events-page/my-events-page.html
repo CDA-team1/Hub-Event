@@ -60,7 +60,9 @@
     <ng-template appColumn="status" let-event>
       <app-event-status-badge [status]="event.status" />
     </ng-template>
-    <ng-template appColumn="seats" let-event>{{ event.registeredCount }} / {{ event.maxSeats }}</ng-template>
+    <ng-template appColumn="seats" let-event
+      >{{ event.registeredCount }} / {{ event.maxSeats }}</ng-template
+    >
     <ng-template appColumn="actions" let-event>
       <div class="actions">
         <app-action-button
@@ -70,7 +72,12 @@
           [routerLink]="['/evenements', event.id, 'modifier']"
         />
         @if (event.status === 'DRAFT') {
-          <app-action-button icon="✅" label="Publier" level="success" (triggered)="publish(event)" />
+          <app-action-button
+            icon="✅"
+            label="Publier"
+            level="success"
+            (triggered)="publish(event)"
+          />
           <app-action-button
             icon="🗑️"
             label="Supprimer"
@@ -79,7 +86,12 @@
           />
         }
         @if (event.status === 'PUBLISHED') {
-          <app-action-button icon="🏁" label="Terminer" level="neutral" (triggered)="finish(event)" />
+          <app-action-button
+            icon="🏁"
+            label="Terminer"
+            level="neutral"
+            (triggered)="finish(event)"
+          />
           @if (event.registeredCount > 0) {
             <app-action-button
               icon="❌"

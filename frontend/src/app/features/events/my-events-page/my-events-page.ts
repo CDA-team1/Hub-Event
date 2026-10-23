@@ -9,7 +9,11 @@ import { EventStatus, OrganizerEventDto } from '../../../domain/event.model';
 import { ActionButton } from '../../../shared/ui/action-button/action-button';
 import { CategoryBadge } from '../../../shared/ui/category-badge/category-badge';
 import { Column } from '../../../shared/ui/data-table/column';
-import { DataTable, DataTableColumn, DataTableSort } from '../../../shared/ui/data-table/data-table';
+import {
+  DataTable,
+  DataTableColumn,
+  DataTableSort,
+} from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { EventStatusBadge } from '../../../shared/ui/event-status-badge/event-status-badge';
@@ -19,7 +23,12 @@ import { Pagination } from '../../../shared/ui/pagination/pagination';
 const PAGE_SIZE = 10;
 
 const CATEGORY_ORDER: Record<Category, number> = { CULTURE: 0, LEISURE: 1, SPORT: 2 };
-const STATUS_ORDER: Record<EventStatus, number> = { DRAFT: 0, PUBLISHED: 1, CANCELLED: 2, FINISHED: 3 };
+const STATUS_ORDER: Record<EventStatus, number> = {
+  DRAFT: 0,
+  PUBLISHED: 1,
+  CANCELLED: 2,
+  FINISHED: 3,
+};
 
 /** Message métier renvoyé par le back (ex. « Cet événement ne peut pas être publié… »), sinon générique. */
 function actionErrorMessage(error: unknown): string {

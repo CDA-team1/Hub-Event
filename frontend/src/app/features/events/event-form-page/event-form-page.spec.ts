@@ -108,9 +108,20 @@ describe('EventFormPage', () => {
     it('affiche le formulaire vide une fois les clubs chargés', async () => {
       const fixture = TestBed.createComponent(EventFormPage);
       TestBed.tick();
-      http.expectOne((req) => req.url.endsWith('/clubs/mine')).flush([
-        { id: 1, name: 'Club A', category: 'SPORT', postalAddress: '', email: '', phone: '', validityEndDate: null, members: [] },
-      ]);
+      http
+        .expectOne((req) => req.url.endsWith('/clubs/mine'))
+        .flush([
+          {
+            id: 1,
+            name: 'Club A',
+            category: 'SPORT',
+            postalAddress: '',
+            email: '',
+            phone: '',
+            validityEndDate: null,
+            members: [],
+          },
+        ]);
       await stable();
       const element = fixture.nativeElement as HTMLElement;
 
@@ -134,9 +145,20 @@ describe('EventFormPage', () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       const fixture = TestBed.createComponent(EventFormPage);
       TestBed.tick();
-      http.expectOne((req) => req.url.endsWith('/clubs/mine')).flush([
-        { id: 1, name: 'Club A', category: 'SPORT', postalAddress: '', email: '', phone: '', validityEndDate: null, members: [] },
-      ]);
+      http
+        .expectOne((req) => req.url.endsWith('/clubs/mine'))
+        .flush([
+          {
+            id: 1,
+            name: 'Club A',
+            category: 'SPORT',
+            postalAddress: '',
+            email: '',
+            phone: '',
+            validityEndDate: null,
+            members: [],
+          },
+        ]);
       await stable();
       const element = fixture.nativeElement as HTMLElement;
 
@@ -164,13 +186,24 @@ describe('EventFormPage', () => {
       expect(navigate).toHaveBeenCalledWith(['/mes-evenements']);
     });
 
-    it("affiche le message du back et ne redirige pas si la création échoue", async () => {
+    it('affiche le message du back et ne redirige pas si la création échoue', async () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       const fixture = TestBed.createComponent(EventFormPage);
       TestBed.tick();
-      http.expectOne((req) => req.url.endsWith('/clubs/mine')).flush([
-        { id: 1, name: 'Club A', category: 'SPORT', postalAddress: '', email: '', phone: '', validityEndDate: null, members: [] },
-      ]);
+      http
+        .expectOne((req) => req.url.endsWith('/clubs/mine'))
+        .flush([
+          {
+            id: 1,
+            name: 'Club A',
+            category: 'SPORT',
+            postalAddress: '',
+            email: '',
+            phone: '',
+            validityEndDate: null,
+            members: [],
+          },
+        ]);
       await stable();
       const element = fixture.nativeElement as HTMLElement;
 
@@ -306,7 +339,9 @@ describe('EventFormPage', () => {
       submitForm(element);
       await stable();
 
-      const request = http.expectOne((req) => req.method === 'PUT' && req.url.endsWith('/events/1'));
+      const request = http.expectOne(
+        (req) => req.method === 'PUT' && req.url.endsWith('/events/1'),
+      );
       expect(request.request.body.title).toBe('Titre modifié');
       expect(request.request.body.clubId).toBeUndefined();
       request.flush({});
@@ -318,7 +353,9 @@ describe('EventFormPage', () => {
     it('verrouille le formulaire quand l’évènement est terminé', async () => {
       const fixture = TestBed.createComponent(EventFormPage);
       TestBed.tick();
-      http.expectOne((req) => req.url.endsWith('/events/1')).flush(makeDetail({ status: 'FINISHED' }));
+      http
+        .expectOne((req) => req.url.endsWith('/events/1'))
+        .flush(makeDetail({ status: 'FINISHED' }));
       await stable();
       const element = fixture.nativeElement as HTMLElement;
 

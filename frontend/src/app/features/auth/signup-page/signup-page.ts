@@ -26,7 +26,11 @@ export class SignupPage {
       await this.auth.signup(request);
       this.success.set(true);
     } catch (error) {
-      if (error instanceof HttpErrorResponse && error.status === 400 && typeof error.error === 'string') {
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 400 &&
+        typeof error.error === 'string'
+      ) {
         this.emailError.set(error.error);
       }
     }

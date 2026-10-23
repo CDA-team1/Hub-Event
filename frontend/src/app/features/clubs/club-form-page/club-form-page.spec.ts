@@ -99,7 +99,7 @@ describe('ClubFormPage', () => {
       expect(navigate).toHaveBeenCalledWith(['/clubs']);
     });
 
-    it("affiche le message du back et ne redirige pas si la création échoue", async () => {
+    it('affiche le message du back et ne redirige pas si la création échoue', async () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       const fixture = TestBed.createComponent(ClubFormPage);
       await stable();

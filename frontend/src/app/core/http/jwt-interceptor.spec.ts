@@ -11,7 +11,10 @@ describe('jwtInterceptor', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(withInterceptors([jwtInterceptor])), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(withInterceptors([jwtInterceptor])),
+        provideHttpClientTesting(),
+      ],
     });
     http = TestBed.inject(HttpClient);
     controller = TestBed.inject(HttpTestingController);

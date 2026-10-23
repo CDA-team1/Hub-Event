@@ -27,7 +27,9 @@
       <tr>
         @for (column of columns(); track column.key) {
           <td [class.hide-on-small]="column.hideOnSmall">
-            <ng-container *ngTemplateOutlet="templateFor(column.key); context: { $implicit: row }" />
+            <ng-container
+              *ngTemplateOutlet="templateFor(column.key); context: { $implicit: row }"
+            />
           </td>
         }
       </tr>
