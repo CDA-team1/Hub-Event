@@ -1,0 +1,20 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Service } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { LegalDocumentDto, LegalDocumentType } from '../../domain/legal-document.model';
+import { API_URL } from '../http/api-url';
+
+@Service()
+export class LegalDocumentApi {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = inject(API_URL);
+
+  getByType(type: LegalDocumentType): Observable<LegalDocumentDto | null> {
+    return this.http.get<LegalDocumentDto | null>(`${this.apiUrl}/documents/${type}`);
+  }
+
+  upsert(type: LegalDocumentType, content: string): Observable<LegalDocumentDto> {
+    return this.http.put<LegalDocumentDto>(`${this.apiUrl}/admin/documents/${type}`, { content });
+  }
+}

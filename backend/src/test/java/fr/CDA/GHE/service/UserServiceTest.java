@@ -1,0 +1,1032 @@
+package fr.CDA.GHE.service;
+
+import fr.CDA.GHE.dto.ActivateAdminAccountRequest;
+import fr.CDA.GHE.dto.AdminUserRequest;
+import fr.CDA.GHE.dto.ClubAffiliationRequest;
+import fr.CDA.GHE.dto.ClubDto;
+import fr.CDA.GHE.dto.CreateUserRequest;
+import fr.CDA.GHE.dto.PageDto;
+import fr.CDA.GHE.dto.UserProfileDto;
+import fr.CDA.GHE.dto.AdminUserDto;
+import fr.CDA.GHE.dto.SuspendUserRequest;
+import fr.CDA.GHE.dto.UpdateUserRequest;
+import fr.CDA.GHE.dto.UserDto;
+import fr.CDA.GHE.entity.AnonymizationRequest;
+import fr.CDA.GHE.entity.Club;
+import fr.CDA.GHE.entity.Comment;
+import fr.CDA.GHE.entity.Event;
+import fr.CDA.GHE.entity.Registration;
+import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.enums.AccountStatus;
+import fr.CDA.GHE.entity.enums.Category;
+import fr.CDA.GHE.entity.enums.RegistrationStatus;
+import fr.CDA.GHE.entity.enums.RequestStatus;
+import fr.CDA.GHE.entity.enums.Role;
+import fr.CDA.GHE.exception.FunctionalException;
+import fr.CDA.GHE.exception.NotFoundException;
+import fr.CDA.GHE.util.AccountTokens;
+import fr.CDA.GHE.repository.AnonymizationRequestRepository;
+import fr.CDA.GHE.repository.ClubRepository;
+import fr.CDA.GHE.repository.CommentRepository;
+import fr.CDA.GHE.repository.EventRepository;
+import fr.CDA.GHE.repository.RegistrationRepository;
+import fr.CDA.GHE.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.endsWith;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+
+/**
+ * Tests de {@link UserService} avec une vraie base H2 (profil "test", voir
+ * {@code GheApplicationTests}) : vérifie le comportement réel des requêtes dérivées
+ * (unicité d'email, jetons, affiliations) plutôt qu'un repository mocké — comme
+ * {@code JpaUserDetailsServiceTest} / {@code LegalDocumentServiceTest}.
+ * <p>
+ * {@link EmailService} est mocké : on ne veut pas qu'un test tente une vraie connexion SMTP
+ * (l'hôte configuré en profil "test" n'écoute nulle part) — même approche que
+ * {@code EventServiceTest} qui mocke certaines dépendances au sein d'un contexte complet.
+ * {@code @Transactional} annule les écritures après chaque test.
+ */
+@ActiveProfiles("test")
+@SpringBootTest
+@Transactional
+class UserServiceTest {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ClubRepository clubRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private RegistrationRepository registrationRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private AnonymizationRequestRepository anonymizationRequestRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private EmailService emailService;
+
+    private static final String STRONG_PASSWORD = "StrOng!Passw0rd";
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    // --- createUser (CU5 signup) ---
+
+    @Test
+    void createUser_shouldCreateInactiveMember_whenRequestIsValid() throws FunctionalException {
+        CreateUserRequest request = new CreateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true);
+
+        UserDto dto = userService.createUser(request);
+
+        assertThat(dto.status()).isEqualTo(AccountStatus.INACTIVE);
+        assertThat(dto.role()).isEqualTo(Role.MEMBER);
+        assertThat(userRepository.findByEmail("john.doe@test.com")).isPresent();
+    }
+
+    @Test
+    void createUser_shouldStoreOnlyTheHashOfAnExpiringActivationToken() throws FunctionalException {
+        UserDto dto = userService.createUser(new CreateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true));
+
+        ArgumentCaptor<String> link = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendActivationEmail(eq("john.doe@test.com"), link.capture());
+        assertThat(link.getValue()).startsWith("http://localhost:4200/activation-compte?token=");
+        String token = link.getValue().substring(link.getValue().indexOf("token=") + 6);
+        User created = userRepository.findById(dto.id()).orElseThrow();
+
+        assertThat(token).hasSize(43);
+        assertThat(created.getActivationTokenHash()).isEqualTo(AccountTokens.hash(token)).isNotEqualTo(token);
+        assertThat(created.getActivationTokenExpiresAt())
+                .isBetween(LocalDateTime.now().plusHours(23), LocalDateTime.now().plusHours(25));
+    }
+
+    @Test
+    void createUser_shouldReplaceAnAbandonedAccountWhoseLinkHasExpired() throws FunctionalException {
+        User abandoned = persistInactiveMemberWithToken("john.doe@test.com", "old-token",
+                LocalDateTime.now().minusHours(1));
+
+        UserDto dto = userService.createUser(new CreateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true));
+
+        assertThat(dto.id()).isNotEqualTo(abandoned.getId());
+        assertThat(userRepository.findById(abandoned.getId())).isEmpty();
+        assertThatThrownBy(() -> userService.activateAccount("old-token")).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void createUser_shouldKeepRefusingTheEmail_whenTheActivationLinkIsStillValid() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token", LocalDateTime.now().plusHours(1));
+
+        assertThatThrownBy(() -> userService.createUser(new CreateUserRequest("Autre", "Personne", "2 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true)))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Cette adresse email est déjà utilisée.");
+    }
+
+    @Test
+    void createUser_shouldNeverReplaceAnActiveAccount() {
+        persistActiveMember("john.doe@test.com");
+
+        assertThatThrownBy(() -> userService.createUser(new CreateUserRequest("Autre", "Personne", "2 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true)))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Cette adresse email est déjà utilisée.");
+        assertThat(userRepository.findByEmail("john.doe@test.com")).isPresent();
+    }
+
+    @Test
+    void createUser_shouldThrow_whenRequiredFieldIsBlank() {
+        CreateUserRequest request = new CreateUserRequest("", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true);
+
+        assertThatThrownBy(() -> userService.createUser(request)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void createUser_shouldThrow_whenEmailAlreadyUsed() throws FunctionalException {
+        userService.createUser(new CreateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true));
+
+        CreateUserRequest duplicate = new CreateUserRequest("Autre", "Personne", "2 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD, true);
+
+        assertThatThrownBy(() -> userService.createUser(duplicate)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void createUser_shouldThrow_whenPasswordIsWeak() {
+        CreateUserRequest request = new CreateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, "faible", true);
+
+        assertThatThrownBy(() -> userService.createUser(request)).isInstanceOf(FunctionalException.class);
+    }
+
+    // --- activateAccount (CU6) ---
+
+    @Test
+    void activateAccount_shouldActivate_whenTokenIsValid() throws FunctionalException {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+
+        UserDto dto = userService.activateAccount("valid-token");
+
+        assertThat(dto.status()).isEqualTo(AccountStatus.ACTIVE);
+        User reloaded = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(reloaded.getActivationTokenHash()).isNull();
+        assertThat(reloaded.getActivationTokenExpiresAt()).isNull();
+    }
+
+    @Test
+    void activateAccount_shouldThrow_whenTokenIsUsedASecondTime() throws FunctionalException {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        userService.activateAccount("valid-token");
+
+        assertThatThrownBy(() -> userService.activateAccount("valid-token"))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Le compte associé à ce lien n'existe pas.");
+    }
+
+    @Test
+    void activateAccount_shouldThrow_whenTokenHasExpired() {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token",
+                LocalDateTime.now().minusMinutes(1));
+
+        assertThatThrownBy(() -> userService.activateAccount("valid-token"))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("Ce lien a expiré");
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getStatus())
+                .isEqualTo(AccountStatus.INACTIVE);
+    }
+
+    @Test
+    void activateAccount_shouldNotAcceptTheStoredHashAsAToken() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+
+        // Une fuite de la base ne doit pas suffire pour activer un compte.
+        assertThatThrownBy(() -> userService.activateAccount(AccountTokens.hash("valid-token")))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void activateAccount_shouldThrow_whenTokenUnknown() {
+        assertThatThrownBy(() -> userService.activateAccount("unknown-token"))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void activateAccount_shouldThrow_whenAlreadyActive() throws FunctionalException {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        userService.activateAccount("valid-token");
+        user.startActivation(AccountTokens.hash("valid-token"), LocalDateTime.now().plusHours(1)); // ré-injecté pour re-tester le contrôle de statut
+        userRepository.save(user);
+
+        assertThatThrownBy(() -> userService.activateAccount("valid-token"))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    // --- getOwnAccount (CU13) ---
+
+@Test
+void getOwnAccount_shouldReturnProfileAndAffiliatedClubs_whenAccountActive()
+        throws FunctionalException {
+    User user = persistActiveMember("john.doe@test.com");
+    Club club = persistClub("Club de Test");
+
+    club.getMembers().add(user);
+    clubRepository.save(club);
+
+    authenticateAs(user);
+
+    UserProfileDto dto = userService.getOwnAccount();
+
+    assertThat(dto.id()).isEqualTo(user.getId());
+    assertThat(dto.lastName()).isEqualTo("Doe");
+    assertThat(dto.firstName()).isEqualTo("John");
+    assertThat(dto.postalAddress()).isEqualTo("1 rue de Test");
+    assertThat(dto.email()).isEqualTo("john.doe@test.com");
+    assertThat(dto.status()).isEqualTo(AccountStatus.ACTIVE);
+    assertThat(dto.role()).isEqualTo(Role.MEMBER);
+
+    assertThat(dto.clubs()).hasSize(1);
+    assertThat(dto.clubs().get(0).id()).isEqualTo(club.getId());
+    assertThat(dto.clubs().get(0).name()).isEqualTo("Club de Test");
+}
+
+    @Test
+    void getOwnAccount_shouldThrow_whenAccountNotActive() {
+    User user = persistInactiveMemberWithToken(
+            "john.doe@test.com",
+            "some-token"
+        );
+
+        authenticateAs(user);
+
+        assertThatThrownBy(() -> userService.getOwnAccount())
+            .isInstanceOf(FunctionalException.class);
+}
+
+    // --- updateOwnAccount / confirmPasswordChange (CU13) ---
+
+    @Test
+    void updateOwnAccount_shouldUpdateFields_whenEmailUnchanged() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest("Doe", "Jonathan", "Nouvelle adresse",
+                "john.doe@test.com", "0600000000", null);
+
+        UserDto dto = userService.updateOwnAccount(request);
+
+        assertThat(dto.firstName()).isEqualTo("Jonathan");
+        assertThat(dto.postalAddress()).isEqualTo("Nouvelle adresse");
+    }
+
+    @Test
+    void updateOwnAccount_shouldThrow_whenNewEmailAlreadyUsedByAnotherAccount() throws FunctionalException {
+        persistActiveMember("taken@test.com");
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "taken@test.com", null, null);
+
+        assertThatThrownBy(() -> userService.updateOwnAccount(request)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void updateOwnAccount_shouldThrow_whenEmailFormatIsInvalid() {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                "Doe",
+                "John",
+                "1 rue de Test",
+                "bonjour",
+                "0600000000",
+                 null
+        );
+
+        assertThatThrownBy(() -> userService.updateOwnAccount(request))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Veuillez renseigner une adresse email valide.");
+    }
+
+    @Test
+    void updateOwnAccount_shouldThrow_whenAccountNotActive() {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "some-token");
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, null);
+
+        assertThatThrownBy(() -> userService.updateOwnAccount(request)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void updateOwnAccount_shouldThrow_whenPasswordProvidedIsWeak() {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, "faible");
+
+        assertThatThrownBy(() -> userService.updateOwnAccount(request)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void updateOwnAccount_shouldStagePassword_withoutApplyingItImmediately_whenPasswordProvided() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        String originalPasswordHash = user.getPassword();
+        authenticateAs(user);
+
+        UpdateUserRequest request = new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD);
+
+        userService.updateOwnAccount(request);
+
+        User reloaded = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(reloaded.getPassword()).isEqualTo(originalPasswordHash);
+        assertThat(reloaded.getPendingPassword()).isNotNull();
+        assertThat(reloaded.getPasswordChangeTokenHash()).isNotNull();
+        assertThat(reloaded.getPasswordChangeTokenExpiresAt())
+                .isBetween(LocalDateTime.now().plusMinutes(55), LocalDateTime.now().plusMinutes(65));
+    }
+
+    @Test
+    void confirmPasswordChange_shouldApplyPendingPassword_whenTokenIsValid() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+        userService.updateOwnAccount(new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD));
+        String token = passwordChangeTokenSentTo("john.doe@test.com");
+
+        userService.confirmPasswordChange(token);
+
+        User reloaded = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(passwordEncoder.matches(STRONG_PASSWORD, reloaded.getPassword())).isTrue();
+        assertThat(reloaded.getPendingPassword()).isNull();
+        assertThat(reloaded.getPasswordChangeTokenHash()).isNull();
+        assertThat(reloaded.getPasswordChangeTokenExpiresAt()).isNull();
+    }
+
+    @Test
+    void confirmPasswordChange_shouldThrow_whenTokenIsUsedASecondTime() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+        userService.updateOwnAccount(new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD));
+        String token = passwordChangeTokenSentTo("john.doe@test.com");
+        userService.confirmPasswordChange(token);
+
+        assertThatThrownBy(() -> userService.confirmPasswordChange(token))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmPasswordChange_shouldThrowAndKeepOldPassword_whenTokenHasExpired() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        String originalPasswordHash = user.getPassword();
+        authenticateAs(user);
+        userService.updateOwnAccount(new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD));
+        String token = passwordChangeTokenSentTo("john.doe@test.com");
+        User pending = userRepository.findById(user.getId()).orElseThrow();
+        pending.startPasswordChange(pending.getPendingPassword(), pending.getPasswordChangeTokenHash(),
+                LocalDateTime.now().minusMinutes(1));
+        userRepository.save(pending);
+
+        assertThatThrownBy(() -> userService.confirmPasswordChange(token))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("Ce lien a expiré");
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getPassword())
+                .isEqualTo(originalPasswordHash);
+    }
+
+    @Test
+    void updateOwnAccount_shouldInvalidateThePreviousLink_whenAPasswordChangeIsRequestedAgain()
+            throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+        UpdateUserRequest request = new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD);
+        userService.updateOwnAccount(request);
+        userService.updateOwnAccount(request);
+
+        ArgumentCaptor<String> links = ArgumentCaptor.forClass(String.class);
+        verify(emailService, times(2)).sendPasswordChangeConfirmationEmail(eq("john.doe@test.com"), links.capture());
+        String firstToken = links.getAllValues().get(0).substring(links.getAllValues().get(0).indexOf("token=") + 6);
+        String secondToken = links.getAllValues().get(1).substring(links.getAllValues().get(1).indexOf("token=") + 6);
+
+        assertThatThrownBy(() -> userService.confirmPasswordChange(firstToken))
+                .isInstanceOf(FunctionalException.class);
+        assertThat(userService.confirmPasswordChange(secondToken)).isNotNull();
+    }
+
+    @Test
+    void updateOwnAccount_shouldSendALinkToTheFrontPage() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+        authenticateAs(user);
+
+        userService.updateOwnAccount(new UpdateUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", null, STRONG_PASSWORD));
+
+        verify(emailService).sendPasswordChangeConfirmationEmail(eq("john.doe@test.com"),
+                contains("http://localhost:4200/confirmation-mot-de-passe?token="));
+    }
+
+    @Test
+    void confirmPasswordChange_shouldThrow_whenTokenInvalid() {
+        assertThatThrownBy(() -> userService.confirmPasswordChange("unknown-token"))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    // --- extractAll / extractById ---
+
+    @Test
+    void extractAll_shouldReturnPagedUsers() {
+        persistActiveMember("a@test.com");
+        persistActiveMember("b@test.com");
+
+        PageDto<UserDto> page = userService.extractAll(null, PageRequest.of(0, 10));
+
+        assertThat(page.totalElements()).isEqualTo(2);
+        assertThat(page.content()).hasSize(2);
+    }
+
+    @Test
+    void extractAll_shouldFilterUsersByRole() {
+        persistActiveMember("member@test.com");
+
+        User admin = persistActiveMember("admin@test.com");
+        admin.setRole(Role.ADMIN);
+        userRepository.save(admin);
+
+        PageDto<UserDto> page = userService.extractAll(Role.ADMIN, PageRequest.of(0, 10));
+
+        assertThat(page.totalElements()).isEqualTo(1);
+        assertThat(page.content()).hasSize(1);
+        assertThat(page.content().get(0).email()).isEqualTo("admin@test.com");
+        assertThat(page.content().get(0).role()).isEqualTo(Role.ADMIN);
+    }
+
+    @Test
+    void extractById_shouldReturnUserWithClubs_whenExists() {
+        Club club = persistClub("Club de Test");
+        User user = persistActiveMember("john.doe@test.com");
+
+        club.getMembers().add(user);
+        clubRepository.save(club);
+
+        AdminUserDto dto = userService.extractById(user.getId());
+
+        assertThat(dto.email()).isEqualTo("john.doe@test.com");
+        assertThat(dto.clubs()).hasSize(1);
+        assertThat(dto.clubs().get(0).id()).isEqualTo(club.getId());
+        assertThat(dto.clubs().get(0).name()).isEqualTo("Club de Test");
+    }
+
+    @Test
+    void extractById_shouldThrow_whenNotFound() {
+        assertThatThrownBy(() -> userService.extractById(999L)).isInstanceOf(NotFoundException.class);
+    }
+
+    // --- createUserByAdmin / updateUserByAdmin (CU25) ---
+
+    @Test
+    void createUserByAdmin_shouldCreateInactiveAccount_withTemporaryPassword() throws FunctionalException {
+        AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", "0600000000", Role.MEMBER, null);
+
+        UserDto dto = userService.createUserByAdmin(request);
+
+        assertThat(dto.status()).isEqualTo(AccountStatus.INACTIVE);
+        assertThat(dto.role()).isEqualTo(Role.MEMBER);
+
+        User created = userRepository.findById(dto.id()).orElseThrow();
+        ArgumentCaptor<String> link = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendAdminCreatedAccountEmail(eq("john.doe@test.com"), anyString(), link.capture());
+        assertThat(link.getValue()).contains("/confirmation-compte?token=");
+        String token = link.getValue().substring(link.getValue().indexOf("token=") + 6);
+
+        // La base ne garde que l'empreinte du jeton, jamais le jeton lui-même ; valable 72 h.
+        assertThat(created.getActivationTokenHash()).isEqualTo(AccountTokens.hash(token)).isNotEqualTo(token);
+        assertThat(created.getActivationTokenExpiresAt())
+                .isBetween(LocalDateTime.now().plusHours(71), LocalDateTime.now().plusHours(73));
+    }
+
+    @Test
+    void createUserByAdmin_shouldReplaceAnAbandonedAccountWhoseLinkHasExpired() throws FunctionalException {
+        User abandoned = persistInactiveMemberWithToken("john.doe@test.com", "old-token",
+                LocalDateTime.now().minusHours(1));
+
+        UserDto dto = userService.createUserByAdmin(new AdminUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", "0600000000", Role.MEMBER, null));
+
+        assertThat(dto.id()).isNotEqualTo(abandoned.getId());
+        assertThat(userRepository.findById(abandoned.getId())).isEmpty();
+    }
+
+    @Test
+    void createUserByAdmin_shouldThrow_whenPhoneIsMissing() {
+        AdminUserRequest request = new AdminUserRequest(
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "john.doe@test.com",
+            null,
+            Role.MEMBER,
+            null
+        );
+
+        assertThatThrownBy(() -> userService.createUserByAdmin(request))
+            .isInstanceOf(FunctionalException.class)
+            .hasMessage("Veuillez renseigner tous les champs obligatoires.");
+    }
+
+    @Test
+    void createUserByAdmin_shouldThrow_whenEmailFormatIsInvalid() {
+        AdminUserRequest request = new AdminUserRequest(
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "bonjour",
+            "0600000000",
+            Role.MEMBER,
+            null
+        );
+
+        assertThatThrownBy(() -> userService.createUserByAdmin(request))
+            .isInstanceOf(FunctionalException.class)
+            .hasMessage("Veuillez renseigner une adresse email valide.");
+}
+
+    @Test
+    void createUserByAdmin_shouldThrow_whenEmailAlreadyUsed() throws FunctionalException {
+        userService.createUserByAdmin(new AdminUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", "0600000000", Role.MEMBER, null));
+
+        AdminUserRequest duplicate = new AdminUserRequest("Autre", "Personne", "2 rue de Test",
+                "john.doe@test.com", "0600000000", Role.MEMBER, null);
+
+        assertThatThrownBy(() -> userService.createUserByAdmin(duplicate)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void createUserByAdmin_shouldThrow_whenOrganizerHasNoClub() {
+        AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", "0600000000", Role.ORGANIZER, null);
+
+        assertThatThrownBy(() -> userService.createUserByAdmin(request)).isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void createUserByAdmin_shouldAssignClubs_whenProvided() throws FunctionalException {
+        Club club = persistClub("Club de Test");
+
+        AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
+                "john.doe@test.com", "0600000000", Role.ORGANIZER, List.of(club.getId()));
+
+        UserDto dto = userService.createUserByAdmin(request);
+
+        assertThat(clubRepository.findByMembers_Id(dto.id())).extracting(Club::getId).containsExactly(club.getId());
+    }
+
+    @Test
+    void createUserByAdmin_shouldNotAssignClubs_whenRoleIsAdmin() throws FunctionalException {
+        Club club = persistClub("Club de Test");
+
+        AdminUserRequest request = new AdminUserRequest(
+            "Doe",
+            "John",
+            "1 rue de Test",
+            "john.doe@test.com",
+            "0600000000",
+            Role.ADMIN,
+            List.of(club.getId())
+        );
+
+        UserDto dto = userService.createUserByAdmin(request);
+
+        assertThat(clubRepository.findByMembers_Id(dto.id())).isEmpty();
+    }
+
+    // --- confirmAccountCreation (CU25/CPT-06) ---
+
+    @Test
+    void confirmAccountCreation_shouldActivateAccount_whenAllValid() throws FunctionalException {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        UserDto dto = userService.confirmAccountCreation("valid-token", request);
+
+        assertThat(dto.status()).isEqualTo(AccountStatus.ACTIVE);
+        User reloaded = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(reloaded.getActivationTokenHash()).isNull();
+        assertThat(passwordEncoder.matches("NewStr0ng!Pass", reloaded.getPassword())).isTrue();
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenTokenHasExpired() {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token",
+                LocalDateTime.now().minusMinutes(1));
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("Ce lien a expiré");
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getStatus())
+                .isEqualTo(AccountStatus.INACTIVE);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenTokenIsUsedASecondTime() throws FunctionalException {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+        userService.confirmAccountCreation("valid-token", request);
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Le compte associé à ce lien n'existe pas.");
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenTokenUnknown() {
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("unknown-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenAlreadyActive() throws FunctionalException {
+        User user = persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "NewStr0ng!Pass");
+        userService.confirmAccountCreation("valid-token", request);
+        user.startActivation(AccountTokens.hash("valid-token"), LocalDateTime.now().plusHours(1)); // ré-injecté pour re-tester le contrôle de statut
+        userRepository.save(user);
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenTemporaryPasswordIncorrect() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest("wrong-temporary-password", "NewStr0ng!Pass", "NewStr0ng!Pass");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenPasswordsDoNotMatch() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "NewStr0ng!Pass", "AnotherPass1!");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void confirmAccountCreation_shouldThrow_whenNewPasswordIsWeak() {
+        persistInactiveMemberWithToken("john.doe@test.com", "valid-token");
+        ActivateAdminAccountRequest request =
+                new ActivateAdminAccountRequest(STRONG_PASSWORD, "faible", "faible");
+
+        assertThatThrownBy(() -> userService.confirmAccountCreation("valid-token", request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    @Test
+    void updateUserByAdmin_shouldUpdateFields() throws FunctionalException {
+        User user = persistActiveMember("john.doe@test.com");
+
+        AdminUserRequest request = new AdminUserRequest("Doe", "Jonathan", "Nouvelle adresse",
+                "john.doe@test.com", "0600000000", Role.MEMBER, null);
+
+        UserDto dto = userService.updateUserByAdmin(user.getId(), request);
+
+        assertThat(dto.firstName()).isEqualTo("Jonathan");
+    }
+
+    @Test
+    void updateUserByAdmin_shouldRemoveClubs_whenRoleBecomesAdmin() throws FunctionalException {
+        Club club = persistClub("Club de Test");
+        User user = persistActiveMember("john.doe@test.com");
+
+        club.getMembers().add(user);
+        clubRepository.save(club);
+
+        AdminUserRequest request = new AdminUserRequest(
+                "Doe",
+                "John",
+                "1 rue de Test",
+                "john.doe@test.com",
+                "0600000000",
+                Role.ADMIN,
+                List.of(club.getId())
+        );
+
+        userService.updateUserByAdmin(user.getId(), request);
+
+         assertThat(clubRepository.findByMembers_Id(user.getId())).isEmpty();
+         assertThat(userRepository.findById(user.getId()).orElseThrow().getRole())
+            .isEqualTo(Role.ADMIN);
+    }
+
+    @Test
+    void updateUserByAdmin_shouldThrow_whenEmailUsedByAnotherAccount() {
+        persistActiveMember("taken@test.com");
+        User user = persistActiveMember("john.doe@test.com");
+
+        AdminUserRequest request = new AdminUserRequest("Doe", "John", "1 rue de Test",
+                "taken@test.com", "0600000000", Role.MEMBER, null);
+
+        assertThatThrownBy(() -> userService.updateUserByAdmin(user.getId(), request))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    // --- updateMemberAffiliations (CU26/CU27) ---
+
+    @Test
+    void updateMemberAffiliations_shouldSyncClubs_forMember() throws FunctionalException {
+        User member = persistActiveMember("john.doe@test.com");
+        Club club = persistClub("Club de Test");
+
+        List<ClubDto> result = userService.updateMemberAffiliations(member.getId(),
+                new ClubAffiliationRequest(List.of(club.getId())));
+
+        assertThat(result).extracting(ClubDto::id).containsExactly(club.getId());
+    }
+
+    @Test
+    void updateMemberAffiliations_shouldKeepOrganizerRole_whenAtLeastOneClubRemains() throws FunctionalException {
+        Club clubA = persistClub("Club A");
+        Club clubB = persistClub("Club B");
+        User organizer = persistActiveOrganizer("organizer@test.com", clubA);
+
+        userService.updateMemberAffiliations(organizer.getId(),
+                new ClubAffiliationRequest(List.of(clubB.getId())));
+
+        assertThat(userRepository.findById(organizer.getId()).orElseThrow().getRole()).isEqualTo(Role.ORGANIZER);
+    }
+
+    @Test
+    void updateMemberAffiliations_shouldDowngradeOrganizerToMember_whenNoClubsRemain() throws FunctionalException {
+        Club club = persistClub("Club de Test");
+        User organizer = persistActiveOrganizer("organizer@test.com", club);
+
+        userService.updateMemberAffiliations(organizer.getId(), new ClubAffiliationRequest(List.of()));
+
+        assertThat(userRepository.findById(organizer.getId()).orElseThrow().getRole()).isEqualTo(Role.MEMBER);
+    }
+
+    @Test
+    void updateMemberAffiliations_shouldThrow_forAdmin() {
+        User admin = persistActiveMember("admin@test.com");
+        admin.setRole(Role.ADMIN);
+        userRepository.save(admin);
+
+        assertThatThrownBy(() -> userService.updateMemberAffiliations(admin.getId(),
+                new ClubAffiliationRequest(List.of())))
+                .isInstanceOf(FunctionalException.class);
+    }
+
+    // --- deleteUserByAdmin (CU25) ---
+
+    @Test
+    void deleteUserByAdmin_shouldRemoveAffiliationsThenDeleteAccount() throws FunctionalException {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        Club club = persistClub("Club de Test");
+        User member = persistActiveMember("john.doe@test.com");
+        club.getMembers().add(member);
+        clubRepository.save(club);
+
+        userService.deleteUserByAdmin(member.getId());
+
+        assertThat(userRepository.findById(member.getId())).isEmpty();
+        assertThat(clubRepository.findById(club.getId()).orElseThrow().getMembers()).isEmpty();
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenDeletingOwnAccount() {
+        User admin = persistActiveMember("admin@test.com");
+        authenticateAs(admin);
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(admin.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessage("Vous ne pouvez pas supprimer votre propre compte.");
+        assertThat(userRepository.findById(admin.getId())).isPresent();
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountHasRegistrations() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User member = persistActiveMember("john.doe@test.com");
+        Event event = persistPublishedEvent(persistActiveMember("organizer@test.com"));
+        registrationRepository.save(new Registration(member, event, RegistrationStatus.REGISTERED, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(member.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+        assertThat(userRepository.findById(member.getId())).isPresent();
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountHasComments() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User member = persistActiveMember("john.doe@test.com");
+        Event event = persistPublishedEvent(persistActiveMember("organizer@test.com"));
+        commentRepository.save(new Comment("Super !", member, event, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(member.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountOrganizesEvents() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User organizer = persistActiveMember("organizer@test.com");
+        persistPublishedEvent(organizer);
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(organizer.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenAccountHasAnonymizationRequest() {
+        authenticateAs(persistActiveMember("admin@test.com"));
+        User member = persistActiveMember("john.doe@test.com");
+        anonymizationRequestRepository.save(
+                new AnonymizationRequest(member, RequestStatus.PENDING, LocalDateTime.now()));
+
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(member.getId()))
+                .isInstanceOf(FunctionalException.class)
+                .hasMessageContaining("historique");
+    }
+
+    @Test
+    void deleteUserByAdmin_shouldThrow_whenNotFound() {
+        assertThatThrownBy(() -> userService.deleteUserByAdmin(999L)).isInstanceOf(NotFoundException.class);
+    }
+
+    // --- suspendUser (SUSP-01) ---
+
+    @Test
+    void suspendUser_shouldSuspendIndefinitely_whenNoEndDate() throws FunctionalException {
+        User member = persistActiveMember("suspend1@test.com");
+
+        userService.suspendUser(member.getId(), new SuspendUserRequest("Fraude avérée", null));
+
+        User updated = userRepository.findById(member.getId()).orElseThrow();
+        assertThat(updated.isSuspended()).isTrue();
+        assertThat(updated.getSuspensionEndDate()).isNull();
+        assertThat(updated.getSuspensionReason()).isEqualTo("Fraude avérée");
+        verify(emailService).sendAccountSuspendedEmail(member.getEmail(), "Fraude avérée", null);
+    }
+
+    @Test
+    void suspendUser_shouldSuspendTemporarily_whenEndDateProvided() throws FunctionalException {
+        User member = persistActiveMember("suspend2@test.com");
+        LocalDate endDate = LocalDate.now().plusDays(7);
+
+        userService.suspendUser(member.getId(), new SuspendUserRequest("Comportement inapproprié", endDate));
+
+        User updated = userRepository.findById(member.getId()).orElseThrow();
+        assertThat(updated.isSuspended()).isTrue();
+        assertThat(updated.getSuspensionEndDate()).isEqualTo(endDate);
+        verify(emailService).sendAccountSuspendedEmail(member.getEmail(), "Comportement inapproprié", endDate);
+    }
+
+    @Test
+    void suspendUser_shouldThrow_whenReasonMissing() {
+        User member = persistActiveMember("suspend3@test.com");
+
+        assertThatThrownBy(() -> userService.suspendUser(member.getId(), new SuspendUserRequest("  ", null)))
+                .isInstanceOf(FunctionalException.class);
+
+        assertThat(userRepository.findById(member.getId()).orElseThrow().isSuspended()).isFalse();
+        verifyNoInteractions(emailService);
+    }
+
+    @Test
+    void suspendUser_shouldThrow_whenNotFound() {
+        assertThatThrownBy(() -> userService.suspendUser(999L, new SuspendUserRequest("Motif", null)))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    // --- Fixtures ---
+
+    private User persistActiveMember(String email) {
+        User user = new User();
+        user.setLastName("Doe");
+        user.setFirstName("John");
+        user.setPostalAddress("1 rue de Test");
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(STRONG_PASSWORD));
+        user.setStatus(AccountStatus.ACTIVE);
+        user.setRole(Role.MEMBER);
+        return userRepository.save(user);
+    }
+
+    private User persistActiveOrganizer(String email, Club club) {
+        User user = persistActiveMember(email);
+        user.setRole(Role.ORGANIZER);
+        userRepository.save(user);
+        club.getMembers().add(user);
+        clubRepository.save(club);
+        return user;
+    }
+
+    /** Extrait le jeton en clair du lien qui vient d'être envoyé par email (la base n'en garde que l'empreinte). */
+    private String passwordChangeTokenSentTo(String email) {
+        ArgumentCaptor<String> link = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendPasswordChangeConfirmationEmail(eq(email), link.capture());
+        return link.getValue().substring(link.getValue().indexOf("token=") + 6);
+    }
+
+    private User persistInactiveMemberWithToken(String email, String token) {
+        return persistInactiveMemberWithToken(email, token, LocalDateTime.now().plusHours(1));
+    }
+
+    private User persistInactiveMemberWithToken(String email, String token, LocalDateTime expiresAt) {
+        User user = new User();
+        user.setLastName("Doe");
+        user.setFirstName("John");
+        user.setPostalAddress("1 rue de Test");
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(STRONG_PASSWORD));
+        user.setStatus(AccountStatus.INACTIVE);
+        user.setRole(Role.MEMBER);
+        user.startActivation(AccountTokens.hash(token), expiresAt);
+        return userRepository.save(user);
+    }
+
+    private Event persistPublishedEvent(User organizer) {
+        Club club = clubRepository.save(new Club("Club des événements", Category.SPORT,
+                "1 rue du Club", "events@test.com", "0500000000"));
+        Event event = new Event("Titre", "Description", "Lieu", LocalDateTime.now().plusDays(5), null,
+                BigDecimal.TEN, BigDecimal.TEN, 50, Category.SPORT, organizer, club);
+        event.publish();
+        return eventRepository.save(event);
+    }
+
+    private Club persistClub(String name) {
+        Club club = new Club(name, Category.SPORT, "1 rue du Club", "club@test.com", "0500000000");
+        return clubRepository.save(club);
+    }
+
+    private void authenticateAs(User user) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, List.of()));
+    }
+}

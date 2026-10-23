@@ -1,0 +1,125 @@
+@if (isNotFound()) {
+  <app-not-found-page />
+} @else if (detail.isLoading() && !event()) {
+  <app-loading-state>Chargement de l'événement…</app-loading-state>
+} @else if (detail.error()) {
+  <app-error-state>
+    <p>Impossible de charger l'événement.</p>
+    <button actions type="button" (click)="detail.reload()">Réessayer</button>
+  </app-error-state>
+} @else if (event(); as current) {
+  <article class="event">
+    <h1>{{ current.title }}</h1>
+
+    @if (current.status !== 'PUBLISHED') {
+      <app-event-status-badge [status]="current.status" />
+    }
+
+    <dl class="facts">
+      <div class="fact">
+        <dt>Début</dt>
+        <dd>{{ current.startDateTime | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </div>
+      @if (current.endDateTime) {
+        <div class="fact">
+          <dt>Fin</dt>
+          <dd>{{ current.endDateTime | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        </div>
+      }
+      <div class="fact">
+        <dt>Lieu</dt>
+        <dd>{{ current.location }}</dd>
+      </div>
+      <div class="fact">
+        <dt>Tarif affilié</dt>
+        <dd>{{ current.affiliatedPrice }} €</dd>
+      </div>
+      <div class="fact">
+        <dt>Tarif non affilié</dt>
+        <dd>{{ current.nonAffiliatedPrice }} €</dd>
+      </div>
+      <div class="fact">
+        <dt>Places</dt>
+        <dd>{{ current.maxSeats }}</dd>
+      </div>
+    </dl>
+
+    <div class="event__pdf">
+      <button
+        type="button"
+        class="event__pdf-button"
+        [disabled]="pdfDownloading()"
+        (click)="downloadPdf()"
+      >
+        {{ pdfDownloading() ? 'Téléchargement…' : 'Télécharger la fiche PDF' }}
+      </button>
+      @if (pdfError()) {
+        <p class="event__pdf-error" role="alert">{{ pdfError() }}</p>
+      }
+    </div>
+
+    @if (isConnected()) {
+      <app-registration-panel
+        [event]="current"
+        [pending]="registrationPending()"
+        [errorMessage]="registrationError()"
+        (registerClicked)="register()"
+        (unregisterClicked)="unregister()"
+      />
+    } @else {
+      <p class="event__login-hint">
+        <a routerLink="/connexion">Connectez-vous</a> pour vous inscrire à cet événement.
+      </p>
+    }
+
+    @if (current.owner) {
+      <app-owner-actions
+        [event]="current"
+        [pending]="ownerActionPending()"
+        [errorMessage]="ownerActionError()"
+        (editClicked)="edit()"
+        (publishClicked)="publish()"
+        (finishClicked)="finish()"
+        (cancelClicked)="cancel()"
+        (deleteClicked)="deleteEvent()"
+      />
+    }
+
+    <section class="event__section">
+      <h2>Description</h2>
+      <p class="event__description">{{ current.description }}</p>
+    </section>
+
+    <section class="event__section">
+      <h2>Photos</h2>
+      <app-image-gallery
+        [images]="current.gallery"
+        [eventTitle]="current.title"
+        [placeholderUrl]="defaultEventImage(current.category)"
+      />
+    </section>
+
+    <section class="event__section">
+      <h2>Commentaires</h2>
+      @if (isConnected()) {
+        <app-comment-form (submitted)="addComment($event)" />
+        @if (commentSubmitting()) {
+          <p role="status">Publication du commentaire…</p>
+        }
+        @if (commentError()) {
+          <p role="alert">{{ commentError() }}</p>
+        }
+      }
+      @if (comments.isLoading()) {
+        <app-loading-state>Chargement des commentaires…</app-loading-state>
+      } @else if (comments.error()) {
+        <app-error-state>
+          <p>Impossible de charger les commentaires.</p>
+          <button actions type="button" (click)="comments.reload()">Réessayer</button>
+        </app-error-state>
+      } @else {
+        <app-comment-list [comments]="comments.value()" />
+      }
+    </section>
+  </article>
+}

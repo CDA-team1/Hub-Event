@@ -1,0 +1,34 @@
+<h1>Supprimer l'évènement</h1>
+
+@if (invalidId) {
+  <app-error-state>
+    <p>Évènement introuvable.</p>
+  </app-error-state>
+} @else if (isLoading()) {
+  <app-loading-state>Chargement de l'évènement…</app-loading-state>
+} @else if (error()) {
+  <app-error-state>
+    <p>Impossible de charger l'évènement.</p>
+  </app-error-state>
+} @else if (ready()) {
+  <section class="confirm-panel">
+    <p class="event-title">« {{ title() }} »</p>
+
+    @if (submitError()) {
+      <p class="error" role="alert">{{ submitError() }}</p>
+    }
+
+    <div class="actions">
+      <button type="button" class="confirm" [disabled]="submitting()" (click)="confirm()">
+        Valider
+      </button>
+      <button type="button" class="cancel" (click)="cancel()">Annuler</button>
+    </div>
+
+    <p class="note">
+      Brouillon → suppression réelle. Publié sans inscrit → suppression réelle. La suppression est
+      définitive : l'évènement n'est pas conservé. Un évènement publié avec des inscrits ne peut pas
+      être supprimé, il doit être annulé.
+    </p>
+  </section>
+}

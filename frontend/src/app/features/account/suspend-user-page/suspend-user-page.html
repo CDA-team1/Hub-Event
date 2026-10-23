@@ -1,0 +1,49 @@
+<h1>Suspendre un compte</h1>
+
+@if (invalidId) {
+  <app-error-state>
+    <p>Compte introuvable.</p>
+  </app-error-state>
+} @else if (loading()) {
+  <app-loading-state>Chargement du compte…</app-loading-state>
+} @else if (loadError()) {
+  <app-error-state>
+    <p>Impossible de charger le compte.</p>
+  </app-error-state>
+} @else if (user(); as account) {
+  <p class="account">{{ account.firstName }} {{ account.lastName }} — {{ account.email }}</p>
+
+  <form (submit)="save($event)" novalidate>
+    <div class="field">
+      <label for="reason">Motif</label>
+      <textarea id="reason" rows="5" [formField]="suspensionForm.reason"></textarea>
+      @if (suspensionForm.reason().touched()) {
+        @for (error of suspensionForm.reason().errors(); track error.kind) {
+          <p class="error">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="endDate">Date de fin (facultative)</label>
+      <input id="endDate" type="date" [formField]="suspensionForm.endDate" />
+      @if (endDateError()) {
+        <p class="error">{{ endDateError() }}</p>
+      }
+    </div>
+
+    @if (submitError()) {
+      <p class="error" role="alert">{{ submitError() }}</p>
+    }
+
+    <div class="actions">
+      <button type="submit" [disabled]="suspensionForm().submitting()">Valider</button>
+      <button type="button" (click)="cancel()">Annuler</button>
+    </div>
+
+    <p class="note">
+      Date vide = suspension définitive. Un email est envoyé à l'utilisateur avec le motif (et la
+      durée si la suspension est temporaire).
+    </p>
+  </form>
+}

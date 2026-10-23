@@ -1,0 +1,28 @@
+<h1>Rechercher un événement</h1>
+
+<app-search-form [criteria]="criteria()" (criteriaChanged)="search($event)" />
+
+<section class="results" aria-live="polite">
+  <h2>Résultats</h2>
+
+  @if (results.isLoading()) {
+    <app-loading-state>Recherche en cours…</app-loading-state>
+  } @else if (results.error()) {
+    <app-error-state>
+      <p>Impossible de lancer la recherche.</p>
+      <button actions type="button" (click)="results.reload()">Réessayer</button>
+    </app-error-state>
+  } @else if (results.value().length === 0) {
+    <app-empty-state>
+      <p>Aucun événement ne correspond à votre recherche.</p>
+    </app-empty-state>
+  } @else {
+    <ul class="results__grid">
+      @for (event of results.value(); track event.id) {
+        <li>
+          <app-event-card [event]="event" />
+        </li>
+      }
+    </ul>
+  }
+</section>

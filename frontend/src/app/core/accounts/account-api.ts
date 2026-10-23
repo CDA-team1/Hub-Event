@@ -1,0 +1,85 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { inject, Service } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { PageDto } from '../../domain/page.model';
+import { Role } from '../../domain/role';
+import { AccountDto, AdminUserDto, UserProfileDto } from '../../domain/account.model';
+import { UpdateUserRequest } from '../../domain/update-user-request';
+import { ConfirmAccountCreationRequest } from '../../domain/confirm-account-creation-request';
+import { AdminUserRequest } from '../../domain/admin-user-request';
+import { SuspendUserRequest } from '../../domain/suspend-user-request';
+import { API_URL } from '../http/api-url';
+
+@Service()
+export class AccountApi {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = inject(API_URL);
+
+  activateAccount(token: string): Observable<void> {
+    const params = new HttpParams().set('token', token);
+
+    return this.http.get<void>(`${this.apiUrl}/auth/activate`, { params });
+  }
+
+  /** Confirme un changement de mot de passe avec le jeton du lien reçu par email (CU13). */
+  confirmPasswordChange(token: string): Observable<AccountDto> {
+    const params = new HttpParams().set('token', token);
+
+    return this.http.get<AccountDto>(`${this.apiUrl}/auth/confirm-password-change`, { params });
+  }
+
+  confirmAccountCreation(
+    token: string,
+    request: ConfirmAccountCreationRequest,
+  ): Observable<AccountDto> {
+    const params = new HttpParams().set('token', token);
+
+    return this.http.post<AccountDto>(`${this.apiUrl}/auth/confirm-account-creation`, request, {
+      params,
+    });
+  }
+
+  getOwnAccount(): Observable<UserProfileDto> {
+    return this.http.get<UserProfileDto>(`${this.apiUrl}/users/me`);
+  }
+
+  updateOwnAccount(request: UpdateUserRequest): Observable<AccountDto> {
+    return this.http.put<AccountDto>(`${this.apiUrl}/users/me`, request);
+  }
+
+  getUsers(role: Role | null, page: number): Observable<PageDto<AccountDto>> {
+    let params = new HttpParams().set('page', page);
+
+    if (role) {
+      params = params.set('role', role);
+    }
+
+    return this.http.get<PageDto<AccountDto>>(`${this.apiUrl}/admin/users`, { params });
+  }
+
+  getUserById(id: number): Observable<AdminUserDto> {
+    return this.http.get<AdminUserDto>(`${this.apiUrl}/admin/users/${id}`);
+  }
+
+  createUser(request: AdminUserRequest): Observable<AccountDto> {
+    return this.http.post<AccountDto>(`${this.apiUrl}/admin/users`, request);
+  }
+
+  updateUser(id: number, request: AdminUserRequest): Observable<AccountDto> {
+    return this.http.put<AccountDto>(`${this.apiUrl}/admin/users/${id}`, request);
+  }
+
+  /**
+   * Supprime un compte. Le back refuse son propre compte et tout compte ayant un historique
+   * (inscriptions, commentaires, évènements, demande d'anonymisation) : 400 avec un message.
+   */
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/admin/users/${id}`);
+  }
+
+  /** Suspend un compte (SUSP-01) : sans date de fin, la suspension est définitive. */
+  suspendUser(id: number, request: SuspendUserRequest): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/admin/users/${id}/suspension`, request);
+  }
+}

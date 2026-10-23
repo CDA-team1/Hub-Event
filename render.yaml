@@ -1,0 +1,130 @@
+services:
+  - type: web
+    name: hub-event-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      - key: DB_HOST
+        sync: false
+
+      - key: DB_PORT
+        sync: false
+
+      - key: DB_NAME
+        sync: false
+
+      - key: DB_USER
+        sync: false
+
+      - key: DB_PASSWORD
+        sync: false
+
+      - key: JWT_SECRET
+        sync: false
+
+      - key: MAIL_HOST
+        sync: false
+
+      - key: MAIL_PORT
+        sync: false
+
+      - key: MAIL_USERNAME
+        sync: false
+
+      - key: MAIL_PASSWORD
+        sync: false
+
+      - key: APP_FRONTEND_URL
+        sync: false
+
+      - key: IMGBB_API_KEY
+        sync: false
+
+  - type: web
+    name: hub-event-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NGINX_ENVSUBST_FILTER
+        value: BACKEND_
+
+      - key: BACKEND_SCHEME
+        value: https
+
+      - key: BACKEND_HOST
+        fromService:
+          name: hub-event-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+  - type: web
+    name: hub-event-backend-recette
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: recette
+
+      - key: DB_HOST
+        sync: false
+
+      - key: DB_PORT
+        sync: false
+
+      - key: DB_NAME
+        sync: false
+
+      - key: DB_USER
+        sync: false
+
+      - key: DB_PASSWORD
+        sync: false
+
+      - key: JWT_SECRET
+        sync: false
+
+      - key: MAIL_HOST
+        sync: false
+
+      - key: MAIL_PORT
+        sync: false
+
+      - key: MAIL_USERNAME
+        sync: false
+
+      - key: MAIL_PASSWORD
+        sync: false
+
+      - key: APP_FRONTEND_URL
+        sync: false
+
+      - key: IMGBB_API_KEY
+        sync: false
+
+  - type: web
+    name: hub-event-frontend-recette
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NGINX_ENVSUBST_FILTER
+        value: BACKEND_
+
+      - key: BACKEND_SCHEME
+        value: https
+
+      - key: BACKEND_HOST
+        fromService:
+          name: hub-event-backend-recette
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME

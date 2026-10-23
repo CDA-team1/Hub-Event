@@ -1,0 +1,153 @@
+import { Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import { AccountApi } from '../../../core/accounts/account-api';
+import { Confirmation } from '../../../core/dialog/confirmation';
+import { AccountDto } from '../../../domain/account.model';
+import { Role } from '../../../domain/role';
+import { ActionButton } from '../../../shared/ui/action-button/action-button';
+import { Column } from '../../../shared/ui/data-table/column';
+import { DataTable, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
+import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { RoleBadge } from '../../../shared/ui/role-badge/role-badge';
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Actif',
+  INACTIVE: 'Inactif',
+  ANONYMIZED: 'Anonymisé',
+};
+
+function isRole(value: string | null): value is Role {
+  return value === 'MEMBER' || value === 'ORGANIZER' || value === 'ADMIN';
+}
+
+@Component({
+  selector: 'app-users-list-page',
+  imports: [
+    ActionButton,
+    Column,
+    DataTable,
+    EmptyState,
+    ErrorState,
+    LoadingState,
+    Pagination,
+    RoleBadge,
+    RouterLink,
+  ],
+  templateUrl: './users-list-page.html',
+  styleUrl: './users-list-page.css',
+})
+export class UsersListPage {
+  private readonly accountApi = inject(AccountApi);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly confirmation = inject(Confirmation);
+
+  protected readonly users = signal<AccountDto[]>([]);
+  protected readonly selectedRole = signal<Role | null>(null);
+  protected readonly page = signal(0);
+  protected readonly pageSize = signal(20);
+  protected readonly totalElements = signal(0);
+
+  protected readonly loading = signal(true);
+  protected readonly errorMessage = signal('');
+  protected readonly deleteError = signal('');
+
+  protected readonly columns: DataTableColumn[] = [
+    { key: 'lastName', header: 'Nom' },
+    { key: 'firstName', header: 'Prénom', hideOnSmall: true },
+    { key: 'email', header: 'Email', hideOnSmall: true },
+    { key: 'role', header: 'Rôle' },
+    { key: 'status', header: 'Statut', hideOnSmall: true },
+    { key: 'actions', header: 'Actions' },
+  ];
+
+  protected statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status;
+  }
+
+  constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      const role = params.get('role');
+      const page = Number(params.get('page') ?? '0');
+
+      this.selectedRole.set(isRole(role) ? role : null);
+      this.page.set(Number.isInteger(page) && page >= 0 ? page : 0);
+
+      this.loadUsers();
+    });
+  }
+
+  protected changeRole(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    const role = isRole(value) ? value : null;
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        role,
+        page: 0,
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  protected changePage(page: number): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  protected reload(): void {
+    this.loadUsers();
+  }
+
+  protected async deleteUser(user: AccountDto): Promise<void> {
+    this.deleteError.set('');
+    const confirmed = await this.confirmation.confirm(
+      `Supprimer définitivement le compte de ${user.firstName} ${user.lastName} (${user.email}) ? ` +
+        'Cette action est irréversible. Un compte qui a un historique (inscriptions, ' +
+        "commentaires, évènements) ne peut pas être supprimé : il faut l'anonymiser.",
+      'Supprimer',
+      'Annuler',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.accountApi.deleteUser(user.id).subscribe({
+      next: () => this.loadUsers(),
+      error: (error: unknown) =>
+        this.deleteError.set(
+          error instanceof HttpErrorResponse && typeof error.error === 'string'
+            ? error.error
+            : 'La suppression a échoué, réessayez.',
+        ),
+    });
+  }
+
+  private loadUsers(): void {
+    this.loading.set(true);
+    this.errorMessage.set('');
+
+    this.accountApi.getUsers(this.selectedRole(), this.page()).subscribe({
+      next: (result) => {
+        this.users.set(result.content);
+        this.page.set(result.page);
+        this.pageSize.set(result.size);
+        this.totalElements.set(result.totalElements);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.errorMessage.set('Impossible de charger la liste des comptes.');
+        this.loading.set(false);
+      },
+    });
+  }
+}

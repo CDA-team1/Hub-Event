@@ -1,0 +1,13 @@
+:host {
+  display: block;
+  padding: 1.5rem 2rem;
+}
+
+h1 {
+  margin: 0 0 1.5rem;
+}
+
+.error {
+  margin: 0 0 1rem;
+  color: #d33f3f;
+}

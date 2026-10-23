@@ -1,0 +1,17 @@
+<section class="activate-account-page">
+  <h1>Activation du compte</h1>
+
+  @if (loading()) {
+    <p>Activation de votre compte en cours...</p>
+  } @else if (success()) {
+    <div class="activate-account-page__success">
+      <h2>Compte activé</h2>
+      <p>Votre compte a bien été activé. Vous pouvez maintenant vous connecter.</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="activate-account-page__error">
+      <h2>Activation impossible</h2>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  }
+</section>

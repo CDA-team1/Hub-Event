@@ -1,0 +1,64 @@
+<main class="anonymization-page">
+  <section class="anonymization-page__content" aria-labelledby="anonymization-title">
+    <h1 id="anonymization-title">Demander l'anonymisation de mes données</h1>
+
+    <div class="anonymization-page__explanation">
+      <p>
+        Votre demande d'anonymisation sera enregistrée puis devra être validée par un
+        administrateur.
+      </p>
+
+      <p>La création de la demande n'anonymise pas immédiatement votre compte.</p>
+    </div>
+
+    <div class="anonymization-page__actions">
+      <button
+        type="button"
+        class="anonymization-page__submit"
+        [disabled]="submitting() || !!successMessage()"
+        (click)="submit()"
+      >
+        {{ submitting() ? 'Envoi en cours...' : 'Valider' }}
+      </button>
+
+      <button
+        type="button"
+        class="anonymization-page__cancel"
+        [disabled]="submitting()"
+        (click)="cancel()"
+      >
+        Annuler
+      </button>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="anonymization-page__error" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+
+    @if (successMessage()) {
+      <p class="anonymization-page__success" role="status">
+        {{ successMessage() }}
+      </p>
+    }
+
+    <div class="anonymization-page__warning">
+      <p>
+        Après validation par un administrateur, votre compte sera anonymisé et ne pourra plus être
+        utilisé.
+      </p>
+
+      <ul>
+        <li>
+          Vos commentaires déjà publiés resteront visibles, mais leur auteur sera affiché sous la
+          mention « SUPPRIMÉ ».
+        </li>
+        <li>
+          Si vous êtes organisateur, vos événements publiés à venir seront annulés lors de
+          l'anonymisation.
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>

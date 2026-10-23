@@ -1,0 +1,88 @@
+package fr.CDA.GHE.repository;
+
+import fr.CDA.GHE.entity.User;
+import fr.CDA.GHE.entity.enums.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
+
+/**
+ * Repository JPA pour l'entité {@link User}.
+ */
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    /**
+     * Recherche un utilisateur par son adresse email.
+     *
+     * @param email l'email à rechercher
+     * @return un {@link Optional} contenant l'utilisateur s'il existe
+     */
+    Optional<User> findByEmail(String email);
+
+    /**
+    * Recherche une page d'utilisateurs filtrée par rôle.
+    *
+    * @param role rôle à rechercher
+    * @param pageable pagination demandée
+    * @return page des utilisateurs ayant ce rôle
+    */
+    Page<User> findByRole(Role role, Pageable pageable);
+
+    /**
+     * Vérifie si un utilisateur existe avec l'adresse email donnée.
+     *
+     * @param email l'email à vérifier
+     * @return {@code true} si un utilisateur possède cet email
+     */
+    boolean existsByEmail(String email);
+
+    /**
+     * Vérifie si un autre utilisateur (identifiant différent) possède déjà l'adresse email
+     * donnée. Utilisé lors d'une modification (CU13, CPT-05) pour ne rejeter l'email que s'il
+     * est pris par un <strong>autre</strong> compte que celui en cours de modification.
+     *
+     * @param email l'email à vérifier
+     * @param id    l'identifiant à exclure de la vérification
+     * @return {@code true} si un autre compte possède déjà cet email
+     */
+    boolean existsByEmailAndIdNot(String email, Long id);
+
+    /**
+     * Recherche un utilisateur par l'empreinte de son jeton d'activation (CU6).
+     *
+     * @param activationTokenHash empreinte SHA-256 du jeton reçu dans le lien d'activation
+     * @return un {@link Optional} contenant l'utilisateur s'il existe
+     */
+    Optional<User> findByActivationTokenHash(String activationTokenHash);
+
+    /**
+     * Recherche un utilisateur par l'empreinte de son jeton de confirmation de changement de mot
+     * de passe (CU13).
+     *
+     * @param passwordChangeTokenHash empreinte SHA-256 du jeton reçu dans le lien de confirmation
+     * @return un {@link Optional} contenant l'utilisateur s'il existe
+     */
+    Optional<User> findByPasswordChangeTokenHash(String passwordChangeTokenHash);
+
+  /**
+   * Indique si un compte est référencé ailleurs dans la base : inscriptions, commentaires,
+   * événements organisés ou demande d'anonymisation.
+   * <p>
+   * Un tel compte ne peut pas être supprimé physiquement (clés étrangères, et son historique doit
+   * être conservé) : seule son anonymisation est possible.
+   * </p>
+   *
+   * @param user compte à examiner
+   * @return {@code true} si au moins une de ces données existe
+   */
+  @Query("SELECT COUNT(u) > 0 FROM User u WHERE u = :user AND ("
+      + "EXISTS (SELECT r FROM Registration r WHERE r.user = u) "
+      + "OR EXISTS (SELECT c FROM Comment c WHERE c.user = u) "
+      + "OR EXISTS (SELECT e FROM Event e WHERE e.organizer = u) "
+      + "OR EXISTS (SELECT a FROM AnonymizationRequest a WHERE a.user = u))")
+  boolean hasHistory(@Param("user") User user);
+}

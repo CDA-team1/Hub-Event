@@ -1,0 +1,38 @@
+<table>
+  <thead>
+    <tr>
+      @for (column of columns(); track column.key) {
+        @if (column.sortable) {
+          <th [attr.aria-sort]="ariaSort(column)" [class.hide-on-small]="column.hideOnSmall">
+            <button type="button" (click)="onHeaderClick(column)">
+              {{ column.header }}
+              @switch (sortDirection(column)) {
+                @case ('asc') {
+                  <span class="sort-indicator">▲</span>
+                }
+                @case ('desc') {
+                  <span class="sort-indicator">▼</span>
+                }
+              }
+            </button>
+          </th>
+        } @else {
+          <th [class.hide-on-small]="column.hideOnSmall">{{ column.header }}</th>
+        }
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (row of rows(); track trackBy()(row, $index)) {
+      <tr>
+        @for (column of columns(); track column.key) {
+          <td [class.hide-on-small]="column.hideOnSmall">
+            <ng-container
+              *ngTemplateOutlet="templateFor(column.key); context: { $implicit: row }"
+            />
+          </td>
+        }
+      </tr>
+    }
+  </tbody>
+</table>

@@ -1,0 +1,50 @@
+<div class="login-page">
+  <div class="card">
+    <h1>Connexion</h1>
+    <p class="subtitle">Accédez à votre hub d'évènements</p>
+
+    <form (submit)="login($event)" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          autocomplete="username"
+          placeholder="exemple@domaine.fr"
+          [formField]="loginForm.email"
+        />
+        @if (loginForm.email().touched()) {
+          @for (error of loginForm.email().errors(); track error.kind) {
+            <p class="error">{{ error.message }}</p>
+          }
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••••"
+          [formField]="loginForm.password"
+        />
+        @if (loginForm.password().touched()) {
+          @for (error of loginForm.password().errors(); track error.kind) {
+            <p class="error">{{ error.message }}</p>
+          }
+        }
+      </div>
+
+      @if (serverError()) {
+        <p class="error server-error" role="alert">{{ serverError() }}</p>
+      }
+
+      <button type="submit" [disabled]="loginForm().submitting()">Valider</button>
+    </form>
+
+    <p class="signup-hint">
+      Nouveau sur Hub Event ? <a routerLink="/creer-un-compte">Créer un compte</a>
+    </p>
+  </div>
+</div>

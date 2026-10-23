@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  padding: 1.5rem 2rem;
+}
+
+h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+}
+
+.results {
+  margin-top: 2rem;
+}
+
+.results h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary-dark);
+}
+
+.results__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 260px);
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 640px) {
+  :host {
+    padding: 1rem;
+  }
+
+  .results__grid {
+    justify-content: center;
+  }
+}

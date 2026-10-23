@@ -1,0 +1,75 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.weekday,
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.weekday-cell {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  color: #64748b;
+}
+
+.day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3.4rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.day--padding {
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.day--highlighted {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Premier jour d'un mois : le nom du mois s'affiche au-dessus du numéro. */
+.day--first {
+  flex-direction: column;
+  line-height: 1.1;
+  box-shadow: inset 3px 0 0 #475569;
+}
+
+.day--first.day--padding {
+  box-shadow: inset 3px 0 0 #cbd5e1;
+}
+
+.month-name {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.day--padding .month-name {
+  color: #b6c0cd;
+}
+
+.day--highlighted .month-name {
+  color: #dbe7ff;
+}
+
+@media (max-width: 640px) {
+  .day {
+    height: auto;
+    aspect-ratio: 1;
+  }
+}

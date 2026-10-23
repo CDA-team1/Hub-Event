@@ -1,0 +1,32 @@
+.comments {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.comment__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.4rem;
+}
+
+.comment__date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.comment__content {
+  margin: 0;
+  white-space: pre-line;
+}

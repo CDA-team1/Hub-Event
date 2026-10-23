@@ -1,0 +1,73 @@
+<form class="search-form" (submit)="search($event)" novalidate>
+  <div class="search-form__grid">
+    <div class="field">
+      <label for="search-category">Catégorie</label>
+      <select id="search-category" [formField]="searchForm.category">
+        <option value="">Toutes</option>
+        @for (category of categories; track category) {
+          <option [value]="category">{{ category | categoryLabel }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="search-min-price">Prix min</label>
+      <input
+        id="search-min-price"
+        type="text"
+        inputmode="decimal"
+        [formField]="searchForm.minPrice"
+      />
+      @if (searchForm.minPrice().touched()) {
+        @for (error of searchForm.minPrice().errors(); track error.kind) {
+          <p class="error" role="alert">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="search-max-price">Prix max</label>
+      <input
+        id="search-max-price"
+        type="text"
+        inputmode="decimal"
+        [formField]="searchForm.maxPrice"
+      />
+      @if (searchForm.maxPrice().touched()) {
+        @for (error of searchForm.maxPrice().errors(); track error.kind) {
+          <p class="error" role="alert">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field">
+      <label for="search-location">Lieu</label>
+      <input id="search-location" type="text" [formField]="searchForm.location" />
+    </div>
+
+    <div class="field">
+      <label for="search-start-date">Date début</label>
+      <input id="search-start-date" type="date" [formField]="searchForm.startDate" />
+    </div>
+
+    <div class="field">
+      <label for="search-end-date">Date fin</label>
+      <input id="search-end-date" type="date" [formField]="searchForm.endDate" />
+      @if (searchForm.endDate().touched()) {
+        @for (error of searchForm.endDate().errors(); track error.kind) {
+          <p class="error" role="alert">{{ error.message }}</p>
+        }
+      }
+    </div>
+
+    <div class="field field--wide">
+      <label for="search-keywords">Mots-clés</label>
+      <input id="search-keywords" type="text" [formField]="searchForm.keywords" />
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="submit">Valider</button>
+    <button type="button" (click)="reset()">Annuler</button>
+  </div>
+</form>

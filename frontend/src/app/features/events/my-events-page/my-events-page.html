@@ -1,0 +1,127 @@
+<h1>Mes évènements</h1>
+
+<a class="add-event" routerLink="/evenements/nouveau">Créer un évènement</a>
+
+@if (isLoading()) {
+  <app-loading-state>Chargement de vos évènements…</app-loading-state>
+} @else if (error()) {
+  <app-error-state>
+    <p>Impossible de charger vos évènements.</p>
+    <button actions type="button" (click)="reload()">Réessayer</button>
+  </app-error-state>
+} @else if (content().length === 0) {
+  <app-empty-state>
+    <p>Vous n'avez créé aucun évènement.</p>
+  </app-empty-state>
+} @else {
+  @if (actionError()) {
+    <p class="error" role="alert">{{ actionError() }}</p>
+  }
+
+  <div class="sort-bar" role="group" aria-label="Trier par">
+    <span>Trier par</span>
+    @for (column of sortableColumns; track column.key) {
+      <button
+        type="button"
+        [class.active]="sort()?.key === column.key"
+        [attr.aria-pressed]="sort()?.key === column.key"
+        (click)="onSortChanged(column.key)"
+      >
+        {{ column.header }}
+        @if (sort()?.key === column.key) {
+          {{ sort()?.direction === 'asc' ? '▲' : '▼' }}
+        }
+      </button>
+    }
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [rows]="pagedEvents()"
+    [trackBy]="trackByEventId"
+    [sort]="sort()"
+    [bordered]="true"
+    (sortChanged)="onSortChanged($event)"
+  >
+    <ng-template appColumn="title" let-event>
+      {{ event.title }}
+      <div class="event-meta">
+        <app-category-badge [category]="event.category" />
+        <app-event-status-badge [status]="event.status" />
+        <span class="event-places">{{ event.registeredCount }} / {{ event.maxSeats }} places</span>
+      </div>
+    </ng-template>
+    <ng-template appColumn="category" let-event>
+      <app-category-badge [category]="event.category" />
+    </ng-template>
+    <ng-template appColumn="dates" let-event>
+      {{ event.startDateTime | date: 'd MMM y HH:mm' }}
+    </ng-template>
+    <ng-template appColumn="status" let-event>
+      <app-event-status-badge [status]="event.status" />
+    </ng-template>
+    <ng-template appColumn="seats" let-event
+      >{{ event.registeredCount }} / {{ event.maxSeats }}</ng-template
+    >
+    <ng-template appColumn="actions" let-event>
+      <div class="actions">
+        <app-action-button
+          icon="✏️"
+          label="Modifier"
+          level="primary"
+          [routerLink]="['/evenements', event.id, 'modifier']"
+        />
+        @if (event.status === 'DRAFT') {
+          <app-action-button
+            icon="✅"
+            label="Publier"
+            level="success"
+            (triggered)="publish(event)"
+          />
+          <app-action-button
+            icon="🗑️"
+            label="Supprimer"
+            level="danger"
+            [routerLink]="['/mes-evenements', event.id, 'supprimer']"
+          />
+        }
+        @if (event.status === 'PUBLISHED') {
+          <app-action-button
+            icon="🏁"
+            label="Terminer"
+            level="neutral"
+            (triggered)="finish(event)"
+          />
+          @if (event.registeredCount > 0) {
+            <app-action-button
+              icon="❌"
+              label="Annuler"
+              level="danger"
+              [routerLink]="['/mes-evenements', event.id, 'annuler']"
+            />
+          } @else {
+            <app-action-button
+              icon="🗑️"
+              label="Supprimer"
+              level="danger"
+              [routerLink]="['/mes-evenements', event.id, 'supprimer']"
+            />
+          }
+        }
+        <app-action-button
+          icon="👥"
+          label="Voir les inscriptions"
+          level="neutral"
+          [routerLink]="['/mes-evenements', event.id, 'inscriptions']"
+        />
+      </div>
+    </ng-template>
+  </app-data-table>
+
+  <app-pagination
+    [page]="page()"
+    [size]="pageSize"
+    [totalElements]="totalElements()"
+    (pageChanged)="onPageChanged($event)"
+  />
+}

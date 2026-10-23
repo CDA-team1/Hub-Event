@@ -1,0 +1,44 @@
+.gallery__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gallery__item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e2e8f0;
+}
+
+.gallery__item--preview {
+  grid-column: 1 / -1;
+  max-width: 640px;
+}
+
+.gallery__item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.gallery__badge {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 92%);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.gallery__badge--soft {
+  background: rgb(255 255 255 / 85%);
+  color: #64748b;
+}

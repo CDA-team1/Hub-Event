@@ -1,0 +1,95 @@
+.confirm-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.confirm-account-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: min(100%, 520px);
+  margin: 0 auto;
+}
+
+.confirm-account-form label {
+  font-size: 0.875rem;
+}
+
+.confirm-account-form input:not([type='checkbox']) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+}
+
+.confirm-account-form__error {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.confirm-account-form__info {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 7px;
+  background: #f1f5f9;
+  font-size: 0.85rem;
+}
+
+.confirm-account-form__legal {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.confirm-account-form__legal button {
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  cursor: pointer;
+}
+
+.confirm-account-form__terms {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.confirm-account-form__submit {
+  align-self: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #64748b;
+  border-radius: 7px;
+  background: #64748b;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .confirm-account-form__field {
+    width: 100%;
+  }
+
+  .confirm-account-form__legal {
+    flex-direction: column;
+  }
+
+  .confirm-account-form__legal button,
+  .confirm-account-form__submit {
+    width: 100%;
+  }
+
+  .confirm-account-form__terms {
+    justify-content: flex-start;
+  }
+}
