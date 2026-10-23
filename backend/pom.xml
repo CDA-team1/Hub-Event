@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.1.1</version>
+		<version>4.1.2</version>
 		<relativePath/>
 	</parent>
 	<groupId>fr.CDA</groupId>
@@ -126,13 +126,13 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>5.3.0</version>
+            <version>5.4.1</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.3.0</version>
+            <version>5.4.1</version>
         </dependency>
 	</dependencies>
 
@@ -167,6 +167,32 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+
+			<!--
+			  SEC-13 : recherche des vulnérabilités connues (CVE) dans les dépendances.
+			  Non lié au build normal (il télécharge la base NVD, long la première fois) : à lancer
+			  à la main avec « mvn org.owasp:dependency-check-maven:check » (voir README, section
+			  Sécurité). Le build échoue à partir d'une vulnérabilité de gravité haute (CVSS 7).
+			  La clé d'API NVD, gratuite (https://nvd.nist.gov/developers/request-an-api-key), se
+			  passe dans la variable d'environnement NVD_API_KEY : sans elle, le téléchargement
+			  est limité et très lent.
+			-->
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>13.0.0</version>
+				<configuration>
+					<failBuildOnCVSS>7</failBuildOnCVSS>
+					<nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+					<formats>
+						<format>HTML</format>
+						<format>JSON</format>
+					</formats>
+					<suppressionFiles>
+						<suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+					</suppressionFiles>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

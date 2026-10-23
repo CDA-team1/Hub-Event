@@ -1,5 +1,6 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.util.LogMasking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
@@ -58,7 +59,7 @@ public class EmailService {
         Ce lien est à usage unique.""".formatted(activationLink));
 
     mailSender.send(message);
-    log.info("Email d'activation envoyé à {}", to);
+    log.info("Email d'activation envoyé à {}", LogMasking.maskEmail(to));
   }
 
   /**
@@ -90,7 +91,7 @@ public class EmailService {
         compte n'est pas finalisé.""".formatted(temporaryPassword, confirmationLink));
 
     mailSender.send(message);
-    log.info("Email de création de compte (admin) envoyé à {}", to);
+    log.info("Email de création de compte (admin) envoyé à {}", LogMasking.maskEmail(to));
   }
 
   /**
@@ -116,7 +117,7 @@ public class EmailService {
         mot de passe actuel reste inchangé tant que vous n'avez pas cliqué sur ce lien.""".formatted(confirmationLink));
 
     mailSender.send(message);
-    log.info("Email de confirmation de changement de mot de passe envoyé à {}", to);
+    log.info("Email de confirmation de changement de mot de passe envoyé à {}", LogMasking.maskEmail(to));
   }
 
   /**
@@ -137,7 +138,7 @@ public class EmailService {
         sur la liste d'attente : vous êtes désormais inscrit !""".formatted(eventTitle));
 
     if (trySend(message)) {
-      log.info("Email de promotion (liste d'attente) envoyé à {} pour l'évènement {}", to, eventTitle);
+      log.info("Email de promotion (liste d'attente) envoyé à {} pour l'évènement {}", LogMasking.maskEmail(to), eventTitle);
     }
   }
 
@@ -161,7 +162,7 @@ public class EmailService {
         Motif : %s""".formatted(eventTitle, reason));
 
     if (trySend(message)) {
-      log.info("Email d'annulation d'inscription (organisateur) envoyé à {} pour l'évènement {}", to, eventTitle);
+      log.info("Email d'annulation d'inscription (organisateur) envoyé à {} pour l'évènement {}", LogMasking.maskEmail(to), eventTitle);
     }
   }
 
@@ -186,7 +187,7 @@ public class EmailService {
     if (trySend(message)) {
       log.info(
           "Email d'annulation d'évènement envoyé à {} pour l'évènement {}",
-          to,
+          LogMasking.maskEmail(to),
           eventTitle
       );
     }
@@ -217,7 +218,7 @@ public class EmailService {
         Motif : %s""".formatted(duration, reason));
 
     if (trySend(message)) {
-      log.info("Email de suspension de compte envoyé à {}", to);
+      log.info("Email de suspension de compte envoyé à {}", LogMasking.maskEmail(to));
     }
   }
 
@@ -227,13 +228,20 @@ public class EmailService {
    * @param message email à envoyer
    * @return {@code true} si l'email a été remis au serveur SMTP, {@code false} sinon
    */
+  private static String maskedRecipients(SimpleMailMessage message) {
+    String[] recipients = message.getTo();
+    return recipients == null
+        ? "?"
+        : Arrays.stream(recipients).map(LogMasking::maskEmail).collect(java.util.stream.Collectors.joining(", "));
+  }
+
   private boolean trySend(SimpleMailMessage message) {
     try {
       mailSender.send(message);
       return true;
     } catch (MailException exception) {
       log.warn("Échec de l'envoi de l'email « {} » à {}", message.getSubject(),
-          Arrays.toString(message.getTo()), exception);
+          maskedRecipients(message), exception);
       return false;
     }
   }

@@ -86,7 +86,9 @@ public class ImgbbClient {
         try {
             restClient.get().uri(deleteUrl).retrieve().toBodilessEntity();
         } catch (RestClientException e) {
-            log.warn("Impossible de supprimer l'image sur imgbb ({})", deleteUrl, e);
+            // Ni le lien de suppression ni le message de l'exception (qui le contient) : quiconque a ce
+            // lien peut supprimer l'image sur imgbb.
+            log.warn("Impossible de supprimer une image sur imgbb : {}", e.getClass().getSimpleName());
         }
     }
 

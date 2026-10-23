@@ -2,8 +2,6 @@ package fr.CDA.GHE.security;
 
 import fr.CDA.GHE.entity.User;
 import fr.CDA.GHE.entity.enums.AccountStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -27,8 +25,6 @@ import java.time.LocalDate;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-  private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
@@ -108,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     try {
       return userDetailsService.loadUserByUsername(email);
     } catch (UsernameNotFoundException exception) {
-      log.info("REFUS authentification JWT (compte introuvable) : email={}", email);
+      SecurityLog.tokenRefused("compte introuvable", null);
       return null;
     }
   }
@@ -128,7 +124,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     if (user.getStatus() != AccountStatus.ACTIVE) {
-      log.info("REFUS authentification JWT (compte non actif) : email={}", user.getEmail());
+      SecurityLog.tokenRefused("compte non actif", user.getId());
       return false;
     }
 
@@ -136,7 +132,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       LocalDate endDate = user.getSuspensionEndDate();
       boolean stillBlocked = endDate == null || LocalDate.now().isBefore(endDate);
       if (stillBlocked) {
-        log.info("REFUS authentification JWT (compte suspendu) : email={}", user.getEmail());
+        SecurityLog.tokenRefused("compte suspendu", user.getId());
         return false;
       }
     }

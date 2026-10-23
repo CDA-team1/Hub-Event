@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Fausses alertes de OWASP Dependency-Check (SEC-13) : une vulnérabilité signalée qui ne concerne pas
+  notre usage de la bibliothèque. Chaque exception doit être justifiée et limitée dans le temps.
+
+  Exemple :
+  <suppress until="2027-01-31Z">
+    <notes>CVE-XXXX-YYYY : vulnérabilité de la partie serveur de la bibliothèque, que nous n'utilisons pas.</notes>
+    <packageUrl regex="true">^pkg:maven/groupe/artefact@.*$</packageUrl>
+    <cve>CVE-XXXX-YYYY</cve>
+  </suppress>
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>

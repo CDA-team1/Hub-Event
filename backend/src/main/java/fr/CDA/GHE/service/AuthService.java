@@ -7,6 +7,7 @@ import fr.CDA.GHE.entity.enums.AccountStatus;
 import fr.CDA.GHE.exception.UnauthorizedException;
 import fr.CDA.GHE.repository.UserRepository;
 import fr.CDA.GHE.security.JwtService;
+import fr.CDA.GHE.security.SecurityLog;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -59,6 +60,7 @@ public class AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.email(), request.password()));
         } catch (AuthenticationException e) {
+            SecurityLog.loginFailed(request.email(), "identifiants invalides");
             throw new UnauthorizedException("Email ou mot de passe invalide");
         }
 
@@ -66,6 +68,7 @@ public class AuthService {
                 .orElseThrow(() -> new UnauthorizedException("Email ou mot de passe invalide"));
 
         if (user.getStatus() != AccountStatus.ACTIVE){
+            SecurityLog.loginFailed(request.email(), "compte non actif");
             throw new UnauthorizedException("Compte inactif ou anonymisé, connexion impossible");
         }
 
@@ -73,11 +76,13 @@ public class AuthService {
             LocalDate endDate = user.getSuspensionEndDate();
             boolean stillBlocked = (endDate == null) || LocalDate.now().isBefore(endDate);
             if (stillBlocked){
+                SecurityLog.loginFailed(request.email(), "compte suspendu");
                 throw new UnauthorizedException("Compte suspendu");
             }
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole());
+        SecurityLog.loginSucceeded(user.getId());
 
         return new LoginResponse(token, user.getRole());
     }
