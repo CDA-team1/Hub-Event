@@ -155,4 +155,3 @@ describe('UserForm', () => {
     expect(component.selectedClubIds()).toEqual([2]);
   });
 });
-

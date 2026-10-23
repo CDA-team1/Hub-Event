@@ -64,7 +64,9 @@ export class EventForm {
   protected readonly hasImageChanges = signal(false);
   protected readonly isEditMode = () => this.clubs() === undefined;
 
-  protected readonly draft = linkedSignal<EventFormValue>(() => this.initialValue() ?? emptyDraft());
+  protected readonly draft = linkedSignal<EventFormValue>(
+    () => this.initialValue() ?? emptyDraft(),
+  );
   protected readonly eventForm = form(this.draft, (path) => {
     required(path.title, { message: 'Le titre est obligatoire.' });
     required(path.description, { message: 'La description est obligatoire.' });
@@ -72,7 +74,9 @@ export class EventForm {
     required(path.category, { message: 'La catégorie est obligatoire.' });
     required(path.startDateTime, { message: 'La date de début est obligatoire.' });
     required(path.affiliatedPrice, { message: 'Le tarif affilié est obligatoire.' });
-    min(path.affiliatedPrice, 0, { message: 'Le tarif affilié doit être supérieur ou égal à zéro.' });
+    min(path.affiliatedPrice, 0, {
+      message: 'Le tarif affilié doit être supérieur ou égal à zéro.',
+    });
     required(path.nonAffiliatedPrice, { message: 'Le tarif non affilié est obligatoire.' });
     min(path.nonAffiliatedPrice, 0, {
       message: 'Le tarif non affilié doit être supérieur ou égal à zéro.',

@@ -12,7 +12,16 @@ import { LoadingState } from '../../../shared/ui/loading-state/loading-state';
 
 @Component({
   selector: 'app-event-registrations-page',
-  imports: [ActionButton, Column, DataTable, DatePipe, EmptyState, ErrorState, LoadingState, RouterLink],
+  imports: [
+    ActionButton,
+    Column,
+    DataTable,
+    DatePipe,
+    EmptyState,
+    ErrorState,
+    LoadingState,
+    RouterLink,
+  ],
   templateUrl: './event-registrations-page.html',
   styleUrl: './event-registrations-page.css',
 })

@@ -105,7 +105,9 @@ describe('EventRegistrationsPage', () => {
   it('affiche le champ Motif au clic sur Désinscrire, masqué au départ', async () => {
     const fixture = TestBed.createComponent(EventRegistrationsPage);
     TestBed.tick();
-    http.expectOne((req) => req.url.endsWith('/events/5/registrations')).flush([makeRegistration()]);
+    http
+      .expectOne((req) => req.url.endsWith('/events/5/registrations'))
+      .flush([makeRegistration()]);
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -121,7 +123,9 @@ describe('EventRegistrationsPage', () => {
   it("refuse l'envoi sans motif", async () => {
     const fixture = TestBed.createComponent(EventRegistrationsPage);
     TestBed.tick();
-    http.expectOne((req) => req.url.endsWith('/events/5/registrations')).flush([makeRegistration()]);
+    http
+      .expectOne((req) => req.url.endsWith('/events/5/registrations'))
+      .flush([makeRegistration()]);
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -137,7 +141,9 @@ describe('EventRegistrationsPage', () => {
   it('masque le formulaire sans appel réseau au clic sur Annuler', async () => {
     const fixture = TestBed.createComponent(EventRegistrationsPage);
     TestBed.tick();
-    http.expectOne((req) => req.url.endsWith('/events/5/registrations')).flush([makeRegistration()]);
+    http
+      .expectOne((req) => req.url.endsWith('/events/5/registrations'))
+      .flush([makeRegistration()]);
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -153,7 +159,9 @@ describe('EventRegistrationsPage', () => {
   it('désinscrit le membre avec le motif saisi et recharge la liste', async () => {
     const fixture = TestBed.createComponent(EventRegistrationsPage);
     TestBed.tick();
-    http.expectOne((req) => req.url.endsWith('/events/5/registrations')).flush([makeRegistration()]);
+    http
+      .expectOne((req) => req.url.endsWith('/events/5/registrations'))
+      .flush([makeRegistration()]);
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -178,10 +186,12 @@ describe('EventRegistrationsPage', () => {
     expect(element.querySelector('app-empty-state')).not.toBeNull();
   });
 
-  it("affiche une erreur si la désinscription échoue", async () => {
+  it('affiche une erreur si la désinscription échoue', async () => {
     const fixture = TestBed.createComponent(EventRegistrationsPage);
     TestBed.tick();
-    http.expectOne((req) => req.url.endsWith('/events/5/registrations')).flush([makeRegistration()]);
+    http
+      .expectOne((req) => req.url.endsWith('/events/5/registrations'))
+      .flush([makeRegistration()]);
     await stable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -194,7 +204,10 @@ describe('EventRegistrationsPage', () => {
 
     http
       .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/events/5/registrations/20'))
-      .flush('Ce membre n’est pas inscrit à cet événement', { status: 400, statusText: 'Bad Request' });
+      .flush('Ce membre n’est pas inscrit à cet événement', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
     await macrotask();
     await stable();
 

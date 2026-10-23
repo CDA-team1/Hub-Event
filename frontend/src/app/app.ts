@@ -1,7 +1,7 @@
-import {Component} from '@angular/core';
-import {RouterOutlet} from '@angular/router';
-import {Footer} from './shared/ui/footer/footer';
-import {Header} from './shared/ui/header/header';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { Footer } from './shared/ui/footer/footer';
+import { Header } from './shared/ui/header/header';
 
 @Component({
   imports: [RouterOutlet, Header, Footer],
@@ -9,5 +9,4 @@ import {Header} from './shared/ui/header/header';
   styleUrl: './app.css',
   templateUrl: './app.html',
 })
-export class App {
-}
+export class App {}

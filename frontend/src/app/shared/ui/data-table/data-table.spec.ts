@@ -44,7 +44,7 @@ class Host {
 }
 
 describe('DataTable', () => {
-  it("affiche un en-tête par colonne et projette le contenu de chaque cellule", async () => {
+  it('affiche un en-tête par colonne et projette le contenu de chaque cellule', async () => {
     const fixture = TestBed.createComponent(Host);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
@@ -69,7 +69,7 @@ describe('DataTable', () => {
     expect(headers[1].querySelector('button')).toBeNull();
   });
 
-  it("émet la clé de la colonne au clic sur son en-tête, sans trier les lignes lui-même", async () => {
+  it('émet la clé de la colonne au clic sur son en-tête, sans trier les lignes lui-même', async () => {
     const fixture = TestBed.createComponent(Host);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;

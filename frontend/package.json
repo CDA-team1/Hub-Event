@@ -7,7 +7,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "format": "prettier --write --end-of-line auto \"src/**/*.{ts,html,css}\"",
+    "format:check": "prettier --check --end-of-line auto \"src/**/*.{ts,html,css}\""
   },
   "private": true,
   "packageManager": "npm@11.13.0",

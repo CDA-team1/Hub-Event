@@ -74,7 +74,9 @@ describe('SuspendUserPage', () => {
     const fixture = TestBed.createComponent(SuspendUserPage);
     TestBed.tick();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-loading-state')).not.toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-loading-state'),
+    ).not.toBeNull();
 
     http.expectOne((req) => req.url.endsWith('/admin/users/7')).flush(makeUser());
   });

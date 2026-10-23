@@ -103,7 +103,8 @@ describe('EventDetailPage', () => {
   });
 
   it('affiche du HTML saisi dans le titre ou la description comme du texte, sans jamais l’interpréter', async () => {
-    const payload = '<img src="x" onerror="window.__xss = true"><script>window.__xss = true</script>';
+    const payload =
+      '<img src="x" onerror="window.__xss = true"><script>window.__xss = true</script>';
     const element = await open('/evenements/5');
     http.expectOne('/api/events/5').flush({ ...DETAIL, title: payload, description: payload });
     http.expectOne('/api/events/5/comments').flush([]);

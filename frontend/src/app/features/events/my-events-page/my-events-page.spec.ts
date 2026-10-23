@@ -162,7 +162,11 @@ describe('MyEventsPage', () => {
         .flush([makeEvent({ status: 'PUBLISHED' })]);
       await stable();
 
-      expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Concert'), 'Publier', 'Annuler');
+      expect(confirm).toHaveBeenCalledWith(
+        expect.stringContaining('Concert'),
+        'Publier',
+        'Annuler',
+      );
       expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Publié');
     });
 
@@ -173,7 +177,9 @@ describe('MyEventsPage', () => {
       element.querySelector<HTMLButtonElement>('button[aria-label="Publier"]')!.click();
       await stable();
 
-      expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe('Brouillon');
+      expect(element.querySelector('app-event-status-badge')?.textContent?.trim()).toBe(
+        'Brouillon',
+      );
     });
 
     it("affiche le message du back si la publication n'est pas permise", async () => {
