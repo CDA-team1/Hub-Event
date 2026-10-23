@@ -11,6 +11,7 @@ Application web de gestion d'évènements pour une **fédération associative r�
 - [🚀 Démarrage rapide](#-démarrage-rapide)
 - [👤 Comptes de démo](#-comptes-de-démo)
 - [🧪 Tests et build](#-tests-et-build)
+- [🔒 Sécurité des dépendances](#-sécurité-des-dépendances)
 - [📁 Structure du dépôt](#-structure-du-dépôt)
 - [🧱 Architecture](#-architecture)
 - [📚 Documentation](#-documentation)
@@ -154,6 +155,54 @@ npm run build                        # build de production dans dist/
 ```
 
 Les profils Maven `dev` (par défaut), `test` et `prod` sélectionnent le profil Spring correspondant. En `prod`, le schéma n'est pas généré (`ddl-auto=validate`) et les données de démo ne sont pas chargées.
+
+## 🔒 Sécurité des dépendances
+
+Deux contrôles à lancer avant une livraison et à chaque mise à jour de dépendance.
+
+**Back** (depuis `backend`) : [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) compare les bibliothèques aux CVE connues. Il a besoin d'une clé d'API NVD, gratuite : [nvd.nist.gov/developers/request-an-api-key](https://nvd.nist.gov/developers/request-an-api-key). Sans elle, le plugin refuse de démarrer.
+
+1. Déclarer la clé dans le terminal, selon le shell (valable pour ce terminal seulement). La clé ne se met **ni dans le dépôt ni dans `.env.properties`** : ce fichier n'est lu que par l'application, pas par Maven.
+
+   | Terminal | Commande |
+   |---|---|
+   | Linux, macOS, Git Bash (bash, zsh) | `export NVD_API_KEY=ta_cle` |
+   | PowerShell | `$env:NVD_API_KEY="ta_cle"` |
+   | Invite de commandes (cmd) | `set NVD_API_KEY=ta_cle` |
+
+   Pour ne pas la retaper à chaque terminal : ajouter la ligne `export` dans `~/.bashrc` (bash) ou `~/.zshrc` (zsh), ou lancer `setx NVD_API_KEY ta_cle` sous Windows puis rouvrir le terminal. Pour savoir quel shell on utilise : `echo $SHELL`.
+
+2. Lancer le contrôle :
+
+   ```bash
+   ./mvnw org.owasp:dependency-check-maven:check      # sous Windows : .\mvnw.cmd ...
+   ```
+
+- Le premier lancement télécharge toute la base NVD (plus de 400 000 enregistrements), les suivants sont rapides. Selon l'état du serveur NVD, cela prend de 20 minutes à plusieurs heures : à lancer à un moment calme (soir, week-end). Le rapport est dans `backend/target/dependency-check-report.html`.
+- Si le téléchargement s'enlise (messages `Retrying request ...` en boucle), interrompre avec Ctrl+C et relancer plus tard avec des pages plus petites : `./mvnw org.owasp:dependency-check-maven:check -DnvdApiResultsPerPage=500 -DnvdMaxRetryCount=20`.
+- Le contrôle échoue à partir d'une vulnérabilité de gravité haute (CVSS 7). Une fausse alerte se déclare dans `backend/dependency-check-suppressions.xml`, avec sa justification et une date de fin.
+
+**Front** (depuis `frontend`) :
+
+```bash
+npm run audit:prod     # dépendances livrées aux utilisateurs : doit rester à 0
+npm audit              # tout, y compris les outils de développement
+```
+
+### Analyse du 22/10/2026
+
+Le back a été analysé avec la base ouverte [OSV.dev](https://osv.dev) (avis de sécurité par version exacte). Le scan OWASP, lui, n'a pas pu aller au bout ce jour-là : le serveur NVD répondait trop lentement pour télécharger sa base complète (voir ci-dessus). À relancer à un moment calme, puis à comparer avec ce tableau.
+
+| Dépendance | Problème | Concerne l'application ? | Décision |
+|---|---|---|---|
+| Tomcat 11.0.24 (3 avis critiques) | contournement des authentifications DIGEST et FORM de Tomcat | Non : l'authentification passe par Spring Security et JWT | Corrigé : Spring Boot 4.1.2 (Tomcat 11.0.27) |
+| Jackson 3.1.5 et 2.21.5 (7 avis) | déni de service à la lecture de JSON (expressions régulières, nombres, mémoire) | Oui : l'API lit du JSON envoyé par les clients | Corrigé : Jackson 3.1.7 et 2.21.7 (inclus dans Spring Boot 4.1.2) |
+| Apache POI 5.3.0 | fichier OOXML piégé à la lecture | Non : l'application n'écrit que des fichiers `.xlsx`, elle n'en lit jamais | Corrigé par prudence : POI 5.4.1 |
+| `@angular/router` 22.2.0 | déni de service lors du rendu côté serveur | Non : pas de rendu côté serveur | Corrigé : Angular 22.2.3 |
+| `@angular/cli` (SDK MCP), `source-map-js` | outils de développement et de build | Non : jamais dans l'application livrée | Corrigés : Angular CLI 22.2.4, mise à jour du verrouillage |
+| `vite` 8.3.0 (dans `@angular/build`) | failles du serveur de développement (`ng serve`) | Non : uniquement sur le poste du développeur | **Accepté** : le correctif imposerait de forcer une version non validée par Angular. À revoir à la prochaine mise à jour d'Angular. |
+
+Résultat : 0 avis sur les 121 dépendances d'exécution du back, `npm run audit:prod` à 0, et `npm audit` complet réduit à `vite` (outil de développement).
 
 ## 📁 Structure du dépôt
 
