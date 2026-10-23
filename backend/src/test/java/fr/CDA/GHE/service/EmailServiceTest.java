@@ -1,5 +1,6 @@
 package fr.CDA.GHE.service;
 
+import fr.CDA.GHE.LogCapture;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.mail.MailSendException;
@@ -41,6 +42,19 @@ class EmailServiceTest {
         verify(mailSender).send(captor.capture());
         assertThat(captor.getValue().getTo()).containsExactly("member@test.com");
         assertThat(captor.getValue().getText()).contains("Tournoi");
+    }
+
+    @Test
+    void logs_shouldMaskTheRecipientAndNeverWriteTheLink() {
+        try (LogCapture logs = new LogCapture(EmailService.class.getName())) {
+            emailService.sendActivationEmail("john.doe@test.com", "http://front/activation-compte?token=JETON-SECRET");
+            emailService.sendEventCancelledEmail("jane.roe@test.com", "Tournoi");
+
+            assertThat(logs.all())
+                    .contains("j***@test.com", "j***@test.com")
+                    .doesNotContain("john.doe", "jane.roe")
+                    .doesNotContain("JETON-SECRET");
+        }
     }
 
     @Test

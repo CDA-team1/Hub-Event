@@ -1,5 +1,7 @@
 package fr.CDA.GHE.exception;
 
+import fr.CDA.GHE.security.SecurityLog;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -63,7 +65,8 @@ public class ApiExceptionHandler {
      * @return la réponse HTTP avec le message d'erreur
      */
     @ExceptionHandler(ForbiddenException.class)
-    protected ResponseEntity<String> handleForbidden(ForbiddenException ex){
+    protected ResponseEntity<String> handleForbidden(ForbiddenException ex, HttpServletRequest request){
+        SecurityLog.accessDenied(request.getMethod(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
 
@@ -109,7 +112,9 @@ public class ApiExceptionHandler {
      * @return la réponse HTTP indiquant que l'accès est refusé
      */
     @ExceptionHandler(AccessDeniedException.class)
-    protected ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
+    protected ResponseEntity<String> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        // getRequestURI() : le chemin seulement, jamais la query string (elle peut porter un jeton de lien).
+        SecurityLog.accessDenied(request.getMethod(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Accès refusé");
     }
 

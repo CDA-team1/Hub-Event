@@ -12,6 +12,7 @@ Application web de gestion d'évènements pour une **fédération associative r�
 - [👤 Comptes de démo](#-comptes-de-démo)
 - [🧪 Tests et build](#-tests-et-build)
 - [🔒 Sécurité des dépendances](#-sécurité-des-dépendances)
+- [📜 Journaux (logs)](#-journaux-logs)
 - [📁 Structure du dépôt](#-structure-du-dépôt)
 - [🧱 Architecture](#-architecture)
 - [📚 Documentation](#-documentation)
@@ -203,6 +204,34 @@ Le back a été analysé avec la base ouverte [OSV.dev](https://osv.dev) (avis d
 | `vite` 8.3.0 (dans `@angular/build`) | failles du serveur de développement (`ng serve`) | Non : uniquement sur le poste du développeur | **Accepté** : le correctif imposerait de forcer une version non validée par Angular. À revoir à la prochaine mise à jour d'Angular. |
 
 Résultat : 0 avis sur les 121 dépendances d'exécution du back, `npm run audit:prod` à 0, et `npm audit` complet réduit à `vite` (outil de développement).
+
+## 📜 Journaux (logs)
+
+Le back écrit ses logs sur la **sortie standard** (la console), sans fichier : rien n'est enregistré sur le disque par l'application elle-même.
+
+| Où tourne le back | Où lire les logs |
+|---|---|
+| En local (`./mvnw spring-boot:run`) | dans le terminal qui l'a lancé |
+| Avec Docker Compose | `docker compose logs backend` |
+| Sur Render | onglet **Logs** du service (historique limité) |
+
+Pour les conserver plus longtemps, il faut les envoyer ailleurs (fonction de l'hébergeur), ce qui n'est pas en place.
+
+**Événements de sécurité** : ils passent par un journal nommé `SECURITY`, au format `ÉVÉNEMENT : clé=valeur`. On les isole en filtrant sur ce nom :
+
+```bash
+docker compose logs backend | grep SECURITY
+```
+
+| Événement | Exemple |
+|---|---|
+| Connexion refusée | `CONNEXION refusée : raison=identifiants invalides email=j***@test.com ip=203.0.113.5` |
+| Connexion réussie | `CONNEXION réussie : userId=12 ip=203.0.113.5` |
+| Jeton JWT refusé (compte suspendu, inactif, introuvable) | `JETON refusé : raison=compte suspendu userId=12 ip=...` |
+| Accès interdit (403) | `ACCÈS REFUSÉ : GET /admin/users userId=12 ip=...` |
+| Quota de requêtes dépassé (429) | `LIMITE DE REQUÊTES dépassée : règle=login ip=...` |
+
+**Règle à respecter quand on ajoute un log** : jamais de mot de passe, de JWT, de jeton de lien reçu par email, de lien de suppression d'image, de query string d'URL, ni d'adresse email complète (utiliser l'identifiant du compte, ou `LogMasking.maskEmail`). Des tests (`SensitiveDataInLogsTest` et les tests de journalisation) échouent si l'une de ces données apparaît.
 
 ## 📁 Structure du dépôt
 

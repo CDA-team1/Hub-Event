@@ -91,7 +91,7 @@ public class AnonymizationRequestService {
         AnonymizationRequest request = new AnonymizationRequest(user, RequestStatus.PENDING, LocalDateTime.now());
         AnonymizationRequest created = anonymizationRequestRepository.save(request);
 
-        log.info("CREATION demande d'anonymisation : id={} userEmail={}", created.getId(), user.getEmail());
+        log.info("CREATION demande d'anonymisation : id={} userId={}", created.getId(), user.getId());
 
         return anonymizationRequestMapper.toDto(created);
     }

@@ -124,7 +124,7 @@ public class UserService {
         user.startActivation(AccountTokens.hash(activationToken), LocalDateTime.now().plus(ACTIVATION_VALIDITY));
 
         User created = userRepository.save(user);
-        log.info("CREATION compte non affilié : id={} email={}", created.getId(), created.getEmail());
+        log.info("CREATION compte non affilié : id={}", created.getId());
 
         // CU5 règle métier n°10 / CU6 : email d'activation (lien à usage unique, expirant).
         String activationLink = frontendUrl + "/activation-compte?token=" + activationToken;
@@ -156,7 +156,7 @@ public class UserService {
         user.setStatus(AccountStatus.ACTIVE);
         user.clearActivationToken(); // jeton à usage unique
 
-        log.info("ACTIVATION compte : id={} email={}", user.getId(), user.getEmail());
+        log.info("ACTIVATION compte : id={}", user.getId());
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
         return userMapper.toDto(user);
@@ -265,7 +265,7 @@ public class UserService {
                     AccountTokens.hash(passwordChangeToken), LocalDateTime.now().plus(PASSWORD_CHANGE_VALIDITY));
         }
 
-        log.info("MODIFICATION compte (self-service) : id={} email={}", user.getId(), user.getEmail());
+        log.info("MODIFICATION compte (self-service) : id={}", user.getId());
 
         if (passwordChanged) {
             String confirmationLink = frontendUrl + "/confirmation-mot-de-passe?token=" + passwordChangeToken;
@@ -299,7 +299,7 @@ public class UserService {
         user.setPassword(user.getPendingPassword());
         user.clearPasswordChange(); // jeton à usage unique
 
-        log.info("CONFIRMATION changement de mot de passe : id={} email={}", user.getId(), user.getEmail());
+        log.info("CONFIRMATION changement de mot de passe : id={}", user.getId());
 
         return userMapper.toDto(user);
     }
@@ -395,8 +395,7 @@ public class UserService {
         if (request.role() != Role.ADMIN) {
             assignClubs(created, request.clubIds());
         }
-        log.info("CREATION compte (admin) : id={} email={} role={}",
-                created.getId(), created.getEmail(), created.getRole());
+        log.info("CREATION compte (admin) : id={} role={}", created.getId(), created.getRole());
 
         String confirmationLink = frontendUrl + "/confirmation-compte?token=" + activationToken;
         emailService.sendAdminCreatedAccountEmail(created.getEmail(), temporaryPassword, confirmationLink);
@@ -450,7 +449,7 @@ public class UserService {
         user.setStatus(AccountStatus.ACTIVE);
         user.clearActivationToken(); // jeton à usage unique
 
-        log.info("VALIDATION création compte (admin) : id={} email={}", user.getId(), user.getEmail());
+        log.info("VALIDATION création compte (admin) : id={}", user.getId());
 
         // Entité gérée : le dirty checking JPA persiste les changements au commit.
         return userMapper.toDto(user);
@@ -490,7 +489,7 @@ public class UserService {
             user,
             request.role() == Role.ADMIN ? List.of() : request.clubIds()
         );
-            log.info("MODIFICATION compte (admin) : id={} email={}", user.getId(), user.getEmail());
+            log.info("MODIFICATION compte (admin) : id={}", user.getId());
 
             // Entité gérée : le dirty checking JPA persiste les changements au commit.
             return userMapper.toDto(user);
@@ -573,7 +572,7 @@ public class UserService {
 
         removeFromClubsAndDelete(user);
 
-        log.info("SUPPRESSION compte (admin) : id={} email={}", id, user.getEmail());
+        log.info("SUPPRESSION compte (admin) : id={}", id);
     }
 
     private void removeFromClubsAndDelete(User user) {
@@ -600,8 +599,7 @@ public class UserService {
                     // Sans flush, Hibernate exécuterait l'INSERT du nouveau compte avant ce DELETE
                     // et l'unicité de l'email serait violée.
                     userRepository.flush();
-                    log.info("SUPPRESSION compte jamais activé (lien expiré) : id={} email={}",
-                            abandoned.getId(), abandoned.getEmail());
+                    log.info("SUPPRESSION compte jamais activé (lien expiré) : id={}", abandoned.getId());
                 });
     }
 
@@ -636,10 +634,7 @@ public class UserService {
 
         emailService.sendAccountSuspendedEmail(user.getEmail(), request.reason(), request.endDate());
 
-        log.info(
-                "SUSPENSION compte (admin) : id={} email={} endDate={}",
-                id, user.getEmail(), request.endDate()
-        );
+        log.info("SUSPENSION compte (admin) : id={} endDate={}", id, request.endDate());
     }
 
     private User findUserOrThrow(Long id) {
