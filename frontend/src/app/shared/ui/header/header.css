@@ -88,7 +88,8 @@
 }
 
 .header__nav > a.active,
-.header__session > a.active {
+.header__session > a.active,
+.admin-menu.active summary {
   border-bottom-color: var(--color-primary);
   color: var(--color-text);
 }
