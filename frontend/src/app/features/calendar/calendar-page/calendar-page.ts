@@ -73,7 +73,7 @@ export class CalendarPage {
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'title', header: 'Évènement' },
-    { key: 'date', header: 'Date' },
+    { key: 'date', header: 'Date', hideOnSmall: true },
     { key: 'actions', header: 'Actions' },
   ];
 

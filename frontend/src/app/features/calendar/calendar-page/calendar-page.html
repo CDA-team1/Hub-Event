@@ -75,7 +75,10 @@
     [trackBy]="trackByEventId"
     [bordered]="true"
   >
-    <ng-template appColumn="title" let-event>{{ event.title }}</ng-template>
+    <ng-template appColumn="title" let-event>
+      {{ event.title }}
+      <div class="event-meta">{{ event.startDateTime | date: 'EEEE d MMMM à HH:mm' }}</div>
+    </ng-template>
     <ng-template appColumn="date" let-event>
       {{ event.startDateTime | date: 'EEEE d MMMM à HH:mm' }}
     </ng-template>

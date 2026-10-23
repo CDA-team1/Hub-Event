@@ -13,6 +13,7 @@
 
 .modes {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -76,6 +77,10 @@ app-data-table {
   align-items: center;
 }
 
+.event-meta {
+  display: none;
+}
+
 .error {
   margin-top: 1rem;
   color: #d33f3f;
@@ -93,5 +98,16 @@ app-data-table {
   .navigation p {
     min-width: 0;
     flex: 1;
+  }
+
+  app-date-range-picker {
+    flex: 1 1 100%;
+  }
+
+  .event-meta {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: #64748b;
   }
 }

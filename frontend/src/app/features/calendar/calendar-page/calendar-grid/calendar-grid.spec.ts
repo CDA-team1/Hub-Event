@@ -20,4 +20,23 @@ describe('CalendarGrid', () => {
     const element = await render(['2026-10-07']);
     expect(element.querySelectorAll('.day--highlighted')).toHaveLength(1);
   });
+
+  it('affiche le nom du mois sur le premier jour du mois uniquement', async () => {
+    const fixture = TestBed.createComponent(CalendarGrid);
+    fixture.componentRef.setInput('weeks', buildCalendarWeeks('2026-10-26', '2026-11-01'));
+    fixture.componentRef.setInput('highlightedDates', new Set<string>());
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const names = element.querySelectorAll('.month-name');
+
+    expect(names).toHaveLength(1);
+    expect(names[0].textContent).toMatch(/nov/i);
+    expect(names[0].closest('.day')?.textContent).toContain('1');
+  });
+
+  it("n'affiche aucun nom de mois quand la période ne contient pas de premier du mois", async () => {
+    const element = await render([]);
+    expect(element.querySelectorAll('.month-name')).toHaveLength(0);
+  });
 });
