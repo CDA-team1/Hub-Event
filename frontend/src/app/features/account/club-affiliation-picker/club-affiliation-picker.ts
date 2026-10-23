@@ -27,4 +27,3 @@ export class ClubAffiliationPicker {
     this.selectionChanged.emit(nextSelection);
   }
 }
-

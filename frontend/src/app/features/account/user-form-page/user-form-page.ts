@@ -184,5 +184,3 @@ export class UserFormPage {
     });
   }
 }
-
-

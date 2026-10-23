@@ -47,13 +47,15 @@ export class ClubsListPage {
     { key: 'actions', header: 'Actions' },
   ];
 
-  private readonly clubs = this.clubApi.list(computed(() => ({ page: this.page(), size:
-    this.pageSize })));
+  private readonly clubs = this.clubApi.list(
+    computed(() => ({ page: this.page(), size: this.pageSize })),
+  );
 
   protected readonly isLoading = this.clubs.isLoading;
   protected readonly error = this.clubs.error;
-  protected readonly content = computed(() => (this.clubs.hasValue() ? this.clubs.value().content
-    : []));
+  protected readonly content = computed(() =>
+    this.clubs.hasValue() ? this.clubs.value().content : [],
+  );
   protected readonly totalElements = computed(() =>
     this.clubs.hasValue() ? this.clubs.value().totalElements : 0,
   );

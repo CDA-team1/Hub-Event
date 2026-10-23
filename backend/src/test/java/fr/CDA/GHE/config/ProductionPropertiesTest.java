@@ -45,8 +45,7 @@ class ProductionPropertiesTest {
     void prodProfile_shouldNotHardcodeCredentials() throws IOException {
         Properties prod = load("application-prod.properties");
 
-        // L'URL peut être composée (jdbc:mysql://${DB_HOST}:...) : l'important est que l'hôte vienne de l'environnement.
-        assertThat(prod.getProperty("spring.datasource.url")).contains("${");
+        assertThat(prod.getProperty("spring.datasource.url")).contains("${DB_HOST}", "${DB_PORT}", "${DB_NAME}");
         assertThat(prod.getProperty("spring.datasource.username")).startsWith("${");
         assertThat(prod.getProperty("spring.datasource.password")).startsWith("${");
     }

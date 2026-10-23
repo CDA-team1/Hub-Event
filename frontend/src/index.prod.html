@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>HubEvent</title>
-  <base href="/">
-  <!--
+  <head>
+    <meta charset="utf-8" />
+    <title>HubEvent</title>
+    <base href="/" />
+    <!--
     Variante de index.html utilisée par la build de production (voir angular.json) : seule la
     balise CSP change, le reste doit rester identique à index.html. Absente en développement, où
     elle bloquerait le rechargement automatique de `ng serve`.
@@ -17,11 +17,14 @@
     frame-ancestors (anti-clickjacking) n'est pas pris en compte dans une balise <meta> : à envoyer
     en en-tête HTTP par l'hébergeur (voir README du front).
   -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://i.ibb.co; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-  <app-root></app-root>
-</body>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://i.ibb.co; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
 </html>

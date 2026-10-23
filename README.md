@@ -273,10 +273,66 @@ Hub-Event/
 - **API** : documentation OpenAPI via Swagger UI sur `http://localhost:8080/api/swagger-ui/index.html` (désactivée avec le profil `prod`).
 - [`backend/docs/database/schema.sql`](backend/docs/database/schema.sql) : structure SQL de la base (MySQL 8).
 
+### 🔌 Endpoints de l'API
+
+Tous les endpoints sont préfixés par `/api`. La documentation détaillée est disponible via Swagger UI en environnement de développement.
+
+| Domaine | Méthode | Endpoint |
+|---|---|---|
+| Authentification | POST | `/auth/login` |
+| Authentification | POST | `/auth/signup` |
+| Authentification | GET | `/auth/activate` |
+| Authentification | GET | `/auth/confirm-password-change` |
+| Authentification | POST | `/auth/confirm-account-creation` |
+| Authentification | POST | `/auth/logout` |
+| Évènements | GET | `/events` |
+| Évènements | GET | `/events/mine` |
+| Évènements | GET | `/events/{id}` |
+| Évènements | GET | `/events/{id}/pdf` |
+| Évènements | GET | `/events/search` |
+| Évènements | POST | `/events` |
+| Évènements | PUT | `/events/{id}` |
+| Évènements | DELETE | `/events/{id}` |
+| Évènements | POST | `/events/{id}/publish` |
+| Évènements | POST | `/events/{id}/status` |
+| Évènements | POST | `/events/{id}/cancel` |
+| Évènements | POST | `/events/{eventId}/images` |
+| Évènements | DELETE | `/events/{eventId}/images/{imageId}` |
+| Évènements | PUT | `/events/{eventId}/images/{imageId}/preview` |
+| Commentaires | GET | `/events/{id}/comments` |
+| Commentaires | POST | `/comments` |
+| Inscriptions | POST | `/events/{eventId}/registrations` |
+| Inscriptions | GET | `/events/{eventId}/registrations` |
+| Inscriptions | DELETE | `/events/{eventId}/registrations/me` |
+| Inscriptions | DELETE | `/events/{eventId}/registrations/{userId}` |
+| Clubs | GET | `/clubs` |
+| Clubs | GET | `/clubs/mine` |
+| Clubs | GET | `/clubs/{id}` |
+| Clubs | POST | `/clubs` |
+| Clubs | PUT | `/clubs/{id}` |
+| Clubs | DELETE | `/clubs/{id}` |
+| Calendrier | GET | `/calendar` |
+| Calendrier | GET | `/calendar/export` |
+| Profil utilisateur | GET | `/users/me` |
+| Profil utilisateur | PUT | `/users/me` |
+| Administration utilisateurs | GET | `/admin/users` |
+| Administration utilisateurs | GET | `/admin/users/{id}` |
+| Administration utilisateurs | POST | `/admin/users` |
+| Administration utilisateurs | PUT | `/admin/users/{id}` |
+| Administration utilisateurs | DELETE | `/admin/users/{id}` |
+| Administration utilisateurs | PUT | `/admin/users/{id}/clubs` |
+| Administration utilisateurs | POST | `/admin/users/{id}/suspension` |
+| Anonymisation | POST | `/anonymization-requests` |
+| Administration anonymisation | GET | `/admin/anonymization` |
+| Administration anonymisation | POST | `/admin/anonymization/{id}/validate` |
+| Documents légaux | GET | `/documents/{type}` |
+| Documents légaux | GET | `/documents/{type}/pdf` |
+| Administration documents | PUT | `/admin/documents/{type}` |
+
 ## 🤝 Contribuer
 
 - 🌿 **Branches** : `dev` est la branche d'intégration. Une branche par carte de travail, nommée `type/CARTE-description` (ex. `feat/EVT-09-image-gallery-form`, `fix/UI-07-responsive-data-table`).
-- 📝 **Commits** : `type(scope): description` courte, en anglais, sans numéro de carte (ex. `feat(evt): add event images component`). Types : `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`.
+- 📝 **Commits** : `type(scope): description (CARTE)` courte, en anglais, avec le numéro de carte (ex. `feat(evt): add event images component (EVT-09)`). Types : `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`.
 - 🔀 **Pull requests** vers `dev`, avec un titre et une description courts. Avant de pousser : les tests du back et du front doivent passer.
 - 🎨 **Formatage du front** : Prettier (`frontend/.prettierrc`).
 
@@ -288,7 +344,6 @@ Les règles complètes (colonnes Trello, étiquettes, identifiants de carte, cyc
 |---|---|
 | ❌ `Unknown database 'ghe_db_dev'` au démarrage du back | La base n'existe pas : voir l'étape 2. |
 | ❌ `Could not resolve placeholder '...'` | Une variable manque dans `backend/.env.properties` (ou le back est lancé hors du dossier `backend`). |
-| ❌ Les tests du back échouent avec `APP_FRONTEND_URL` | Le profil de test lit `.env.properties` pour cette valeur : vérifie que le fichier existe et contient `APP_FRONTEND_URL`. |
 | 🔒 Swagger UI répond 401 | L'accès à la documentation de l'API nécessite pour l'instant un jeton JWT. |
 | 🟢 Erreur de version de Node au `npm install` | Utilise Node 22.22+, 24.15+ ou 26+ (voir Prérequis). |
 | 📧 La création d'un compte échoue (délai de 5 s puis erreur) | L'e-mail d'activation est indispensable : vérifie les variables `MAIL_*` et le mot de passe d'application Gmail. En développement, utilise les comptes de démo déjà actifs. |

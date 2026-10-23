@@ -4,7 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-// EnableAsync : active @Async, utilisé par EmailService pour envoyer les notifications en tâche de fond.
+/**
+ * Point d'entrée de l'application Hub-Event.
+ *
+ * <p>Active également l'exécution asynchrone utilisée notamment pour l'envoi
+ * des notifications par e-mail.</p>
+ */
 @SpringBootApplication
 @EnableAsync
 public class GheApplication {

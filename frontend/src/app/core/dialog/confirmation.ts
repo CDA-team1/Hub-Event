@@ -1,4 +1,10 @@
-import { ApplicationRef, EnvironmentInjector, Service, createComponent, inject } from '@angular/core';
+import {
+  ApplicationRef,
+  EnvironmentInjector,
+  Service,
+  createComponent,
+  inject,
+} from '@angular/core';
 import { ConfirmationDialog } from '../../shared/ui/confirmation-dialog/confirmation-dialog';
 
 /**
