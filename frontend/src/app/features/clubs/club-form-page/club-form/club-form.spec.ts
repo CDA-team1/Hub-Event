@@ -77,7 +77,7 @@ describe('ClubForm', () => {
     expect(element.querySelector<HTMLInputElement>('#postalAddress')?.value).toBe('2 rue de Lyon');
   });
 
-  it("émet cancelled au clic sur Annuler", async () => {
+  it('émet cancelled au clic sur Annuler', async () => {
     const { fixture, element } = await render();
     const emitted: void[] = [];
     fixture.componentInstance.cancelled.subscribe(() => emitted.push(undefined));

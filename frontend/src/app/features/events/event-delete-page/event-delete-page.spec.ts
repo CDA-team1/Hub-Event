@@ -65,7 +65,9 @@ describe('EventDeletePage', () => {
     const fixture = TestBed.createComponent(EventDeletePage);
     TestBed.tick();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-loading-state')).not.toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-loading-state'),
+    ).not.toBeNull();
 
     http.expectOne((req) => req.url.endsWith('/events/5')).flush(makeDetail());
   });
@@ -100,10 +102,13 @@ describe('EventDeletePage', () => {
 
     http
       .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/events/5'))
-      .flush('Cet événement ne peut pas être supprimé car il possède des inscrits. Il doit être annulé.', {
-        status: 400,
-        statusText: 'Bad Request',
-      });
+      .flush(
+        'Cet événement ne peut pas être supprimé car il possède des inscrits. Il doit être annulé.',
+        {
+          status: 400,
+          statusText: 'Bad Request',
+        },
+      );
     await stable();
 
     expect(element.textContent).toContain('Il doit être annulé.');

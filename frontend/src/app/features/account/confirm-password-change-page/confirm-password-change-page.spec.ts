@@ -40,13 +40,14 @@ describe('ConfirmPasswordChangePage', () => {
     expect(element.querySelector('a')?.getAttribute('href')).toBe('/connexion');
   });
 
-  it("affiche le message du back quand le lien est refusé (expiré, déjà utilisé…)", async () => {
+  it('affiche le message du back quand le lien est refusé (expiré, déjà utilisé…)', async () => {
     accountApi.confirmPasswordChange.mockReturnValue(
       throwError(
         () =>
           new HttpErrorResponse({
             status: 400,
-            error: 'Ce lien a expiré. Refaites la modification du mot de passe depuis votre compte.',
+            error:
+              'Ce lien a expiré. Refaites la modification du mot de passe depuis votre compte.',
           }),
       ),
     );
@@ -60,7 +61,9 @@ describe('ConfirmPasswordChangePage', () => {
 
   it('affiche un message générique quand le serveur répond autrement', async () => {
     accountApi.confirmPasswordChange.mockReturnValue(
-      throwError(() => new HttpErrorResponse({ status: 500, error: 'Une erreur interne est survenue.' })),
+      throwError(
+        () => new HttpErrorResponse({ status: 500, error: 'Une erreur interne est survenue.' }),
+      ),
     );
 
     const fixture = setup('jeton');

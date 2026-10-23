@@ -1,5 +1,5 @@
-import {inject, Service, Signal} from '@angular/core';
-import {httpResource, HttpClient} from '@angular/common/http';
+import { inject, Service, Signal } from '@angular/core';
+import { httpResource, HttpClient } from '@angular/common/http';
 import {
   CommentDto,
   CreateEventRequest,
@@ -10,9 +10,9 @@ import {
   EventSearchCriteria,
   ImageDto,
   OrganizerEventDto,
-  UpdateEventRequest
+  UpdateEventRequest,
 } from '../../domain/event.model';
-import {firstValueFrom} from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { API_URL } from '../http/api-url';
 import { criteriaToParams } from '../../domain/event-search';
 
@@ -27,7 +27,7 @@ export class EventApi {
 
   publicEvents() {
     return httpResource<EventListDto>(() => `${this.apiUrl}/events`, {
-      defaultValue: {cultureEvents: [], leisureEvents: [], sportEvents: [], pastEvents: []},
+      defaultValue: { cultureEvents: [], leisureEvents: [], sportEvents: [], pastEvents: [] },
     });
   }
 

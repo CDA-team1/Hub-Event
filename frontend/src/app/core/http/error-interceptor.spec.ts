@@ -67,7 +67,7 @@ describe('errorInterceptor', () => {
     expect(await message).toBe('Trop de requêtes, réessayez dans quelques instants.');
   });
 
-  it("propose un message générique pour une 400 sans corps texte", async () => {
+  it('propose un message générique pour une 400 sans corps texte', async () => {
     const message = expectErrorMessage();
     controller
       .expectOne('/api/quelque-chose')
@@ -116,7 +116,9 @@ describe('errorInterceptor', () => {
     [418, 'Une erreur est survenue.'],
   ])('associe le bon message pour une %i', async (status, expected) => {
     const message = expectErrorMessage();
-    controller.expectOne('/api/quelque-chose').flush('peu importe', { status, statusText: 'Error' });
+    controller
+      .expectOne('/api/quelque-chose')
+      .flush('peu importe', { status, statusText: 'Error' });
 
     expect(await message).toBe(expected);
   });

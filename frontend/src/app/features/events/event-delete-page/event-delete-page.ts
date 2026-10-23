@@ -30,7 +30,9 @@ export class EventDeletePage {
   protected readonly invalidId = !isValidEventId(this.eventId());
   protected readonly isLoading = this.event.isLoading;
   protected readonly error = this.event.error;
-  protected readonly title = computed(() => (this.event.hasValue() ? this.event.value().title : ''));
+  protected readonly title = computed(() =>
+    this.event.hasValue() ? this.event.value().title : '',
+  );
   protected readonly ready = computed(() => this.event.hasValue());
 
   protected readonly submitting = signal(false);

@@ -12,8 +12,10 @@
   <div class="track">
     @for (item of items(); track $index) {
       <div class="slide" #slide>
-        <ng-container [ngTemplateOutlet]="renderItem()"
-                      [ngTemplateOutletContext]="{ $implicit: item }" />
+        <ng-container
+          [ngTemplateOutlet]="renderItem()"
+          [ngTemplateOutletContext]="{ $implicit: item }"
+        />
       </div>
     }
   </div>

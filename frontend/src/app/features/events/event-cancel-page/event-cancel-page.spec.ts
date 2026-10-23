@@ -65,7 +65,9 @@ describe('EventCancelPage', () => {
     const fixture = TestBed.createComponent(EventCancelPage);
     TestBed.tick();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-loading-state')).not.toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-loading-state'),
+    ).not.toBeNull();
 
     http.expectOne((req) => req.url.endsWith('/events/5')).flush(makeDetail());
   });
@@ -86,7 +88,9 @@ describe('EventCancelPage', () => {
     element.querySelector<HTMLButtonElement>('.confirm')!.click();
     await stable();
 
-    http.expectOne((req) => req.method === 'POST' && req.url.endsWith('/events/5/cancel')).flush({});
+    http
+      .expectOne((req) => req.method === 'POST' && req.url.endsWith('/events/5/cancel'))
+      .flush({});
     await stable();
 
     expect(navigate).toHaveBeenCalledWith(['/mes-evenements']);
@@ -107,7 +111,9 @@ describe('EventCancelPage', () => {
       });
     await stable();
 
-    expect(element.textContent).toContain('Cet événement ne peut pas être annulé dans son état actuel.');
+    expect(element.textContent).toContain(
+      'Cet événement ne peut pas être annulé dans son état actuel.',
+    );
     expect(navigate).not.toHaveBeenCalled();
   });
 
