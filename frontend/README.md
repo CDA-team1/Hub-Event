@@ -24,7 +24,8 @@ L'application est servie sur **http://localhost:4200**. Le serveur de développe
 | `npx ng test --watch=false` | Tests, une seule exécution |
 | `npm run build` | Build de production dans `dist/` |
 | `npm run lint` | Vérifie le code avec ESLint |
-| `npx prettier --check "src/**/*.{ts,html,css}"` | Vérifie le formatage |
+| `npm run format` | Reformate le code avec Prettier |
+| `npm run format:check` | Vérifie le formatage |
 
 ## 📁 Structure de `src/app`
 
